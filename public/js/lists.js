@@ -154,24 +154,22 @@ Views.home = {
       const todo = todoOf(l.id).length, done = doneOf(l.id).length;
       return `<div class="card list-card" data-id="${l.id}">
         <a class="lc" href="#/l/${l.id}">
-          <span class="emoji">${h(l.emoji)}</span>
+          ${listTile(l)}
           <span class="t"><b>${h(l.name)}</b><span>${todo ? `${todo} da prendere` : 'Tutto preso'}${done ? ` · ${done} nel carrello` : ''}</span></span>
           ${todo ? `<span class="badge">${todo}</span>` : ''}
         </a>
         <span class="grip" aria-label="Trascina per riordinare">${I.grip}</span>
       </div>`;
-    }).join('') : `<div class="empty"><div class="big">🧺</div>Nessuna lista. Creane una con il +</div>`;
+    }).join('') : `<div class="empty">${emptyArt('basket')}Nessuna lista. Creane una con il +</div>`;
   },
 };
 
-const EMOJIS = ['🛒', '🥦', '🍎', '🥩', '🐟', '🧀', '🍞', '🍝', '🍷', '🍺', '⚽', '🎉', '🧴', '🧻', '🐶', '💊', '🏠', '🎄'];
-
 function listSheet(list) {
-  let emoji = list ? list.emoji : '🛒';
+  let emoji = list ? listIconId(list.emoji) : 'cart';
   openSheet(`<h2>${list ? 'Modifica lista' : 'Nuova lista'}</h2>
     <form id="lf">
       <label class="field"><span>Nome</span><input class="input" name="lname" required maxlength="80" value="${h(list ? list.name : '')}" placeholder="es. Supermercato, Farmacia…"></label>
-      <div class="field"><span>Icona</span><div class="emoji-pick">${EMOJIS.map((e) => `<button type="button" data-e="${e}" class="${e === emoji ? 'on' : ''}">${e}</button>`).join('')}</div></div>
+      <div class="field"><span>Icona</span><div class="emoji-pick">${LIST_ICONS.map((e) => `<button type="button" data-e="${e}" class="${e === emoji ? 'on' : ''}" aria-label="${e}">${iconTile(e)}</button>`).join('')}</div></div>
       <div class="actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn primary">Salva</button></div>
       ${list ? `<div class="actions"><button type="button" class="btn danger" id="del-list">Elimina lista</button></div>` : ''}
     </form>`, (sh) => {
@@ -218,7 +216,7 @@ function itemRow(i, { grip = false, dept = false } = {}) {
   return `<li class="item ${i.checked ? 'done' : ''} ${flashIds.has(i.id) ? 'flash' : ''}" data-id="${i.id}">
     <button class="tap" data-act="toggle" aria-pressed="${i.checked}">
       <span class="check">${I.check}</span>
-      <span class="txt"><span class="name">${dept ? `<span class="dept-dot">${S.deptOf(i.department).emoji}</span>` : ''}${h(i.name)}${fav ? '<span class="fav">★</span>' : ''}${q ? `<span class="qty">${h(q)}</span>` : ''}</span>
+      <span class="txt"><span class="name">${dept ? deptTile(i.department, 'sm') : ''}${h(i.name)}${fav ? icon('starFill', 'fav') : ''}${q ? `<span class="qty">${h(q)}</span>` : ''}</span>
       ${meta || tags ? `<span class="meta">${meta}${tags ? ` <span class="tags">${tags}</span>` : ''}</span>` : ''}</span>
     </button>
     <button class="icon-btn more" data-act="edit" aria-label="Dettagli">${I.more}</button>
@@ -299,7 +297,7 @@ Views.list = {
   update() {
     const list = st.lists.get(this.route.id);
     if (!list) { toast('La lista è stata eliminata'); history.replaceState(null, '', '#/'); return mount(); }
-    $('#lt').textContent = `${list.emoji} ${list.name}`;
+    $('#lt').innerHTML = `${listTile(list, 'sm')} ${h(list.name)}`;
     const mode = list.sort_mode || 'manual';
     let todo = todoOf(list.id);
     const done = doneOf(list.id);
@@ -319,7 +317,7 @@ Views.list = {
         if (!groups.has(d)) groups.set(d, []);
         groups.get(d).push(i);
       }
-      wrap.innerHTML = S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<div class="dept-h">${d.emoji} ${h(d.label)} <small>${groups.get(d.id).length}</small></div>
+      wrap.innerHTML = S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<div class="dept-h">${deptTile(d.id, 'sm')} ${h(d.label)} <small>${groups.get(d.id).length}</small></div>
         <ul class="items">${groups.get(d.id).sort((a, b) => a.name.localeCompare(b.name, 'it')).map((i) => itemRow(i)).join('')}</ul>`).join('');
     } else if (mode === 'alpha') {
       wrap.innerHTML = `<ul class="items">${todo.sort((a, b) => a.name.localeCompare(b.name, 'it')).map((i) => itemRow(i, { dept: true })).join('')}</ul>`;
@@ -336,8 +334,8 @@ Views.list = {
     }
     const allTodo = todoOf(list.id).length;
     $('#done-wrap').innerHTML = (!allTodo && !done.length)
-      ? `<div class="empty"><div class="big">📝</div>La lista è vuota.<br>Scrivi qui sopra cosa serve, oppure tocca <b>Abituali</b>.</div>`
-      : (!allTodo ? `<div class="empty" style="padding:24px"><div class="big">🎉</div>Tutto preso!</div>` : '') +
+      ? `<div class="empty">${emptyArt('list')}La lista è vuota.<br>Scrivi qui sopra cosa serve, oppure tocca <b>Abituali</b>.</div>`
+      : (!allTodo ? `<div class="empty" style="padding:24px">${emptyArt('done')}Tutto preso!</div>` : '') +
         (done.length ? `<div class="section-h"><button class="btn ghost" data-act="toggle-done">${this.showDone ? '▾' : '▸'} Nel carrello (${done.length})</button>
           <span><button class="btn ghost" data-act="clear">Svuota</button><button class="btn primary sm" data-act="close">Concludi spesa</button></span></div>
           ${this.showDone ? `<ul class="items">${done.map((i) => itemRow(i)).join('')}</ul>` : ''}` : '');
@@ -360,7 +358,7 @@ Views.list = {
       cand = cand.filter((x) => x.count > 0).sort((a, b) => (b.favorite - a.favorite) || b.count - a.count);
     }
     $('#sg').innerHTML = cand.slice(0, 12).map((x) =>
-      `<button type="button" class="chip" data-name="${h(x.name)}">${x.favorite ? '★ ' : ''}${h(x.name)}${x.brand ? `<small>${h(x.brand)}</small>` : ''}</button>`).join('');
+      `<button type="button" class="chip" data-name="${h(x.name)}">${x.favorite ? icon('starFill', 'fav') + ' ' : ''}${h(x.name)}${x.brand ? `<small>${h(x.brand)}</small>` : ''}</button>`).join('');
   },
   clearDone() {
     const list = st.lists.get(this.route.id);
@@ -386,15 +384,16 @@ function itemSheet(it) {
         <label class="field narrow"><span>Unità</span><select class="input" name="unit">${unitOptions(it.unit)}</select></label>
       </div>
       <label class="field"><span>Marca</span><input class="input" name="brand" list="brands" maxlength="80" placeholder="Qualsiasi" value="${h(it.brand)}">${brandDatalist()}</label>
-      <label class="field"><span>Reparto</span><select class="input" name="department">${deptOptions(it.department)}</select></label>
+      ${deptPicker('department', it.department)}
       ${tagField('tags', it.tags)}
       <label class="field"><span>Nota</span><input class="input" name="note" maxlength="300" placeholder="es. quello senza lattosio" value="${h(it.note)}"></label>
-      ${lists.length > 1 ? `<label class="field"><span>Lista</span><select class="input" name="list_id">${lists.map((l) => `<option value="${l.id}" ${l.id === it.list_id ? 'selected' : ''}>${h(l.emoji)} ${h(l.name)}</option>`).join('')}</select></label>` : ''}
+      ${lists.length > 1 ? `<label class="field"><span>Lista</span><select class="input" name="list_id">${lists.map((l) => listOption(l, it.list_id)).join('')}</select></label>` : ''}
       <label class="switch"><input type="checkbox" name="favorite" ${prod.favorite ? 'checked' : ''}><span>${I.star} Prodotto abituale</span></label>
       <div class="actions"><button type="button" class="btn danger" id="del">Elimina</button><button class="btn primary">Salva</button></div>
     </form>`, (sh) => {
     const f = $('#itf', sh);
     bindTagField(sh, 'tags');
+    bindDeptPicker(sh, 'department');
     f.onsubmit = (e) => {
       e.preventDefault();
       const el = f.elements;
@@ -435,16 +434,16 @@ function favoritesSheet(listId) {
       const there = inList.has(p.key);
       return `<li class="item ${there ? 'done' : ''}" data-key="${h(p.key)}"><button class="tap" type="button">
         <span class="check">${I.check}</span>
-        <span class="txt"><span class="name" style="text-decoration:none">${S.deptOf(p.department).emoji} ${h(p.name)}${q ? `<span class="qty">${h(q)}</span>` : ''}</span>
+        <span class="txt"><span class="name" style="text-decoration:none">${deptTile(p.department, 'sm')} ${h(p.name)}${q ? `<span class="qty">${h(q)}</span>` : ''}</span>
         ${p.brand ? `<span class="meta">${h(p.brand)}</span>` : ''}</span></button></li>`;
-    }).join('')}</ul>` : `<div class="empty">Nessun prodotto abituale.<br>Segnali con la ★ dai dettagli di un articolo (⋮) o dal catalogo Prodotti.</div>`;
+    }).join('')}</ul>` : `<div class="empty">${emptyArt('star')}Nessun prodotto abituale.<br>Segnali con la ${icon('star')} dai dettagli di un articolo (⋮) o dal catalogo Prodotti.</div>`;
     const all = $('#fav-all', sh);
     all.hidden = !missing.length;
     all.textContent = `Aggiungi i ${missing.length} mancanti`;
   };
   const list = st.lists.get(listId);
   openSheet(`<h2>${I.star} Abituali</h2>
-    <p class="muted">Tocca per aggiungere a <b>${h(list.emoji)} ${h(list.name)}</b>.</p>
+    <p class="muted">Tocca per aggiungere a <b>${h(list.name)}</b>.</p>
     <div id="fav-body"></div>
     <div class="actions"><a class="btn" href="#/p">Gestisci prodotti</a><button class="btn primary" id="fav-all"></button></div>`, (sh) => {
     draw(sh);
@@ -496,7 +495,7 @@ Views.products = {
   mount() {
     app.innerHTML = topBar('Prodotti', { back: '#/s', right: `<button class="icon-btn" id="np" aria-label="Nuovo prodotto">${I.plus}</button>` }) +
       `<main><input class="input search" id="pq" type="search" placeholder="Cerca prodotto, marca o #tag…" value="${h(this.q)}">
-      <p class="muted small">Il catalogo si riempie da solo con quello che aggiungi alle liste e alle ricette. Qui puoi impostare reparto, tag, quantità abituale e ★.</p>
+      <p class="muted small">Il catalogo si riempie da solo con quello che aggiungi alle liste e alle ricette. Qui puoi impostare reparto, tag, quantità e marca abituali, e segnare con ${icon('star')} i prodotti abituali.</p>
       <div id="pl"></div></main>` + tabBar('settings');
     $('#pq').oninput = (e) => { this.q = e.target.value; this.update(); };
     $('#np').onclick = () => productSheet(null);
@@ -520,14 +519,14 @@ Views.products = {
       if (!groups.has(d)) groups.set(d, []);
       groups.get(d).push(p);
     }
-    $('#pl').innerHTML = all.length ? S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<div class="dept-h">${d.emoji} ${h(d.label)} <small>${groups.get(d.id).length}</small></div>
+    $('#pl').innerHTML = all.length ? S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<div class="dept-h">${deptTile(d.id, 'sm')} ${h(d.label)} <small>${groups.get(d.id).length}</small></div>
       <ul class="items">${groups.get(d.id).sort((a, b) => a.name.localeCompare(b.name, 'it')).map((p) => {
         const q2 = S.fmtQty(p.qty, p.unit);
         const meta = [p.brand && h(p.brand), q2 && h(q2)].filter(Boolean).join(' · ');
         return `<li class="item"><button class="tap" data-key="${h(p.key)}" type="button"><span class="txt"><span class="name">${h(p.name)}</span>
           ${meta || (p.tags || []).length ? `<span class="meta">${meta} <span class="tags">${tagPills(p.tags)}</span></span>` : ''}</span></button>
           <button class="icon-btn star ${p.favorite ? 'on' : ''}" data-star="${h(p.key)}" aria-label="Abituale">${p.favorite ? I.starFill : I.star}</button></li>`;
-      }).join('')}</ul>`).join('') : `<div class="empty"><div class="big">🏷️</div>${st.products.size ? 'Nessun prodotto trovato.' : 'Il catalogo è vuoto: inizia ad aggiungere articoli alle liste.'}</div>`;
+      }).join('')}</ul>`).join('') : `<div class="empty">${emptyArt('tag')}${st.products.size ? 'Nessun prodotto trovato.' : 'Il catalogo è vuoto: inizia ad aggiungere articoli alle liste.'}</div>`;
   },
 };
 
@@ -542,7 +541,7 @@ function productSheet(p) {
         <label class="field narrow"><span>Unità</span><select class="input" name="unit">${unitOptions(p.unit)}</select></label>
       </div>
       <label class="field"><span>Marca preferita</span><input class="input" name="brand" list="brands" maxlength="80" value="${h(p.brand)}">${brandDatalist()}</label>
-      <label class="field"><span>Reparto</span><select class="input" name="department">${deptOptions(p.department)}</select></label>
+      ${deptPicker('department', p.department)}
       ${tagField('tags', p.tags)}
       <label class="switch"><input type="checkbox" name="favorite" ${p.favorite ? 'checked' : ''}><span>${I.star} Prodotto abituale</span></label>
       <div class="actions">${isNew ? '<button type="button" class="btn" data-close>Annulla</button>' : '<button type="button" class="btn danger" id="pdel">Elimina</button>'}<button class="btn primary">Salva</button></div>
@@ -550,10 +549,11 @@ function productSheet(p) {
     </form>`, (sh) => {
     const f = $('#pf', sh);
     bindTagField(sh, 'tags');
+    const setDept = bindDeptPicker(sh, 'department');
     if (isNew) {
       const n = f.elements.pname;
       setTimeout(() => n.focus(), 50);
-      n.addEventListener('change', () => { if (!f.elements.department.value) f.elements.department.value = S.guessDepartment(n.value); });
+      n.addEventListener('change', () => { if (!f.elements.department.value) setDept(S.guessDepartment(n.value)); });
     }
     const values = () => {
       const el = f.elements;

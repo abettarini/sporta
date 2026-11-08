@@ -353,3 +353,43 @@ textarea.input { resize: vertical; min-height: 90px; }
 }
 #update-bar span { flex: 1; font-weight: 600; font-size: 15px; }
 #update-bar button { border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 700; background: var(--accent-ink); color: var(--accent); }
+
+/* ------------------------------------------------ icone */
+.ico { width: 1em; height: 1em; display: inline-block; vertical-align: -0.15em; flex: none; }
+.ico-tile {
+  --c: #7b8794;
+  display: inline-grid; place-items: center; flex: none; border-radius: 12px; color: var(--c);
+  background: color-mix(in srgb, var(--c) 14%, var(--surface));
+  width: 44px; height: 44px; font-size: 26px;
+}
+.ico-tile.sm { width: 26px; height: 26px; border-radius: 8px; font-size: 17px; }
+.ico-tile.lg { width: 56px; height: 56px; border-radius: 16px; font-size: 32px; }
+.ico-tile .ico { width: 1em; height: 1em; vertical-align: 0; }
+@media (prefers-color-scheme: dark) {
+  .ico-tile { color: color-mix(in srgb, var(--c) 70%, white); background: color-mix(in srgb, var(--c) 24%, var(--surface)); }
+}
+.empty-art {
+  width: 76px; height: 76px; margin: 0 auto 12px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent); font-size: 38px;
+}
+
+/* ------------------------------------------------ icone nell'interfaccia */
+.list-card .ico-tile { margin-right: 0; }
+.top h1 .ico-tile.sm { vertical-align: -4px; margin-right: 4px; }
+.dept-h .ico-tile.sm { width: 24px; height: 24px; font-size: 16px; border-radius: 7px; }
+.item .name .ico-tile.sm { width: 22px; height: 22px; font-size: 14px; border-radius: 6px; margin-right: 8px; vertical-align: -4px; }
+.ico.fav { color: var(--warn); margin-left: 5px; width: 15px; height: 15px; vertical-align: -1px; }
+.chip .ico.fav { margin: 0; }
+.empty .ico { vertical-align: -3px; }
+.recipe-card .thumb.ph { color: var(--muted); font-size: 30px; }
+.link-card .ico-tile { font-size: 24px; }
+.emoji-pick { gap: 8px; }
+.emoji-pick button { width: auto; height: auto; padding: 2px; border-radius: 15px; border: 2px solid transparent; background: none; }
+.emoji-pick button.on { border-color: var(--accent); }
+.dept-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+.dept-pick button {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 12px; text-align: left;
+  border: 2px solid transparent; background: var(--surface); font-size: 13px; line-height: 1.2; min-height: 44px;
+}
+.dept-pick button.on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.emoji-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); justify-items: center; }

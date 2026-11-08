@@ -164,55 +164,59 @@
 
   // Reparti nell'ordine tipico di un supermercato.
   const DEPARTMENTS = [
-    { id: 'frutta', label: 'Frutta e verdura', emoji: '🥬' },
-    { id: 'pane', label: 'Pane e forno', emoji: '🥖' },
-    { id: 'carne', label: 'Carne', emoji: '🥩' },
-    { id: 'pesce', label: 'Pesce', emoji: '🐟' },
-    { id: 'salumi', label: 'Salumi e formaggi', emoji: '🧀' },
-    { id: 'latticini', label: 'Latte, latticini e uova', emoji: '🥛' },
-    { id: 'pasta', label: 'Pasta, riso e cereali', emoji: '🍝' },
-    { id: 'dispensa', label: 'Dispensa', emoji: '🥫' },
-    { id: 'colazione', label: 'Colazione e dolci', emoji: '🍪' },
-    { id: 'surgelati', label: 'Surgelati', emoji: '❄️' },
-    { id: 'bevande', label: 'Bevande', emoji: '🥤' },
-    { id: 'persona', label: 'Igiene e cura persona', emoji: '🧴' },
-    { id: 'casa', label: 'Casa e pulizia', emoji: '🧽' },
-    { id: 'animali', label: 'Animali', emoji: '🐾' },
-    { id: 'bimbi', label: 'Infanzia', emoji: '🍼' },
-    { id: '', label: 'Altro', emoji: '📦' },
+    { id: 'frutta', label: 'Frutta e verdura' },
+    { id: 'pane', label: 'Pane e forno' },
+    { id: 'carne', label: 'Carne' },
+    { id: 'pesce', label: 'Pesce' },
+    { id: 'salumi', label: 'Salumi e formaggi' },
+    { id: 'latticini', label: 'Latte, latticini e uova' },
+    { id: 'pasta', label: 'Pasta, riso e cereali' },
+    { id: 'dispensa', label: 'Dispensa' },
+    { id: 'colazione', label: 'Colazione e dolci' },
+    { id: 'surgelati', label: 'Surgelati' },
+    { id: 'bevande', label: 'Bevande' },
+    { id: 'persona', label: 'Igiene e cura persona' },
+    { id: 'casa', label: 'Casa e pulizia' },
+    { id: 'animali', label: 'Animali' },
+    { id: 'bimbi', label: 'Infanzia' },
+    { id: '', label: 'Altro' },
   ];
 
   // Parole chiave per proporre il reparto di un prodotto nuovo (si può sempre cambiare).
   const DEPT_WORDS = {
     frutta: 'mel mele pera pere banan aranc limon mandarin clementin fragol uva kiwi pesc albicocc ciliegi anguri melone frutt ananas avocad insalat lattug rucola spinac pomodor pomodorin zucchin melanzan peperon patat cipoll aglio carot sedano finocch cavol broccol verza zucca fungh champignon funghi basilico prezzemol rosmarin salvia menta piselli fagiolin carciof asparag porr radicchi cetriol verdur scalogn zenzero',
-    pane: 'pane panin pancarr piadin focacc grissin crackers cracker fette biscottate taralli pizza pangrattato',
+    pane: 'pane panin pancarr piadin focacc grissin crackers cracker fette_biscottate taralli pizza pangrattato',
     carne: 'carne pollo tacchino manzo vitell maiale salsicc macinat hamburger bistecc fettin cotolett arrost costin agnell coniglio petto cosce wurstel',
     pesce: 'pesce salmone tonno fresco merluzz orata branzin gamber cozz vongol calamar polpo seppi alici acciugh baccal sgombr',
     salumi: 'prosciutt salam mortadell bresaol speck pancett guancial coppa formagg parmigian grana pecorin mozzarell burrat stracchin gorgonzol provolon scamorz ricott fontina asiago emmental taleggio mascarpone feta',
     latticini: 'latte yogurt burro panna uova uovo kefir besciamella',
     pasta: 'pasta spaghett penne fusill rigaton linguin tagliatell lasagn gnocch riso farro orzo couscous quinoa farina semola polenta tortellin ravioli',
-    dispensa: 'olio aceto sale pepe zucchero passata pelati sugo pesto tonno in scatola legumi fagioli ceci lenticch mais olive capperi brodo dado spezie origano curry maionese ketchup senape conserv sottaceti lievito',
+    dispensa: 'olio aceto sale pepe zucchero passata pelati sugo pesto tonno_in_scatola in_scatola legumi fagioli ceci lenticch mais olive capperi brodo dado spezie origano curry maionese ketchup senape conserv sottaceti lievito',
     colazione: 'biscott cereali muesli marmellat confettur nutella miele caffè caffe the tè tisan cacao merendin cioccolat torta crostat cornett brioche',
     surgelati: 'surgelat gelato bastoncin findus minestrone surgel ghiacciol',
-    bevande: 'acqua vino birra succo aranciata coca cola bibit tonica spumante prosecco liquor',
-    persona: 'shampoo bagnoschiuma sapone dentifricio spazzolin deodorante assorbent rasoi crema cotone carta igienica fazzolett',
-    casa: 'detersiv detergent sgrassator candeggin ammorbident pellicol alluminio sacchett spugn scottex rotoli tovagliol piatti carta forno lavastovigli anticalcare',
-    animali: 'croccant crocchett gatto cane lettiera scatolett per cani per gatti',
-    bimbi: 'pannolin omogeneizz salviett latte in polvere biberon',
+    bevande: 'acqua vino birra succo aranciata coca_cola bibit tonica spumante prosecco liquor',
+    persona: 'shampoo bagnoschiuma sapone dentifricio spazzolin deodorante assorbent rasoi crema cotone carta_igienica fazzolett',
+    casa: 'detersiv detergent sgrassator candeggin ammorbident pellicol alluminio sacchett spugn scottex rotoli tovagliol piatti carta_forno carta_stagnola lavastovigli anticalcare',
+    animali: 'croccant crocchett gatto cane lettiera scatolett per_cani per_gatti',
+    bimbi: 'pannolin omogeneizz salviett latte_in_polvere biberon',
   };
   const DEPT_INDEX = [];
   for (const [dept, words] of Object.entries(DEPT_WORDS)) {
-    for (const w of words.split(' ')) if (w) DEPT_INDEX.push([w, dept]);
+    for (const w of words.split(' ')) if (w) DEPT_INDEX.push([w.replace(/_/g, ' '), dept]); // "_" unisce le frasi
   }
   DEPT_INDEX.sort((a, b) => b[0].length - a[0].length);
 
+  // La parola che compare per prima nel nome indica di solito il prodotto
+  // ("passata di pomodoro" -> dispensa); a parità vince la parola chiave più lunga.
+  const deaccent = (x) => x.normalize('NFD').replace(/[̀-ͯ]/g, '');
   function guessDepartment(name) {
-    const n = ' ' + normName(name).normalize('NFD').replace(/[̀-ͯ]/g, '') + ' ';
+    const n = ' ' + deaccent(normName(name)) + ' ';
+    let best = null;
     for (const [w, dept] of DEPT_INDEX) {
-      const ww = w.normalize('NFD').replace(/[̀-ͯ]/g, '');
-      if (n.includes(' ' + ww)) return dept;
+      const at = n.indexOf(' ' + deaccent(w));
+      if (at >= 0 && (!best || at < best.at || (at === best.at && w.length > best.len))) best = { at, len: w.length, dept };
     }
-    return '';
+    return best ? best.dept : '';
   }
 
   function deptOf(id) {

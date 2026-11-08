@@ -207,7 +207,7 @@ function applyLocal(op) {
   switch (op.k) {
     case 'list.put': {
       const ex = st.lists.get(op.id);
-      st.lists.set(op.id, { ...(ex || { id: op.id, emoji: '🛒', position: t, sort_mode: 'manual', created_at: t }), ...op.data, updated_at: t });
+      st.lists.set(op.id, { ...(ex || { id: op.id, emoji: 'cart', position: t, sort_mode: 'manual', created_at: t }), ...op.data, updated_at: t });
       break;
     }
     case 'list.del':
@@ -516,9 +516,23 @@ function unitOptions(sel) {
   const all = S.UNITS.includes(u) ? S.UNITS : S.UNITS.concat([u]);
   return all.map((x) => `<option value="${h(x)}" ${x === u ? 'selected' : ''}>${x || '—'}</option>`).join('');
 }
-function deptOptions(sel) {
-  return S.DEPARTMENTS.map((d) => `<option value="${d.id}" ${d.id === (sel || '') ? 'selected' : ''}>${d.emoji} ${h(d.label)}</option>`).join('');
+// Scelta del reparto: griglia di icone (più comoda di una tendina sul telefono).
+function deptPicker(name, sel) {
+  return `<div class="field"><span>Reparto</span><input type="hidden" name="${name}" value="${h(sel || '')}">
+    <div class="dept-pick" data-for="${name}">${S.DEPARTMENTS.map((d) => `<button type="button" data-dept="${d.id}" class="${d.id === (sel || '') ? 'on' : ''}">
+      ${deptTile(d.id, 'sm')}<span>${h(d.label)}</span></button>`).join('')}</div></div>`;
 }
+function bindDeptPicker(root, name) {
+  const input = root.querySelector(`[name="${name}"]`);
+  const pick = root.querySelector(`.dept-pick[data-for="${name}"]`);
+  const set = (v) => {
+    input.value = v;
+    pick.querySelectorAll('[data-dept]').forEach((b) => b.classList.toggle('on', b.dataset.dept === v));
+  };
+  pick.onclick = (e) => { const b = e.target.closest('[data-dept]'); if (b) set(b.dataset.dept); };
+  return set;
+}
+const listOption = (l, cur) => `<option value="${l.id}" ${l.id === cur ? 'selected' : ''}>${h(l.name)}</option>`;
 function brandDatalist() {
   const brands = [...new Set([...st.products.values()].map((x) => x.brand).filter(Boolean))].sort();
   return `<datalist id="brands">${brands.map((b) => `<option value="${h(b)}">`).join('')}</datalist>`;

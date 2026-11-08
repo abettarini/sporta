@@ -62,7 +62,7 @@ Views.settings = {
       <div class="card"><h3>Il tuo nome</h3>
         <p>Viene mostrato agli altri sugli articoli che aggiungi o prendi.</p>
         <input class="input" id="sn" value="${h(st.member)}" maxlength="40"></div>
-      <a class="card link-card" href="#/p"><span class="emoji">🏷️</span><span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
+      <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
       <div class="card"><h3>Gruppo attuale</h3>
         <label class="field"><span>Nome</span><input class="input" id="hn" maxlength="80"></label>
         <p>Per invitare qualcuno condividi il link o il codice: chi lo inserisce vede e modifica liste, ricette e spese di questo gruppo.</p>

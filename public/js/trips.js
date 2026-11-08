@@ -14,7 +14,7 @@ Views.trips = {
   update() {
     const trips = sortedTrips();
     if (!trips.length) {
-      $('#tl').innerHTML = `<div class="empty"><div class="big">🧾</div>Nessuna spesa salvata.<br>Quando hai preso tutto, tocca <b>Concludi spesa</b> in fondo alla lista: qui troverai cosa hai comprato, quando e dove.</div>`;
+      $('#tl').innerHTML = `<div class="empty">${emptyArt('receipt')}Nessuna spesa salvata.<br>Quando hai preso tutto, tocca <b>Concludi spesa</b> in fondo alla lista: qui troverai cosa hai comprato, quando e dove.</div>`;
       return;
     }
     const months = new Map();
@@ -77,7 +77,7 @@ Views.trip = {
         ${t.created_by || t.list_name ? `<div class="muted small">${t.list_name ? 'Lista ' + h(t.list_name) : ''}${t.created_by ? ' · conclusa da ' + h(t.created_by) : ''}</div>` : ''}
       </div>
       <p class="muted small">Tocca gli articoli per scegliere quali rimettere in lista.</p>
-      ${S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<div class="dept-h">${d.emoji} ${h(d.label)}</div>
+      ${S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<div class="dept-h">${deptTile(d.id, 'sm')} ${h(d.label)}</div>
         <ul class="items">${groups.get(d.id).map(([i, k]) => {
           const q = S.fmtQty(i.qty, i.unit);
           const meta = [i.brand && h(i.brand), i.by && 'preso da ' + h(i.by)].filter(Boolean).join(' · ');
@@ -86,7 +86,7 @@ Views.trip = {
             ${meta || (i.tags || []).length ? `<span class="meta">${meta} <span class="tags">${tagPills(i.tags)}</span></span>` : ''}</span></button></li>`;
         }).join('')}</ul>`).join('')}`;
     const tl = $('#ttl'), cur = tl.value || lastListId();
-    tl.innerHTML = sortedLists().map((l) => `<option value="${l.id}" ${l.id === cur ? 'selected' : ''}>${h(l.emoji)} ${h(l.name)}</option>`).join('');
+    tl.innerHTML = sortedLists().map((l) => listOption(l, cur)).join('');
     const n = t.items.length - this.off.size;
     const btn = $('#tadd');
     btn.textContent = n ? `Rimetti in lista (${n})` : 'Rimetti in lista';

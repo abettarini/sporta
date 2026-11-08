@@ -41,6 +41,7 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - **Offline**: l'app si apre anche senza rete, le modifiche vanno in coda e partono appena torna la connessione.
 - **Aggiornamenti**: quando esce una nuova versione compare l'avviso *Aggiorna* (vedi [Versioni e aggiornamenti](#versioni-e-aggiornamenti)).
 - **Pronta per gli agenti AI** con WebMCP (vedi [WebMCP](#webmcp)).
+- **Icone**: un set di icone originali (SVG a tratto) per reparti, liste e stati vuoti, con un colore per ogni reparto e varianti per il tema chiaro e scuro. Le liste create con le versioni precedenti, che usavano emoji, vengono mostrate con l'icona equivalente.
 
 ## Pubblicazione su Vercel (consigliata)
 
@@ -186,6 +187,7 @@ lib/http.js            adattamento richiesta/risposta HTTP
 public/index.html      shell dell'app
 public/version.js      versione dell'app (generato da package.json)
 public/shared.js       inserimento rapido, unità, scalatura, reparti (usato da client e server)
+public/js/icons.js     set di icone (reparti, liste, interfaccia) e relativi colori
 public/js/core.js      stato multi-gruppo, coda offline, sincronizzazione, componenti comuni
 public/js/lists.js     liste, articoli, abituali, conclusione spesa, catalogo prodotti
 public/js/recipes.js   ricette, foto, condivisione

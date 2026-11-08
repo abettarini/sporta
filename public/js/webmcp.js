@@ -276,12 +276,16 @@
     {
       name: 'sporta_create_list',
       description: 'Crea una nuova lista della spesa nel gruppo attivo.',
-      inputSchema: { type: 'object', properties: { name: { type: 'string' }, emoji: { type: 'string' } }, required: ['name'] },
-      execute: ({ name, emoji } = {}) => {
+      inputSchema: {
+        type: 'object',
+        properties: { name: { type: 'string' }, icon: { type: 'string', enum: LIST_ICONS, description: 'Icona della lista' } },
+        required: ['name'],
+      },
+      execute: ({ name, icon: ic } = {}) => {
         const ng = needGroup(); if (ng) return ng;
         if (!String(name || '').trim()) return fail('Nome obbligatorio');
         const maxPos = Math.max(0, ...[...st.lists.values()].map((l) => l.position));
-        enqueue({ k: 'list.put', id: uid(), data: { name: String(name).trim(), emoji: emoji || '🛒', position: maxPos + 1 } });
+        enqueue({ k: 'list.put', id: uid(), data: { name: String(name).trim(), emoji: listIconId(ic), position: maxPos + 1 } });
         return ok(`Lista "${name}" creata.`);
       },
     },

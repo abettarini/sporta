@@ -74,10 +74,10 @@ Views.recipes = {
       .filter((r) => !q || S.normName(r.name).includes(q) || r.ingredients.some((i) => S.normName(i.name).includes(q)))
       .sort((a, b) => a.name.localeCompare(b.name, 'it'));
     $('#rl').innerHTML = rs.length ? rs.map((r) => `<a class="card recipe-card" href="#/r/${r.id}">
-        ${r.photos && r.photos.length ? `<img class="thumb" src="${photoUrl(r.photos[0])}" alt="" loading="lazy">` : '<span class="thumb ph">🍽️</span>'}
+        ${r.photos && r.photos.length ? `<img class="thumb" src="${photoUrl(r.photos[0])}" alt="" loading="lazy">` : `<span class="thumb ph">${icon('dish')}</span>`}
         <span class="t"><b>${h(r.name)}</b><span>${h(recipeMeta(r))}</span></span>
         ${r.share_token ? `<span class="shared-ico" title="Condivisa">${I.share}</span>` : ''}</a>`).join('')
-      : `<div class="empty"><div class="big">📖</div>${st.recipes.size ? 'Nessuna ricetta trovata.' : 'Nessuna ricetta.<br>Aggiungine una con il +'}</div>`;
+      : `<div class="empty">${emptyArt('book')}${st.recipes.size ? 'Nessuna ricetta trovata.' : 'Nessuna ricetta.<br>Aggiungine una con il +'}</div>`;
   },
 };
 
@@ -117,7 +117,7 @@ Views.recipe = {
     $('#rbody').innerHTML = recipeBodyHtml(r, this.people, this.off);
     window.scrollTo(0, y);
     const tl = $('#tl'), cur = tl.value || lastListId();
-    tl.innerHTML = sortedLists().map((l) => `<option value="${l.id}" ${l.id === cur ? 'selected' : ''}>${h(l.emoji)} ${h(l.name)}</option>`).join('');
+    tl.innerHTML = sortedLists().map((l) => listOption(l, cur)).join('');
     const n = scaledSelected(r, this.people, this.off).length;
     const btn = $('#addr');
     btn.textContent = n ? `Aggiungi ${n}` : 'Aggiungi';
@@ -206,7 +206,7 @@ Views.shared = {
       j = await res.json();
       if (!res.ok) throw new Error(j.error || 'Ricetta non trovata');
     } catch (e) {
-      $('#rbody').innerHTML = `<div class="empty"><div class="big">🔗</div>${h(e.message || 'Ricetta non disponibile')}</div>`;
+      $('#rbody').innerHTML = `<div class="empty">${emptyArt('link')}${h(e.message || 'Ricetta non disponibile')}</div>`;
       return;
     }
     const r = j.recipe;

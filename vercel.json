@@ -6,9 +6,22 @@
     {
       "source": "/api/:path*",
       "destination": "/api?__path=:path*"
+    },
+    {
+      "source": "/r/:token",
+      "destination": "/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/version.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
     {
       "source": "/api/events",
       "headers": [
@@ -33,6 +46,15 @@
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
         }
       ]
     }

@@ -1,23 +1,46 @@
 # Sporta 🧺
 
-*La spesa di famiglia.*
+*La spesa condivisa, in famiglia e non solo.*
 
-Lista della spesa condivisa in famiglia: è una PWA installabile sul telefono e si aggiorna in tempo reale.
+Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiornata in tempo reale, con ricette e storico delle spese.
 
 ## Funzioni
 
-- **Più liste** per famiglia (Supermercato, Farmacia…), ognuna con la sua icona.
-- **Tempo reale**: articoli aggiunti, modificati, spuntati o riordinati compaiono subito su tutti i telefoni (Server-Sent Events, con Postgres LISTEN/NOTIFY).
+### Gruppi
+- Un telefono può partecipare a **più gruppi** (la famiglia, la squadra di calcetto, una festa…) e passare dall'uno all'altro toccando il nome in alto. Ogni gruppo ha liste, ricette, prodotti e spese separati.
+- Ogni gruppo ha un **codice d'invito** (es. `ABCD-EFGH-JKLM`), condivisibile anche come link.
+
+### Liste
+- **Più liste** per gruppo (Supermercato, Farmacia…), ognuna con la sua icona.
+- **Tempo reale**: articoli aggiunti, modificati, spuntati o riordinati compaiono subito su tutti i telefoni.
 - **Inserimento rapido** in una sola riga, con i dettagli facoltativi:
   - `latte` → solo il nome
   - `2 kg patate`, `500g farina`, `latte x3`, `uova 6` → quantità e unità
   - `pasta 500 g @De Cecco` → con la marca
-  - suggerimenti dagli articoli usati più spesso; se un articolo è già in lista, la quantità viene sommata (g/kg e ml/l vengono convertiti)
-- **Dettagli** (quantità, unità, marca, nota, lista) dal pulsante ⋮ di ogni articolo.
-- **Drag & drop**: si trascinano articoli, liste e ingredienti con la maniglia ⠿. Funziona con il dito e con il mouse.
-- **Nel carrello**: gli articoli spuntati scendono in fondo e mostrano chi li ha presi. *Svuota* li toglie, e si può annullare.
-- **Ricette**: ingredienti e numero di persone. Si sceglie per quante persone cucinare, le quantità vengono ricalcolate e arrotondate in modo sensato (uova e pezzi interi, grammi a 5/10), si deselezionano gli ingredienti che si hanno già e si aggiunge tutto a una lista.
+  - suggerimenti dai prodotti più usati; se un articolo è già in lista la quantità viene sommata (g/kg e ml/l vengono convertiti)
+- **Dettagli** dal pulsante ⋮: quantità, unità, marca, **reparto**, **tag**, nota, lista e ★ prodotto abituale.
+- **Ordinamento**: manuale con drag & drop (maniglia ⠿, funziona con il dito), **per reparto** (nell'ordine tipico del supermercato) o alfabetico. Il reparto viene proposto in automatico dal nome del prodotto.
+- **Filtro per tag** (es. `#bio`, `#offerta`, `#per Luca`).
+- **Prodotti abituali**: con *Abituali* si rimettono in lista con un tocco, con quantità e marca solite.
+- **Nel carrello**: gli articoli spuntati scendono in fondo e mostrano chi li ha presi.
+
+### Prodotti
+- Il **catalogo** si riempie da solo con quello che si aggiunge alle liste e alle ricette. Da *Altro → Prodotti* si impostano reparto, tag, quantità e marca abituali e la ★.
+
+### Spese
+- **Concludi spesa** salva gli articoli presi nello storico, con data, chi l'ha fatta, negozio e totale (facoltativi), e li toglie dalla lista.
+- Nella scheda **Spese** lo storico è diviso per mese, con il totale mensile; da una spesa passata si possono **rimettere in lista** gli articoli scelti.
+
+### Ricette
+- Foto, descrizione, **difficoltà**, **tempi di preparazione e cottura**, ingredienti e **procedimento a passaggi** (riordinabili con drag & drop).
+- **Autocompletamento** degli ingredienti dal catalogo e dalle altre ricette; gli ingredienti nuovi entrano subito nei suggerimenti.
+- Si sceglie per quante persone cucinare: le quantità vengono ricalcolate e arrotondate in modo sensato (uova e pezzi interi, grammi a 5/10). Si deselezionano gli ingredienti già in casa e il resto va nella lista.
+- **Condivisione con link privato** (non indicizzato e revocabile): chi lo apre vede la ricetta anche senza Sporta e, se usa Sporta, può salvarla nelle sue ricette. Le ricette si possono anche copiare in un altro dei propri gruppi.
+
+### App
 - **Offline**: l'app si apre anche senza rete, le modifiche vanno in coda e partono appena torna la connessione.
+- **Aggiornamenti**: quando esce una nuova versione compare l'avviso *Aggiorna* (vedi [Versioni e aggiornamenti](#versioni-e-aggiornamenti)).
+- **Pronta per gli agenti AI** con WebMCP (vedi [WebMCP](#webmcp)).
 
 ## Pubblicazione su Vercel (consigliata)
 
@@ -32,7 +55,7 @@ Serve solo un database **Postgres**: Neon dal Marketplace di Vercel (piano gratu
 
 ### Inizializzazione del database
 
-Non serve fare nulla: alla prima richiesta l'app crea da sola le tabelle (`households`, `lists`, `items`, `recipes`, `history`). L'operazione è idempotente e protetta da un lock, quindi è sicura anche con più istanze che partono insieme.
+Non serve fare nulla: alla prima richiesta l'app crea da sola le tabelle e, sui database creati con versioni precedenti, aggiunge le colonne nuove (migrazioni automatiche, senza toccare i dati). L'operazione è idempotente e protetta da un lock, quindi è sicura anche con più istanze che partono insieme.
 
 Se preferisci creare le tabelle prima del primo accesso, o verificare che la connessione funzioni, recupera le variabili da Vercel e lancia lo script:
 
@@ -64,7 +87,7 @@ Se hai un solo URL senza pooler (per esempio un Postgres tuo), basta `DATABASE_U
 
 Le funzioni Vercel non condividono la memoria, quindi gli aggiornamenti passano da Postgres con **LISTEN/NOTIFY**:
 
-1. ogni modifica fa una `NOTIFY` sul canale della famiglia;
+1. ogni modifica fa una `NOTIFY` sul canale del gruppo;
 2. ogni telefono con l'app aperta tiene una connessione SSE verso una funzione, che è in `LISTEN` su quel canale e inoltra subito la modifica.
 
 Ogni 4 minuti circa la funzione chiude la connessione per rispettare i limiti di durata di Vercel; il browser si riconnette da solo e ricarica lo stato, quindi non si perde nulla. Se il tempo reale non è disponibile, l'app si aggiorna comunque ogni 10 secondi.
@@ -104,23 +127,72 @@ sporta.tuodominio.it {
 
 Con nginx va disattivato il buffering su `/api/events` (`proxy_buffering off;`), altrimenti gli aggiornamenti in tempo reale arrivano in ritardo.
 
+## Versioni e aggiornamenti
+
+La versione dell'app è quella di `package.json`. Lo script `scripts/sync-version.js` la copia in `public/version.js`, letto sia dall'app (è visibile in *Altro*) sia dal service worker.
+
+Per pubblicare una nuova versione:
+
+```bash
+npm version minor
+```
+
+Il comando (oppure `patch` o `major`) aggiorna `package.json` e `public/version.js`, poi crea commit e tag. Dopo il push e il deploy:
+
+1. il service worker dei telefoni si accorge che `version.js` è cambiato e scarica in background tutti i file della nuova versione, in una cache separata;
+2. l'app mostra l'avviso **"È disponibile una nuova versione · Aggiorna"**, e intanto continua a funzionare con la versione precedente;
+3. toccando *Aggiorna* le modifiche non ancora inviate restano salvate, la nuova versione si attiva e la pagina si ricarica. La cache della versione vecchia viene eliminata.
+
+L'app controlla gli aggiornamenti ogni volta che torna in primo piano e ogni 30 minuti. Il database si aggiorna da solo con le migrazioni automatiche.
+
+Durante lo sviluppo i file vengono serviti dalla cache della versione installata: dopo una modifica conviene lanciare `npm run sync-version` con una versione nuova, oppure attivare *Update on reload* negli strumenti per sviluppatori del browser (*Application → Service workers*).
+
+## WebMCP
+
+Sporta espone i suoi strumenti agli agenti AI del browser tramite [WebMCP](https://webmachinelearning.github.io/webmcp/docs/proposal.html) (`navigator.modelContext.registerTool`), una proposta W3C ancora sperimentale: in Chrome è disponibile dietro flag. Nei browser che non la supportano il codice (`public/js/webmcp.js`) non fa nulla.
+
+| Strumento | Cosa fa |
+|---|---|
+| `sporta_get_overview` | gruppo attivo, gruppi, liste con il numero di articoli |
+| `sporta_switch_group` | passa a un altro gruppo |
+| `sporta_get_list` | articoli di una lista (da prendere e nel carrello) |
+| `sporta_add_items` | aggiunge articoli con quantità, unità, marca, nota e tag facoltativi |
+| `sporta_set_item_checked` | segna un articolo come preso o da prendere |
+| `sporta_remove_items` | elimina articoli |
+| `sporta_get_favorites` | prodotti abituali |
+| `sporta_search_recipes`, `sporta_get_recipe` | cerca e legge le ricette |
+| `sporta_add_recipe_to_list` | aggiunge gli ingredienti di una ricetta per N persone, escludendo quelli già in casa |
+| `sporta_create_recipe` | crea una ricetta |
+| `sporta_get_shopping_history` | storico delle spese |
+| `sporta_create_list` | crea una lista |
+
+Gli strumenti usano le stesse funzioni dell'interfaccia: le modifiche passano dalla coda offline e arrivano in tempo reale a tutto il gruppo.
+
 ## Condivisione e sicurezza
 
-Chi crea la famiglia riceve un **codice d'invito** (es. `ABCD-EFGH-JKLM`). In *Impostazioni → Condividi invito* parte un link che fa entrare direttamente. Chi ha il codice vede e modifica tutto, quindi va trattato come una password. I tentativi con codici sbagliati sono limitati.
+- Chi ha il **codice d'invito** di un gruppo vede e modifica tutto quel gruppo, quindi il codice va trattato come una password. I tentativi con codici sbagliati sono limitati. Ogni gruppo è isolato dagli altri.
+- Le **ricette condivise** sono raggiungibili solo da chi ha il link (identificativo casuale non indovinabile). La pagina non mostra dati del gruppo e il link si può disattivare in qualsiasi momento.
+- Le **foto** sono servite tramite identificativi casuali non indovinabili, come i link condivisi.
+- L'app chiede ai motori di ricerca di non indicizzare le pagine (`noindex`).
 
 ## Struttura
 
 ```
-api/index.js         funzione serverless per Vercel (tutte le /api/*)
-server.js            server locale/self-hosted: statici + API + SSE
-lib/core.js          logica delle API e schema del database
-lib/backends.js      adattatori: SQLite o Postgres, tempo reale in memoria o LISTEN/NOTIFY
-lib/http.js          adattamento richiesta/risposta HTTP
-public/index.html    shell dell'app
-public/app.js        interfaccia, coda offline, sincronizzazione, drag & drop
-public/shared.js     parsing inserimento rapido, unità, scalatura (usato da client e server)
-public/sw.js         service worker (cache offline)
-public/manifest.webmanifest, public/icons/
-vercel.json          configurazione Vercel (statici da public/, rewrite delle API)
-scripts/make-icons.js  rigenera le icone PNG dall'SVG (richiede Playwright)
+api/index.js           funzione serverless per Vercel (tutte le /api/*)
+server.js              server locale/self-hosted: statici + API + SSE
+lib/core.js            logica delle API, schema del database e migrazioni
+lib/backends.js        adattatori: SQLite o Postgres, tempo reale in memoria o LISTEN/NOTIFY
+lib/http.js            adattamento richiesta/risposta HTTP
+public/index.html      shell dell'app
+public/version.js      versione dell'app (generato da package.json)
+public/shared.js       inserimento rapido, unità, scalatura, reparti (usato da client e server)
+public/js/core.js      stato multi-gruppo, coda offline, sincronizzazione, componenti comuni
+public/js/lists.js     liste, articoli, abituali, conclusione spesa, catalogo prodotti
+public/js/recipes.js   ricette, foto, condivisione
+public/js/trips.js     storico delle spese
+public/js/webmcp.js    strumenti WebMCP per gli agenti AI
+public/js/settings.js  benvenuto, gruppi, impostazioni, avvio e aggiornamenti
+public/sw.js           service worker versionato (offline e aggiornamenti)
+vercel.json            configurazione Vercel
+scripts/               db-init, sync-version, make-icons
 ```

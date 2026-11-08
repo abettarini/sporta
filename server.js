@@ -38,6 +38,7 @@ function serveStatic(req, res, url) {
       // Il service worker gestisce la cache offline; qui forziamo la rivalidazione.
       'Cache-Control': ext === '.png' ? 'public, max-age=604800' : 'no-cache',
       'X-Content-Type-Options': 'nosniff',
+      'X-Robots-Tag': 'noindex, nofollow',
     });
     res.end(data);
   });

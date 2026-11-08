@@ -1,6 +1,6 @@
 {
   "name": "sporta",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Sporta: PWA lista della spesa condivisa in tempo reale, con ricette",
   "main": "server.js",
   "private": true,
@@ -10,7 +10,9 @@
   "scripts": {
     "start": "node --no-warnings server.js",
     "icons": "node scripts/make-icons.js",
-    "db:init": "node scripts/db-init.js"
+    "db:init": "node scripts/db-init.js",
+    "version": "node scripts/sync-version.js && git add public/version.js",
+    "sync-version": "node scripts/sync-version.js"
   },
   "dependencies": {
     "postgres": "3.4.5"

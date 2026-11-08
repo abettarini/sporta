@@ -1,0 +1,12 @@
+{
+  "name": "lista-spesa",
+  "version": "1.0.0",
+  "description": "PWA lista della spesa condivisa in tempo reale, con ricette",
+  "main": "server.js",
+  "private": true,
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "icons": "node scripts/make-icons.js"
+  }
+}

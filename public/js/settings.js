@@ -1,57 +1,108 @@
 'use strict';
 /* Sporta — benvenuto, impostazioni (nome, gruppi, inviti, installazione) e avvio. */
 
+// Primo accesso. Tre percorsi:
+//  - link d'invito con codice valido -> solo il proprio nome (alias);
+//  - "Ho un codice" (o link senza codice valido) -> 1) codice, 2) nome;
+//  - "Crea un gruppo" -> nome + nome del gruppo/famiglia.
+const focusLater = (sel) => setTimeout(() => { const el = $(sel); if (el) el.focus(); }, 50);
+
 Views.welcome = {
   mount() {
-    const join = new URLSearchParams(location.search).get('join') || '';
-    app.innerHTML = `<div class="welcome">
-      <img class="logo" src="/icons/icon-192.png" alt="">
-      <h1>Sporta</h1>
-      <p>La lista della spesa condivisa con la famiglia, gli amici o la squadra: aggiornata in tempo reale, con le tue ricette.</p>
-      <label class="field"><span>Il tuo nome</span>
-        <input class="input" id="w-name" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member)}"></label>
-      <div class="card">
-        <h3>Hai un codice d'invito?</h3>
-        <form id="w-join">
-          <input class="input" id="w-code" placeholder="XXXX-XXXX-XXXX" value="${h(join)}">
-          <button class="btn primary block" style="margin-top:10px">Unisciti al gruppo</button>
-        </form>
-      </div>
-      <div class="card">
-        <h3>…oppure crea un gruppo</h3>
-        <form id="w-new">
-          <input class="input" id="w-fam" placeholder="es. Casa Rossi, Calcetto, Festa di Anna">
-          <button class="btn block" style="margin-top:10px">Crea un nuovo gruppo</button>
-        </form>
-      </div>
-      <p class="err" id="w-err"></p>
-    </div>`;
-    const err = (m) => { $('#w-err').textContent = m; };
-    const joinBtn = $('#w-join button');
-    bindCodeInput($('#w-code'), (complete) => { joinBtn.disabled = !complete; });
+    this.code = null; this.group = null; this.err = ''; this.fromLink = false; this.prefill = '';
+    const join = new URLSearchParams(location.search).get('join');
+    if (join == null) return this.show('start');
+    this.fromLink = true;
+    const code = normCode(join);
+    if (cleanCode(code).length !== CODE_LEN) { this.fromLink = false; this.err = 'Il link non contiene un codice valido: inseriscilo qui.'; this.prefill = code; return this.show('code'); }
+    this.show('checking');
+    previewGroup(code)
+      .then((name) => { this.code = code; this.group = name; this.show('alias'); })
+      .catch((e) => { this.fromLink = false; this.err = e.message === 'Codice non valido.' ? 'Il link non contiene un codice valido: inseriscilo qui.' : e.message; this.prefill = code; this.show('code'); });
+  },
+  show(step) {
+    this.step = step;
+    const back = (to) => `<button type="button" class="icon-btn wback" data-to="${to}" aria-label="Indietro">${I.back}</button>`;
+    const err = `<p class="err" id="w-err">${h(this.err || '')}</p>`;
+    const steps = (n) => `<div class="steps-dots"><span class="${n === 1 ? 'on' : ''}"></span><span class="${n === 2 ? 'on' : ''}"></span></div>`;
+    let body = '';
+    if (step === 'start') {
+      body = `<img class="logo" src="/icons/icon-192.png" alt="">
+        <h1>Sporta</h1>
+        <p>La lista della spesa condivisa con la famiglia, gli amici o la squadra: aggiornata in tempo reale, con le tue ricette.</p>
+        <button class="btn primary block lg" data-to="code">Ho un codice d'invito</button>
+        <button class="btn block lg" data-to="create" style="margin-top:10px">Crea un nuovo gruppo</button>
+        <p class="muted small center" style="margin-top:18px">Se qualcuno ti ha invitato, apri il link che ti ha mandato: basterà scrivere il tuo nome.</p>`;
+    } else if (step === 'checking') {
+      body = `<div class="empty">${emptyArt('link')}Verifico l'invito…</div>`;
+    } else if (step === 'code') {
+      body = `${back('start')}${steps(1)}
+        <h2>Inserisci il codice d'invito</h2>
+        <p class="muted">Lo trovi nel messaggio di chi ti ha invitato. Basta scrivere lettere e numeri: maiuscole e trattini si mettono da soli.</p>
+        <form id="w-code-f"><input class="input" id="w-code" placeholder="XXXX-XXXX-XXXX" value="${h(this.prefill || '')}">
+        ${err}<button class="btn primary block lg" id="w-next">Continua</button></form>`;
+    } else if (step === 'alias') {
+      body = `${this.fromLink ? '' : back('code')}${this.fromLink ? '' : steps(2)}
+        <div class="invite-card">${groupAvatar(this.group)}<small>${this.fromLink ? 'Sei stato invitato nel gruppo' : 'Stai entrando nel gruppo'}</small><b>${h(this.group)}</b></div>
+        <form id="w-alias-f"><label class="field"><span>Come ti chiami?</span>
+          <input class="input" id="w-name" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member)}"></label>
+          <p class="hint">È il nome che gli altri vedranno sugli articoli che aggiungi o prendi.</p>
+          ${err}<button class="btn primary block lg">Entra nel gruppo</button></form>
+        ${this.fromLink ? `<button class="btn ghost block" data-to="code" style="margin-top:8px">Non è il tuo invito? Inserisci un altro codice</button>` : ''}`;
+    } else if (step === 'create') {
+      body = `${back('start')}
+        <h2>Crea un gruppo</h2>
+        <p class="muted">Una famiglia, la squadra di calcetto, una festa… Poi potrai invitare gli altri con un link.</p>
+        <form id="w-create-f">
+          <label class="field"><span>Il tuo nome</span><input class="input" id="w-name" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member)}"></label>
+          <label class="field"><span>Nome del gruppo o famiglia</span><input class="input" id="w-fam" required maxlength="80" placeholder="es. Casa Rossi, Calcetto, Festa di Anna"></label>
+          ${err}<button class="btn primary block lg">Crea il gruppo</button></form>`;
+    }
+    app.innerHTML = `<div class="welcome">${body}</div>`;
+    this.err = '';
+    app.querySelectorAll('[data-to]').forEach((b) => {
+      b.onclick = () => { if (b.dataset.to === 'code') this.prefill = ''; this.fromLink = this.fromLink && b.dataset.to !== 'code'; this.show(b.dataset.to); };
+    });
+    const fail = (m) => { $('#w-err').textContent = m; };
     const saveName = () => {
       const n = $('#w-name').value.trim();
-      if (!n) { err('Inserisci il tuo nome: serve per vedere chi ha aggiunto cosa.'); $('#w-name').focus(); return false; }
+      if (!n) { fail('Scrivi il tuo nome.'); $('#w-name').focus(); return false; }
       st.member = n; ls.set('member', n); return true;
     };
-    const enter = (j) => {
-      addGroup(j);
-      history.replaceState(null, '', '/#/');
-      mount();
-    };
-    $('#w-join').onsubmit = async (e) => {
-      e.preventDefault();
-      if (!saveName()) return;
-      try { enter(await joinGroup($('#w-code').value)); } catch (x) { err(x.message); }
-    };
-    $('#w-new').onsubmit = async (e) => {
-      e.preventDefault();
-      if (!saveName()) return;
-      try {
-        enter(await createGroup($('#w-fam').value.trim()));
-        toast('Gruppo creato! Invita gli altri da Altro');
-      } catch (x) { err(x.message); }
-    };
+    const enter = (j) => { addGroup(j); history.replaceState(null, '', '/#/'); mount(); };
+    if (step === 'code') {
+      const next = $('#w-next');
+      bindCodeInput($('#w-code'), (complete) => { next.disabled = !complete; });
+      focusLater('#w-code');
+      $('#w-code-f').onsubmit = async (e) => {
+        e.preventDefault();
+        next.disabled = true;
+        try {
+          const code = normCode($('#w-code').value);
+          this.group = await previewGroup(code);
+          this.code = code;
+          this.show('alias');
+        } catch (x) { fail(x.message); next.disabled = false; }
+      };
+    }
+    if (step === 'alias') {
+      if (!st.member) focusLater('#w-name');
+      $('#w-alias-f').onsubmit = async (e) => {
+        e.preventDefault();
+        if (!saveName()) return;
+        try { enter(await joinGroup(this.code)); toast(`Benvenuto nel gruppo "${this.group}"`); } catch (x) { fail(x.message); }
+      };
+    }
+    if (step === 'create') {
+      focusLater(st.member ? '#w-fam' : '#w-name');
+      $('#w-create-f').onsubmit = async (e) => {
+        e.preventDefault();
+        if (!saveName()) return;
+        const fam = $('#w-fam').value.trim();
+        if (!fam) { fail('Dai un nome al gruppo.'); return; }
+        try { enter(await createGroup(fam)); toast('Gruppo creato! Invita gli altri da Altro'); } catch (x) { fail(x.message); }
+      };
+    }
   },
 };
 
@@ -93,7 +144,7 @@ Views.settings = {
       try { await navigator.clipboard.writeText(link()); toast('Link copiato'); } catch { prompt('Copia il link:', link()); }
     };
     $('#share').onclick = async () => {
-      const data = { title: 'Sporta', text: `Unisciti al gruppo "${groupName()}" su Sporta (codice ${st.code})`, url: link() };
+      const data = { title: 'Sporta', text: `Ti invito nel gruppo "${groupName()}" su Sporta: apri il link e scrivi il tuo nome. (Codice: ${st.code})`, url: link() };
       if (navigator.share) { try { await navigator.share(data); } catch { /* annullato */ } } else $('#copy').click();
     };
     $('#g-new').onclick = () => newGroupSheet();
@@ -147,11 +198,8 @@ Views.settings = {
   if (join && st.code) {
     history.replaceState(null, '', '/' + location.hash);
     const code = normCode(join);
-    if (!st.groups.some((g) => g.code === code)) {
-      joinGroupSheet();
-      const input = document.querySelector('#jg [name="gcode"]');
-      if (input) { input.value = code; input.dispatchEvent(new Event('input')); }
-    } else switchGroup(code);
+    if (st.groups.some((g) => g.code === code)) switchGroup(code);
+    else joinGroupSheet(code);
   }
   setupServiceWorker();
 })();

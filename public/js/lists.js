@@ -89,28 +89,72 @@ function newGroupSheet() {
   });
 }
 
-function joinGroupSheet() {
-  openSheet(`<h2>Unisciti a un gruppo</h2>
-    <form id="jg"><label class="field"><span>Codice d'invito</span><input class="input" name="gcode" required placeholder="XXXX-XXXX-XXXX"></label>
-    <p class="hint">Basta scrivere lettere e numeri: maiuscole e trattini si mettono da soli. Puoi anche incollare il link d'invito.</p>
-    <p class="err" id="jg-err"></p>
-    <div class="actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn primary">Unisciti</button></div></form>`, (sh) => {
-    const f = $('#jg', sh);
-    const ok = f.querySelector('button.primary');
-    bindCodeInput(f.elements.gcode, (complete) => { ok.disabled = !complete; });
-    setTimeout(() => f.elements.gcode.focus(), 50);
-    f.onsubmit = async (e) => {
-      e.preventDefault();
-      try {
-        const j = await joinGroup(f.elements.gcode.value);
-        closeSheet(true);
-        addGroup(j);
-        history.replaceState(null, '', '#/');
-        mount();
-        toast(`Sei nel gruppo "${j.household.name}"`);
-      } catch (err) { $('#jg-err', sh).textContent = err.message; }
+// Unirsi a un altro gruppo (per chi usa già Sporta): 1) codice, se non arriva da un link;
+// 2) conferma del gruppo trovato e del proprio nome.
+function joinGroupSheet(prefill) {
+  openSheet(`<div id="jg-body"></div>`, (sh) => {
+    const body = $('#jg-body', sh);
+    const stepCode = (msg = '') => {
+      body.innerHTML = `<h2>Unisciti a un gruppo</h2>
+        <form id="jg"><label class="field"><span>Codice d'invito</span><input class="input" name="gcode" required placeholder="XXXX-XXXX-XXXX" value="${h(prefill || '')}"></label>
+        <p class="hint">Basta scrivere lettere e numeri: maiuscole e trattini si mettono da soli. Puoi anche incollare il link d'invito.</p>
+        <p class="err" id="jg-err">${h(msg)}</p>
+        <div class="actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn primary">Continua</button></div></form>`;
+      const f = $('#jg', sh);
+      const ok = f.querySelector('button.primary');
+      bindCodeInput(f.elements.gcode, (complete) => { ok.disabled = !complete; });
+      setTimeout(() => f.elements.gcode.focus(), 50);
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        ok.disabled = true;
+        try { stepConfirm(normCode(f.elements.gcode.value), await previewGroup(f.elements.gcode.value)); }
+        catch (err) { $('#jg-err', sh).textContent = err.message; ok.disabled = false; }
+      };
     };
+    const stepConfirm = (code, name) => {
+      if (st.groups.some((g) => g.code === code)) { closeSheet(true); switchGroup(code); toast(`Sei già nel gruppo "${name}"`); return; }
+      body.innerHTML = `<div class="invite-head">${groupAvatar(name)}<div><small>Invito al gruppo</small><b>${h(name)}</b></div></div>
+        <form id="jg2"><label class="field"><span>Il tuo nome</span><input class="input" name="alias" required maxlength="40" autocomplete="given-name" value="${h(st.member)}" placeholder="Come ti vedranno gli altri"></label>
+        <p class="err" id="jg-err"></p>
+        <div class="actions"><button type="button" class="btn" id="jg-back">Altro codice</button><button class="btn primary">Entra nel gruppo</button></div></form>`;
+      const f = $('#jg2', sh);
+      $('#jg-back', sh).onclick = () => { prefill = ''; stepCode(); };
+      if (!st.member) setTimeout(() => f.elements.alias.focus(), 50);
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        const alias = f.elements.alias.value.trim(); if (!alias) return;
+        try {
+          const j = await joinGroup(code);
+          st.member = alias; ls.set('member', alias);
+          closeSheet(true);
+          addGroup(j);
+          history.replaceState(null, '', '#/');
+          mount();
+          toast(`Benvenuto nel gruppo "${j.household.name}"`);
+        } catch (err) { $('#jg-err', sh).textContent = err.message; }
+      };
+    };
+    // Dal link d'invito: se il codice è valido si va subito alla conferma.
+    if (prefill && cleanCode(prefill).length === CODE_LEN) {
+      body.innerHTML = '<div class="empty">Verifico l\'invito…</div>';
+      previewGroup(prefill).then((name) => stepConfirm(normCode(prefill), name))
+        .catch((err) => stepCode(err.message === 'Codice non valido.' ? 'Il link non contiene un codice valido: inseriscilo qui.' : err.message));
+    } else stepCode(prefill ? 'Il link non contiene un codice valido: inseriscilo qui.' : '');
   });
+}
+
+const groupAvatar = (name) => `<span class="avatar lg">${h((name || '?').slice(0, 1).toUpperCase())}</span>`;
+
+// Verifica un codice e restituisce il nome del gruppo (senza entrarci).
+async function previewGroup(rawCode) {
+  const code = normCode(rawCode);
+  if (cleanCode(code).length !== CODE_LEN) throw new Error('Il codice è di 12 caratteri.');
+  let r;
+  try { r = await fetch('/api/household', { headers: { Authorization: 'Bearer ' + code } }); } catch { throw new Error('Nessuna connessione.'); }
+  if (r.status === 401) throw new Error('Codice non valido.');
+  if (r.status === 429) throw new Error('Troppi tentativi, riprova più tardi.');
+  if (!r.ok) throw new Error('Errore, riprova.');
+  return (await r.json()).household.name;
 }
 
 async function createGroup(name) {

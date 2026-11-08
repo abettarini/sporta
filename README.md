@@ -8,7 +8,12 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 
 ### Gruppi
 - Un telefono può partecipare a **più gruppi** (la famiglia, la squadra di calcetto, una festa…) e passare dall'uno all'altro toccando il nome in alto. Ogni gruppo ha liste, ricette, prodotti e spese separati.
-- Ogni gruppo ha un **codice d'invito** (es. `ABCD-EFGH-JKLM`), condivisibile anche come link.
+- Ogni gruppo ha un **codice d'invito** (es. `ABCD-EFGH-JKLM`), condivisibile come link da *Altro → Condividi invito*.
+- **Ingresso guidato**:
+  - chi apre il **link d'invito** vede il nome del gruppo e deve solo scrivere il proprio nome;
+  - se il link non contiene un codice valido, o si entra senza link, si inserisce prima il codice (maiuscole e trattini si mettono da soli; si può incollare anche il link intero) e poi il nome;
+  - per **creare un gruppo** bastano il proprio nome e il nome del gruppo o della famiglia;
+  - chi usa già Sporta e apre un invito conferma con un tocco e il nuovo gruppo si aggiunge ai suoi.
 
 ### Liste
 - **Più liste** per gruppo (Supermercato, Farmacia…), ognuna con la sua icona.

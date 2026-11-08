@@ -111,7 +111,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); inst
 
 Views.settings = {
   mount() {
-    app.innerHTML = topBar('Altro') + `<main class="settings">
+    app.innerHTML = topBar('Altro') + `<main class="settings wide">
       <div class="card"><h3>Gruppo attuale</h3>
         <form id="hn-f" class="inline-edit"><label class="field"><span>Nome del gruppo</span>
           <span class="row"><input class="input" id="hn" required maxlength="80"><button class="btn primary" id="hn-save" disabled>Salva</button></span></label></form>

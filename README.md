@@ -45,6 +45,7 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - **Condivisione con link privato** (non indicizzato e revocabile): chi lo apre vede la ricetta anche senza Sporta e, se usa Sporta, può salvarla nelle sue ricette. Le ricette si possono anche copiare in un altro dei propri gruppi.
 
 ### App
+- **Telefono, tablet e desktop**: sul telefono navigazione in basso e una colonna; da 760 px barra laterale con le icone e pannelli come finestre; da 1000 px colonna con l'elenco (liste, ricette, spese) accanto al contenuto aperto e ricetta con ingredienti e procedimento affiancati; da 1240 px barra laterale completa, con il gruppo, e dettagli in un pannello a destra. Scorciatoie: `/` per scrivere, `Esc` per chiudere.
 - **Offline**: l'app si apre anche senza rete, le modifiche vanno in coda e partono appena torna la connessione.
 - **Aggiornamenti**: quando esce una nuova versione compare l'avviso *Aggiorna* (vedi [Versioni e aggiornamenti](#versioni-e-aggiornamenti)).
 - **Pronta per gli agenti AI** con WebMCP (vedi [WebMCP](#webmcp)).

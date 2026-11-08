@@ -6,32 +6,37 @@ const sortedTrips = () => [...st.trips.values()].sort((a, b) => b.created_at - a
 const monthKey = (t) => { const d = new Date(t); return d.getFullYear() * 12 + d.getMonth(); };
 const monthLabel = (t) => { const s = new Date(t).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1); };
 
-Views.trips = {
-  mount() {
-    app.innerHTML = topBar('Spese') + `<main><div id="tl"></div></main>` + tabBar('trips');
-    this.update();
-  },
-  update() {
-    const trips = sortedTrips();
-    if (!trips.length) {
-      $('#tl').innerHTML = `<div class="empty">${emptyArt('receipt')}Nessuna spesa salvata.<br>Quando hai preso tutto, tocca <b>Concludi spesa</b> in fondo alla lista: qui troverai cosa hai comprato, quando e dove.</div>`;
-      return;
-    }
-    const months = new Map();
+// Elenco per mese (pagina Spese sul telefono, colonna laterale sugli schermi larghi).
+function tripsListHtml(activeId, compact) {
+  const trips = sortedTrips();
+  if (!trips.length) {
+    return `<div class="empty">${emptyArt('receipt')}Nessuna spesa salvata.<br>Quando hai preso tutto, tocca <b>Concludi spesa</b> in fondo alla lista: qui troverai cosa hai comprato, quando e dove.</div>`;
+  }
+  const months = new Map();
     for (const t of trips) {
       const k = monthKey(t.created_at);
       if (!months.has(k)) months.set(k, []);
       months.get(k).push(t);
     }
-    $('#tl').innerHTML = [...months.values()].map((ts) => {
+  return [...months.values()].map((ts) => {
       const sum = ts.reduce((s, t) => s + (t.total || 0), 0);
       return `<div class="section-h"><span>${h(monthLabel(ts[0].created_at))}</span>${sum ? `<span>${h(S.fmtMoney(sum))}</span>` : ''}</div>
-        <div class="list-cards">${ts.map((t) => `<a class="card trip-card" href="#/t/${t.id}">
+        <div class="list-cards ${compact ? 'compact' : ''}">${ts.map((t) => `<a class="card trip-card ${t.id === activeId ? 'on' : ''}" href="#/t/${t.id}">
           <span class="date"><b>${new Date(t.created_at).getDate()}</b>${h(fmtDate(t.created_at, { weekday: 'short' }))}</span>
           <span class="t"><b>${h(t.store || t.list_name || 'Spesa')}</b><span>${t.items.length} articoli${t.created_by ? ' · ' + h(t.created_by) : ''}${t.store && t.list_name ? ' · ' + h(t.list_name) : ''}</span></span>
           ${t.total != null ? `<span class="amount">${h(S.fmtMoney(t.total))}</span>` : ''}</a>`).join('')}</div>`;
     }).join('');
+}
+
+Views.trips = {
+  mount() {
+    // Con la colonna laterale si apre direttamente la spesa più recente.
+    const first = sortedTrips()[0];
+    if (hasPane() && first) { history.replaceState(null, '', '#/t/' + first.id); return mount(); }
+    app.innerHTML = topBar('Spese') + `<main><div id="tl"></div></main>` + tabBar('trips');
+    this.update();
   },
+  update() { $('#tl').innerHTML = tripsListHtml(null); },
 };
 
 Views.trip = {
@@ -40,9 +45,9 @@ Views.trip = {
     if (!t) { history.replaceState(null, '', '#/t'); return mount(); }
     if (this.tid !== t.id) { this.tid = t.id; this.off = new Set(); }
     app.innerHTML = topBar(`<span id="tt"></span>`, {
-      back: '#/t',
+      back: hasPane() ? '' : '#/t',
       right: `<button class="icon-btn" id="tmenu" aria-label="Modifica">${I.edit}</button>`,
-    }) + `<main><div id="tbody"></div>
+    }) + (hasPane() ? `<aside class="pane" id="pane-trips"></aside>` : '') + `<main><div id="tbody"></div>
       <div class="sticky-cta"><div class="card">
         <select class="input" id="ttl"></select>
         <button class="btn primary" id="tadd">Rimetti in lista</button>
@@ -61,6 +66,8 @@ Views.trip = {
     const t = st.trips.get(this.route.id);
     if (!t) { history.replaceState(null, '', '#/t'); return mount(); }
     $('#tt').textContent = t.store || t.list_name || 'Spesa';
+    const pane = $('#pane-trips');
+    if (pane) pane.innerHTML = `<div class="pane-h"><b>Spese</b></div>${tripsListHtml(t.id, true)}`;
     const groups = new Map();
     t.items.forEach((i, k) => {
       const d = S.deptOf(i.department).id;

@@ -470,6 +470,8 @@ function updateStatus() {
   if (!dot) return;
   dot.className = 'status ' + (st.live ? 'live' : 'off');
   dot.title = st.live ? 'Sincronizzato in tempo reale' : 'Non connesso: le modifiche verranno inviate appena possibile';
+  const gn = $('.nav-group .g-name');
+  if (gn) gn.textContent = groupName();
   const n = myOps().length;
   if (pend) pend.textContent = n ? `${n} in attesa` : '';
 }
@@ -524,10 +526,39 @@ function topBar(title, { back, right = '' } = {}) {
   </header>`;
 }
 
+// Barra di navigazione: in basso sul telefono, laterale su tablet e desktop (vedi CSS).
 function tabBar(active) {
-  const t = (id, href, icon, label) => `<a href="${href}" class="${active === id ? 'on' : ''}">${icon}<span>${label}</span></a>`;
-  return `<nav class="tabs">${t('lists', '#/', I.cart, 'Liste')}${t('recipes', '#/r', I.book, 'Ricette')}${t('trips', '#/t', I.receipt, 'Spese')}${t('settings', '#/s', I.gear, 'Altro')}</nav>`;
+  const t = (id, href, icon, label, cls = '') => `<a href="${href}" class="${active === id ? 'on' : ''} ${cls}" title="${label}">${icon}<span>${label}</span></a>`;
+  const g = groupName();
+  return `<nav class="tabs">
+    <button type="button" class="nav-group wide-only" id="nav-grp" title="Cambia gruppo"><span class="avatar">${h((g || '?').slice(0, 1).toUpperCase())}</span><span class="g-name">${h(g)}</span>${I.down}</button>
+    ${t('lists', '#/', I.cart, 'Liste')}${t('recipes', '#/r', I.book, 'Ricette')}${t('trips', '#/t', I.receipt, 'Spese')}
+    ${t('products', '#/p', icon('tag'), 'Prodotti', 'wide-only')}${t('settings', '#/s', I.gear, 'Altro')}</nav>`;
 }
+
+// --------------------------------------------------------------- schermi larghi
+// Fasce: telefono (< 760 px), tablet con barra laterale a icone (>= 760), colonna con
+// l'elenco accanto al contenuto (>= 1000), barra laterale completa (>= 1240).
+const mqRail = matchMedia('(min-width: 760px)');
+const mqPane = matchMedia('(min-width: 1000px)');
+const hasPane = () => mqPane.matches;
+let layoutKey = `${mqRail.matches}${mqPane.matches}`;
+const onLayoutChange = () => {
+  const k = `${mqRail.matches}${mqPane.matches}`;
+  if (k !== layoutKey) { layoutKey = k; if (st.code && !sheetOpen && !dragging) mount(); }
+};
+mqRail.addEventListener('change', onLayoutChange);
+mqPane.addEventListener('change', onLayoutChange);
+
+// Scorciatoie da tastiera: "/" per scrivere (aggiunta rapida o ricerca), Esc chiude i pannelli.
+document.addEventListener('keydown', (e) => {
+  const typing = e.target.closest && e.target.closest('input, textarea, select, [contenteditable]');
+  if (e.key === 'Escape' && sheetOpen) { e.preventDefault(); closeSheet(); return; }
+  if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey) {
+    const f = $('#qi') || $('#rq') || $('#pq');
+    if (f) { e.preventDefault(); f.focus(); }
+  }
+});
 
 function unitOptions(sel) {
   const u = S.normUnit(sel);
@@ -741,8 +772,17 @@ function mount() {
   if (r.name === 'shared') view = Views.shared;
   else if (!st.code) view = Views.welcome;
   else view = Views[r.name] || Views.home;
+  // Con la colonna laterale la home delle liste coincide con l'ultima lista aperta.
+  if (view === Views.home && hasPane() && st.lists.size) {
+    history.replaceState(null, '', '#/l/' + lastListId());
+    return mount();
+  }
   view.route = r;
   view.mount();
+  app.classList.toggle('has-pane', !!app.querySelector(':scope > .pane'));
+  app.classList.toggle('with-nav', !!app.querySelector(':scope > .tabs'));
+  const ng = $('#nav-grp');
+  if (ng) ng.onclick = () => groupSheet();
   updateStatus();
   window.scrollTo(0, 0);
 }

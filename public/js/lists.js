@@ -197,6 +197,8 @@ Views.home = {
     this.update();
   },
   update() {
+    // Schermi larghi: appena arrivano le liste si apre l'ultima, con la colonna laterale.
+    if (hasPane() && st.lists.size) return mount();
     const g = $('#grp');
     if (g) g.innerHTML = `${h(groupName())} ${I.down}`;
     const lists = sortedLists();
@@ -248,6 +250,25 @@ function listSheet(list) {
   });
 }
 
+// --------------------------------------------------------------- colonna delle liste (schermi larghi)
+function listsPaneBody(activeId) {
+  return `<div class="pane-h"><b>Liste</b><button class="icon-btn" data-pane="new" aria-label="Nuova lista">${I.plus}</button></div>
+    ${sortedLists().map((l) => {
+      const n = todoOf(l.id).length;
+      return `<a class="pane-row ${l.id === activeId ? 'on' : ''}" href="#/l/${l.id}">${listTile(l, 'sm')}
+        <span class="t"><b>${h(l.name)}</b><small>${n ? `${n} da prendere` : 'Tutto preso'}</small></span>${n ? `<span class="badge">${n}</span>` : ''}</a>`;
+    }).join('')}
+    <button class="pane-row ghost" data-pane="favs">${icon('star')} <span class="t"><b>Prodotti abituali</b></span></button>`;
+}
+function bindListsPane(activeId) {
+  const pane = $('#pane-lists'); if (!pane) return;
+  pane.onclick = (e) => {
+    const b = e.target.closest('[data-pane]'); if (!b) return;
+    if (b.dataset.pane === 'new') listSheet();
+    if (b.dataset.pane === 'favs') favoritesSheet(activeId);
+  };
+}
+
 // --------------------------------------------------------------- vista lista
 function itemMeta(i) {
   const parts = [];
@@ -285,9 +306,9 @@ Views.list = {
     ls.set('lastList.' + st.code, list.id);
     if (this.listId !== list.id) { this.listId = list.id; this.tag = null; }
     app.innerHTML = topBar(`<span id="lt"></span>`, {
-      back: '#/',
+      back: hasPane() ? '' : '#/',
       right: `<button class="icon-btn" id="list-menu" aria-label="Opzioni lista">${I.more}</button>`,
-    }) + `<main>
+    }) + (hasPane() ? `<aside class="pane" id="pane-lists"></aside>` : '') + `<main class="wide">
       <div class="quick">
         <form id="qf" autocomplete="off">
           <input id="qi" enterkeyhint="done" placeholder="Aggiungi… (es. 2 kg patate @Selex)" aria-label="Aggiungi articolo">
@@ -348,6 +369,8 @@ Views.list = {
     const list = st.lists.get(this.route.id);
     if (!list) { toast('La lista è stata eliminata'); history.replaceState(null, '', '#/'); return mount(); }
     $('#lt').innerHTML = `${listTile(list, 'sm')} ${h(list.name)}`;
+    const pane = $('#pane-lists');
+    if (pane) { pane.innerHTML = listsPaneBody(list.id); if (!pane.onclick) bindListsPane(list.id); }
     const mode = list.sort_mode || 'manual';
     let todo = todoOf(list.id);
     const done = doneOf(list.id);
@@ -367,8 +390,8 @@ Views.list = {
         if (!groups.has(d)) groups.set(d, []);
         groups.get(d).push(i);
       }
-      wrap.innerHTML = S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<div class="dept-h">${deptTile(d.id, 'sm')} ${h(d.label)} <small>${groups.get(d.id).length}</small></div>
-        <ul class="items">${groups.get(d.id).sort((a, b) => a.name.localeCompare(b.name, 'it')).map((i) => itemRow(i)).join('')}</ul>`).join('');
+      wrap.innerHTML = `<div class="dept-cols">${S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<section class="dept-block"><div class="dept-h">${deptTile(d.id, 'sm')} ${h(d.label)} <small>${groups.get(d.id).length}</small></div>
+        <ul class="items">${groups.get(d.id).sort((a, b) => a.name.localeCompare(b.name, 'it')).map((i) => itemRow(i)).join('')}</ul></section>`).join('')}</div>`;
     } else if (mode === 'alpha') {
       wrap.innerHTML = `<ul class="items">${todo.sort((a, b) => a.name.localeCompare(b.name, 'it')).map((i) => itemRow(i, { dept: true })).join('')}</ul>`;
     } else {
@@ -544,7 +567,7 @@ Views.products = {
   q: '',
   mount() {
     app.innerHTML = topBar('Prodotti', { back: '#/s', right: `<button class="icon-btn" id="np" aria-label="Nuovo prodotto">${I.plus}</button>` }) +
-      `<main><input class="input search" id="pq" type="search" placeholder="Cerca prodotto, marca o #tag…" value="${h(this.q)}">
+      `<main class="wide"><input class="input search" id="pq" type="search" placeholder="Cerca prodotto, marca o #tag…" value="${h(this.q)}">
       <p class="muted small">Il catalogo si riempie da solo con quello che aggiungi alle liste e alle ricette. Qui puoi impostare reparto, tag, quantità e marca abituali, e segnare con ${icon('star')} i prodotti abituali.</p>
       <div id="pl"></div></main>` + tabBar('settings');
     $('#pq').oninput = (e) => { this.q = e.target.value; this.update(); };
@@ -569,14 +592,14 @@ Views.products = {
       if (!groups.has(d)) groups.set(d, []);
       groups.get(d).push(p);
     }
-    $('#pl').innerHTML = all.length ? S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<div class="dept-h">${deptTile(d.id, 'sm')} ${h(d.label)} <small>${groups.get(d.id).length}</small></div>
+    $('#pl').innerHTML = all.length ? '<div class="dept-cols">' + S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<section class="dept-block"><div class="dept-h">${deptTile(d.id, 'sm')} ${h(d.label)} <small>${groups.get(d.id).length}</small></div>
       <ul class="items">${groups.get(d.id).sort((a, b) => a.name.localeCompare(b.name, 'it')).map((p) => {
         const q2 = S.fmtQty(p.qty, p.unit);
         const meta = [p.brand && h(p.brand), q2 && h(q2)].filter(Boolean).join(' · ');
         return `<li class="item"><button class="tap" data-key="${h(p.key)}" type="button"><span class="txt"><span class="name">${h(p.name)}</span>
           ${meta || (p.tags || []).length ? `<span class="meta">${meta} <span class="tags">${tagPills(p.tags)}</span></span>` : ''}</span></button>
           <button class="icon-btn star ${p.favorite ? 'on' : ''}" data-star="${h(p.key)}" aria-label="Abituale">${p.favorite ? I.starFill : I.star}</button></li>`;
-      }).join('')}</ul>`).join('') : `<div class="empty">${emptyArt('tag')}${st.products.size ? 'Nessun prodotto trovato.' : 'Il catalogo è vuoto: inizia ad aggiungere articoli alle liste.'}</div>`;
+      }).join('')}</ul></section>`).join('') + '</div>' : `<div class="empty">${emptyArt('tag')}${st.products.size ? 'Nessun prodotto trovato.' : 'Il catalogo è vuoto: inizia ad aggiungere articoli alle liste.'}</div>`;
   },
 };
 

@@ -36,7 +36,7 @@ function recipeBodyHtml(r, people, off) {
   if (r.prep_min) chips.push(`<span class="meta-chip">${I.clock} Preparazione ${S.fmtMinutes(r.prep_min)}</span>`);
   if (r.cook_min) chips.push(`<span class="meta-chip">${I.flame} Cottura ${S.fmtMinutes(r.cook_min)}</span>`);
   if (r.difficulty) chips.push(`<span class="meta-chip">${I.chart} ${DIFF_LABEL[r.difficulty]}</span>`);
-  return `
+  return `<div class="recipe-layout"><div class="r-main">
     ${r.photos && r.photos.length ? `<div class="gallery">${r.photos.map((p) => `<img src="${photoUrl(p)}" alt="" loading="lazy">`).join('')}</div>` : ''}
     ${r.description ? `<p class="lead">${h(r.description)}</p>` : ''}
     ${chips.length ? `<div class="meta-chips">${chips.join('')}</div>` : ''}
@@ -51,7 +51,9 @@ function recipeBodyHtml(r, people, off) {
         <span class="txt"><span class="name">${h(i.name)}${q ? `<span class="qty">${h(q)}</span>` : ''}</span>
         ${i.brand ? `<span class="meta">${h(i.brand)}</span>` : ''}</span></button></li>`;
     }).join('')}</ul>` : '<div class="empty">Nessun ingrediente.</div>'}
-    ${steps.length ? `<div class="section-h">Procedimento</div><ol class="steps">${steps.map((s) => `<li>${h(s.text)}</li>`).join('')}</ol>` : ''}`;
+    </div><div class="r-steps">
+    ${steps.length ? `<div class="section-h">Procedimento</div><ol class="steps">${steps.map((s) => `<li>${h(s.text)}</li>`).join('')}</ol>` : ''}
+    </div></div>`;
 }
 
 function scaledSelected(r, people, off) {
@@ -64,7 +66,7 @@ Views.recipes = {
   mount() {
     app.innerHTML = topBar('Ricette', {
       right: `<a class="icon-btn" href="#/r/new/edit" aria-label="Nuova ricetta">${I.plus}</a>`,
-    }) + `<main><input class="input search" id="rq" type="search" placeholder="Cerca ricetta o ingrediente…" value="${h(this.q)}"><div class="list-cards" id="rl"></div></main>` + tabBar('recipes');
+    }) + `<main class="wide"><input class="input search" id="rq" type="search" placeholder="Cerca ricetta o ingrediente…" value="${h(this.q)}"><div class="list-cards recipe-grid" id="rl"></div></main>` + tabBar('recipes');
     $('#rq').oninput = (e) => { this.q = e.target.value; this.update(); };
     this.update();
   },
@@ -94,7 +96,7 @@ Views.recipe = {
     app.innerHTML = topBar(`<span id="rt"></span>`, {
       back: '#/r',
       right: `<button class="icon-btn" id="rshare" aria-label="Condividi">${I.share}</button><a class="icon-btn" href="#/r/${r.id}/edit" aria-label="Modifica">${I.edit}</a>`,
-    }) + `<main><div id="rbody"></div>
+    }) + (hasPane() ? `<aside class="pane" id="pane-recipes"></aside>` : '') + `<main class="wide"><div id="rbody"></div>
       <div class="sticky-cta"><div class="card">
         <select class="input" id="tl"></select>
         <button class="btn primary" id="addr">Aggiungi</button>
@@ -113,6 +115,13 @@ Views.recipe = {
     const r = st.recipes.get(this.route.id);
     if (!r) { history.replaceState(null, '', '#/r'); return mount(); }
     $('#rt').textContent = r.name;
+    const pane = $('#pane-recipes');
+    if (pane) {
+      pane.innerHTML = `<div class="pane-h"><b>Ricette</b><a class="icon-btn" href="#/r/new/edit" aria-label="Nuova ricetta">${I.plus}</a></div>` +
+        [...st.recipes.values()].sort((a, b) => a.name.localeCompare(b.name, 'it')).map((x) => `<a class="pane-row ${x.id === r.id ? 'on' : ''}" href="#/r/${x.id}">
+          ${x.photos && x.photos.length ? `<img class="pthumb" src="${photoUrl(x.photos[0])}" alt="" loading="lazy">` : `<span class="pthumb ph">${icon('dish')}</span>`}
+          <span class="t"><b>${h(x.name)}</b><small>${h(recipeMeta(x))}</small></span></a>`).join('');
+    }
     const y = window.scrollY;
     $('#rbody').innerHTML = recipeBodyHtml(r, this.people, this.off);
     window.scrollTo(0, y);
@@ -215,6 +224,13 @@ Views.shared = {
     this.off = new Set();
     document.title = r.name + ' · Sporta';
     $('#rt').textContent = r.name;
+    const pane = $('#pane-recipes');
+    if (pane) {
+      pane.innerHTML = `<div class="pane-h"><b>Ricette</b><a class="icon-btn" href="#/r/new/edit" aria-label="Nuova ricetta">${I.plus}</a></div>` +
+        [...st.recipes.values()].sort((a, b) => a.name.localeCompare(b.name, 'it')).map((x) => `<a class="pane-row ${x.id === r.id ? 'on' : ''}" href="#/r/${x.id}">
+          ${x.photos && x.photos.length ? `<img class="pthumb" src="${photoUrl(x.photos[0])}" alt="" loading="lazy">` : `<span class="pthumb ph">${icon('dish')}</span>`}
+          <span class="t"><b>${h(x.name)}</b><small>${h(recipeMeta(x))}</small></span></a>`).join('');
+    }
     const draw = () => { $('#rbody').innerHTML = recipeBodyHtml(r, this.people, this.off); };
     draw();
     $('#rbody').addEventListener('click', (e) => {

@@ -430,3 +430,112 @@ textarea.input { resize: vertical; min-height: 90px; }
 small.as { display: block; color: var(--muted); font-size: 13px; }
 .settings .hint { margin: 0; }
 .switch.small-switch span { display: block; }
+
+/* ================================================ tablet e desktop ================================================ */
+.wide-only { display: none !important; }
+.nav-group { cursor: pointer; }
+
+/* --- tablet: barra laterale con le icone, pannelli come finestre centrate --- */
+@media (min-width: 760px) {
+  :root { --side: 78px; --pane: 0px; }
+  #app.with-nav { padding-left: var(--side); }
+  .wide-only { display: flex !important; }
+  .tabs {
+    top: 0; bottom: 0; left: 0; right: auto; width: var(--side);
+    flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 4px;
+    border-top: 0; border-right: 1px solid var(--line); padding: calc(var(--safe-top) + 14px) 8px 14px;
+  }
+  .tabs a { flex: none; max-width: none; padding: 10px 0; font-size: 11px; }
+  .tabs a:hover { background: var(--surface-2); }
+  .nav-group { border: 0; background: none; flex-direction: column; align-items: center; padding: 2px 0 12px; margin-bottom: 8px; border-bottom: 1px solid var(--line); color: var(--text); }
+  .nav-group .g-name, .nav-group > svg { display: none; }
+  main { padding-bottom: 40px; max-width: 760px; }
+  main.wide { max-width: 1120px; }
+  .sticky-cta { bottom: 16px; }
+  #toast { bottom: 24px; left: calc(50% + var(--side) / 2); }
+  #app.has-pane ~ #toast { left: calc(50% + (var(--side) + var(--pane)) / 2); }
+  #cards { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+  .sheet {
+    left: 50%; right: auto; top: 50%; bottom: auto; margin: 0 0 0 calc(var(--side) / 2);
+    width: min(560px, calc(100vw - var(--side) - 48px)); max-height: 86vh; border-radius: 20px;
+    transform: translate(-50%, -50%); animation: pop .18s ease; padding: 18px 20px 20px;
+  }
+  .sheet .grab { display: none; }
+  @keyframes pop { from { opacity: 0; transform: translate(-50%, -47%) scale(.98); } }
+
+  .recipe-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .recipe-grid .recipe-card { position: relative; flex-direction: column; align-items: stretch; padding: 0; gap: 0; overflow: hidden; }
+  .recipe-grid .recipe-card .thumb { width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: 0; font-size: 44px; }
+  .recipe-grid .recipe-card .t { padding: 10px 12px 12px; }
+  .recipe-grid .recipe-card > span:last-child:not(.t) { position: absolute; top: 8px; right: 8px; background: var(--surface); border-radius: 50%; width: 30px; height: 30px; display: grid; place-items: center; }
+  .recipe-grid .recipe-card > span:last-child:not(.t) svg { width: 16px; height: 16px; }
+
+  .settings.wide { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; align-items: start; }
+  .settings.wide > * { margin: 0 !important; }
+  .settings.wide > p { grid-column: 1 / -1; }
+  .dept-pick { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+
+/* --- colonna con l'elenco accanto al contenuto --- */
+@media (min-width: 1000px) {
+  :root { --pane: 300px; }
+  .pane {
+    position: fixed; top: 0; bottom: 0; left: var(--side); width: var(--pane); z-index: 11; overflow-y: auto;
+    background: var(--surface); border-right: 1px solid var(--line); padding: calc(var(--safe-top) + 14px) 10px 24px;
+  }
+  #app.has-pane { padding-left: calc(var(--side) + var(--pane)); }
+  .pane-h { display: flex; align-items: center; justify-content: space-between; min-height: 40px; padding: 0 4px 8px 8px; }
+  .pane-h b { font-size: 20px; }
+  .pane-row {
+    display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; margin-bottom: 2px; border: 0; border-radius: 10px;
+    background: none; color: inherit; text-decoration: none; text-align: left; font: inherit; cursor: pointer;
+  }
+  .pane-row:hover { background: var(--surface-2); }
+  .pane-row.on { background: var(--accent-soft); }
+  .pane-row .t { flex: 1; min-width: 0; }
+  .pane-row b { display: block; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pane-row small { color: var(--muted); font-size: 12.5px; }
+  .pane-row.ghost { color: var(--accent); margin-top: 6px; }
+  .pane-row.ghost .ico { font-size: 20px; }
+  .pane-row .badge { min-width: 24px; height: 22px; font-size: 12px; }
+  .pthumb { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; flex: none; background: var(--surface-2); display: grid; place-items: center; color: var(--muted); font-size: 22px; }
+  .pane .section-h { margin: 14px 8px 4px; }
+  .pane .list-cards.compact { gap: 2px; }
+  .pane .trip-card { box-shadow: none; background: none; padding: 8px; border-radius: 10px; }
+  .pane .trip-card:hover { background: var(--surface-2); }
+  .pane .trip-card.on { background: var(--accent-soft); }
+  .pane .empty { padding: 24px 8px; font-size: 14px; }
+
+  .recipe-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  .r-steps { position: sticky; top: calc(var(--safe-top) + 70px); }
+  .r-steps .section-h { margin-top: 4px; }
+  .recipe-layout .gallery { margin: 4px 0 12px; padding: 0; }
+  .recipe-layout .gallery img { width: 100%; }
+}
+
+/* --- desktop: barra laterale completa, pannelli come colonna di dettaglio a destra --- */
+@media (min-width: 1240px) {
+  :root { --side: 236px; }
+  .tabs { padding: calc(var(--safe-top) + 14px) 12px 14px; gap: 2px; }
+  .tabs a { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 10px 12px; font-size: 15px; font-weight: 600; border-radius: 10px; }
+  .tabs a.on { background: var(--accent-soft); }
+  .tabs a svg { width: 21px; height: 21px; }
+  .nav-group { flex-direction: row; justify-content: flex-start; gap: 10px; padding: 8px 10px; margin-bottom: 14px; border: 0; border-radius: 12px; background: var(--surface-2); font-weight: 700; font-size: 15px; }
+  .nav-group:hover { background: var(--line); }
+  .nav-group .g-name { display: block; flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-group > svg { display: block; width: 16px; height: 16px; color: var(--muted); flex: none; }
+  .sheet {
+    left: auto; right: 0; top: 0; bottom: 0; margin: 0; transform: none; width: 440px; max-height: none;
+    border-radius: 0; border-left: 1px solid var(--line); padding: calc(var(--safe-top) + 20px) 22px 28px; animation: slide .2s ease;
+  }
+  @keyframes slide { from { opacity: 0; transform: translateX(32px); } }
+  .backdrop { background: rgba(0, 0, 0, .14); }
+}
+
+/* --- schermi molto larghi: reparti su due colonne --- */
+@media (min-width: 1400px) {
+  .dept-cols { column-count: 2; column-gap: 18px; }
+  .dept-block { break-inside: avoid; padding-bottom: 2px; }
+  .dept-block .dept-h { margin-top: 10px; }
+}

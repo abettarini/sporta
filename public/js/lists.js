@@ -59,7 +59,8 @@ function groupSheet() {
   openSheet(`<h2>I tuoi gruppi</h2>
     <div class="items">${st.groups.map((g) => `<button class="row-btn" data-code="${h(g.code)}">
       <span class="avatar">${h((g.name || '?').slice(0, 1).toUpperCase())}</span>
-      <span class="t">${h(g.name)}</span>${g.code === st.code ? `<span class="ok">${I.check}</span>` : ''}</button>`).join('')}</div>
+      <span class="t">${h(g.name)}${memberFor(g.code) ? `<small class="as">sei ${h(memberFor(g.code))}</small>` : ''}</span>${g.code === st.code ? `<span class="ok">${I.check}</span>` : ''}</button>`).join('')}</div>
+    <p class="muted small">Nome del gruppo e il tuo nome si cambiano da <a href="#/s">Altro</a>.</p>
     <div class="actions"><button class="btn" id="g-join">Unisciti con codice</button><button class="btn primary" id="g-new">Nuovo gruppo</button></div>`, (sh) => {
     sh.querySelectorAll('[data-code]').forEach((b) => { b.onclick = () => { closeSheet(true); switchGroup(b.dataset.code); }; });
     $('#g-new', sh).onclick = () => newGroupSheet();
@@ -125,7 +126,8 @@ function joinGroupSheet(prefill) {
         const alias = f.elements.alias.value.trim(); if (!alias) return;
         try {
           const j = await joinGroup(code);
-          st.member = alias; ls.set('member', alias);
+          ls.set('member', alias);
+          st.member = alias;
           closeSheet(true);
           addGroup(j);
           history.replaceState(null, '', '#/');

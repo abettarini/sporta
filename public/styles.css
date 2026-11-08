@@ -419,3 +419,14 @@ textarea.input { resize: vertical; min-height: 90px; }
 .invite-head small { display: block; color: var(--muted); }
 .invite-head b { font-size: 20px; }
 .invite-head .avatar.lg { width: 52px; height: 52px; font-size: 24px; }
+
+/* ------------------------------------------------ modifica nome gruppo / alias */
+.inline-edit .row { display: flex; gap: 8px; align-items: center; }
+.inline-edit .row .input { flex: 1; }
+.inline-edit .row .btn { flex: none; padding: 11px 14px; }
+.inline-edit + .inline-edit { margin-top: 4px; }
+.small-switch { font-weight: 400; font-size: 14px; margin: -4px 0 6px; align-items: flex-start; }
+.small-switch input { width: 20px; height: 20px; margin-top: 1px; }
+small.as { display: block; color: var(--muted); font-size: 13px; }
+.settings .hint { margin: 0; }
+.switch.small-switch span { display: block; }

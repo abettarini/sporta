@@ -14,6 +14,8 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
   - se il link non contiene un codice valido, o si entra senza link, si inserisce prima il codice (maiuscole e trattini si mettono da soli; si può incollare anche il link intero) e poi il nome;
   - per **creare un gruppo** bastano il proprio nome e il nome del gruppo o della famiglia;
   - chi usa già Sporta e apre un invito conferma con un tocco e il nuovo gruppo si aggiunge ai suoi.
+- **Nome del gruppo** modificabile da *Altro*: il nuovo nome arriva in tempo reale a tutti i membri.
+- **Il tuo nome (alias) per gruppo**: in ogni gruppo puoi presentarti in modo diverso (es. "Papà" in famiglia, "Andrea" al calcetto). Quando lo cambi puoi aggiornare anche gli articoli e le spese già registrati con il vecchio nome.
 
 ### Liste
 - **Più liste** per gruppo (Supermercato, Farmacia…), ognuna con la sua icona.

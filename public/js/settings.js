@@ -112,12 +112,16 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); inst
 Views.settings = {
   mount() {
     app.innerHTML = topBar('Altro') + `<main class="settings">
-      <div class="card"><h3>Il tuo nome</h3>
-        <p>Viene mostrato agli altri sugli articoli che aggiungi o prendi.</p>
-        <input class="input" id="sn" value="${h(st.member)}" maxlength="40"></div>
-      <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
       <div class="card"><h3>Gruppo attuale</h3>
-        <label class="field"><span>Nome</span><input class="input" id="hn" maxlength="80"></label>
+        <form id="hn-f" class="inline-edit"><label class="field"><span>Nome del gruppo</span>
+          <span class="row"><input class="input" id="hn" required maxlength="80"><button class="btn primary" id="hn-save" disabled>Salva</button></span></label></form>
+        <form id="sn-f" class="inline-edit"><label class="field"><span>Il tuo nome in questo gruppo</span>
+          <span class="row"><input class="input" id="sn" required maxlength="40" autocomplete="given-name"><button class="btn primary" id="sn-save" disabled>Salva</button></span></label>
+          <label class="switch small-switch" id="sn-past" hidden><input type="checkbox" id="sn-rename" checked><span>Aggiorna anche articoli e spese già registrati come «<b id="sn-old"></b>»</span></label>
+          <p class="hint">È il nome che gli altri vedono su ciò che aggiungi o prendi. In ogni gruppo puoi usarne uno diverso.</p></form>
+      </div>
+      <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
+      <div class="card"><h3>Invita</h3>
         <p>Per invitare qualcuno condividi il link o il codice: chi lo inserisce vede e modifica liste, ricette e spese di questo gruppo.</p>
         <div class="code" id="hc"></div>
         <div class="actions"><button class="btn" id="copy">Copia link</button><button class="btn primary" id="share">Condividi invito</button></div>
@@ -130,14 +134,42 @@ Views.settings = {
       <div class="card" id="inst"></div>
       <p class="muted small center">Sporta v${h(window.SPORTA_VERSION || 'dev')}</p>
     </main>` + tabBar('settings');
-    $('#sn').onchange = (e) => { const v = e.target.value.trim(); if (v) { st.member = v; ls.set('member', v); toast('Nome salvato'); } };
-    $('#hn').onchange = (e) => {
-      const v = e.target.value.trim(); if (!v) return;
+    // --- nome del gruppo (arriva a tutti i membri in tempo reale)
+    const hn = $('#hn'), hnSave = $('#hn-save');
+    hn.oninput = () => { hnSave.disabled = !hn.value.trim() || hn.value.trim() === groupName(); };
+    $('#hn-f').onsubmit = (e) => {
+      e.preventDefault();
+      const v = hn.value.trim(); if (!v || v === groupName()) return;
       enqueue({ k: 'hh.put', id: 'hh', data: { name: v } }, { silent: true });
       const g = st.groups.find((x) => x.code === st.code);
       if (g) { g.name = v; ls.setJson('groups', st.groups); }
-      toast('Nome del gruppo salvato');
+      hn.blur();
+      toast('Nome del gruppo aggiornato per tutti');
       this.update();
+    };
+    // --- alias in questo gruppo
+    const sn = $('#sn'), snSave = $('#sn-save');
+    sn.value = st.member;
+    sn.oninput = () => {
+      const v = sn.value.trim();
+      snSave.disabled = !v || v === st.member;
+      $('#sn-past').hidden = !st.member || !v || v === st.member;
+      $('#sn-old').textContent = st.member;
+    };
+    $('#sn-f').onsubmit = async (e) => {
+      e.preventDefault();
+      const v = sn.value.trim(), old = st.member;
+      if (!v || v === old) return;
+      const renamePast = old && $('#sn-rename').checked;
+      setMember(v);
+      snSave.disabled = true;
+      $('#sn-past').hidden = true;
+      sn.blur();
+      if (!renamePast) { toast('Nome aggiornato'); return; }
+      try {
+        await api('POST', '/api/member/rename', { from: old, to: v });
+        toast('Nome aggiornato anche su articoli e spese');
+      } catch (x) { toast('Nome aggiornato. Articoli e spese passati non aggiornati: ' + x.message); }
     };
     const link = () => `${location.origin}/?join=${encodeURIComponent(st.code)}`;
     $('#copy').onclick = async () => {
@@ -163,11 +195,11 @@ Views.settings = {
   },
   update() {
     const hn = $('#hn');
-    if (hn && document.activeElement !== hn) hn.value = groupName();
+    if (hn && document.activeElement !== hn) { hn.value = groupName(); $('#hn-save').disabled = true; }
     if ($('#hc')) $('#hc').textContent = st.code;
     $('#groups').innerHTML = st.groups.map((g) => `<div class="group-row">
       <button class="row-btn" data-switch="${h(g.code)}"><span class="avatar">${h((g.name || '?').slice(0, 1).toUpperCase())}</span>
-        <span class="t">${h(g.name)}${g.code === st.code ? ' <small>(attuale)</small>' : ''}</span></button>
+        <span class="t">${h(g.name)}${g.code === st.code ? ' <small>(attuale)</small>' : ''}${memberFor(g.code) ? `<small class="as">sei ${h(memberFor(g.code))}</small>` : ''}</span></button>
       <button class="btn ghost danger-text" data-leave="${h(g.code)}">Esci</button></div>`).join('');
     const inst = $('#inst'); if (!inst) return;
     const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;

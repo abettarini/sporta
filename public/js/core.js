@@ -67,7 +67,7 @@ const I = {
 const st = {
   groups: ls.json('groups', []),
   code: null,
-  member: ls.get('member') || '',
+  member: '', // alias nel gruppo attivo (vedi memberFor)
   household: null,
   lists: new Map(),
   items: new Map(),
@@ -78,6 +78,19 @@ const st = {
   live: false,
 };
 st.code = st.groups.some((g) => g.code === ls.get('active')) ? ls.get('active') : (st.groups[0] && st.groups[0].code) || null;
+
+// Ogni gruppo può avere un alias diverso; "member" è il nome predefinito per i gruppi nuovi.
+function memberFor(code) {
+  const g = st.groups.find((x) => x.code === code);
+  return (g && g.alias) || ls.get('member') || '';
+}
+function setMember(alias) {
+  st.member = alias;
+  ls.set('member', alias);
+  const g = st.groups.find((x) => x.code === st.code);
+  if (g) { g.alias = alias; ls.setJson('groups', st.groups); }
+}
+st.member = memberFor(st.code);
 
 const myOps = () => st.outbox.filter((o) => o.g === st.code);
 const groupName = () => (st.household && st.household.name) || (st.groups.find((g) => g.code === st.code) || {}).name || '';
@@ -131,11 +144,12 @@ function loadGroupFromCache() {
 
 function addGroup(j) {
   const code = j.household.code;
-  if (!st.groups.some((g) => g.code === code)) st.groups.push({ code, name: j.household.name });
+  if (!st.groups.some((g) => g.code === code)) st.groups.push({ code, name: j.household.name, alias: st.member || ls.get('member') || '' });
   ls.setJson('groups', st.groups);
   if (cacheTimer) writeCache();
   st.code = code;
   ls.set('active', code);
+  st.member = memberFor(code);
   setState(j);
   for (const op of myOps()) applyLocal(op);
   writeCache();
@@ -147,6 +161,7 @@ function switchGroup(code, hash = '#/') {
   if (cacheTimer) writeCache();
   st.code = code;
   ls.set('active', code);
+  st.member = memberFor(code);
   loadGroupFromCache();
   history.replaceState(null, '', hash);
   connect();
@@ -166,6 +181,7 @@ function leaveGroup(code) {
   if (rt) { rt.close(); rt = null; }
   st.code = st.groups[0] ? st.groups[0].code : null;
   ls.set('active', st.code);
+  st.member = memberFor(st.code);
   if (st.code) { loadGroupFromCache(); connect(); } else clearState();
   history.replaceState(null, '', '#/');
   mount();
@@ -273,8 +289,8 @@ function opRequest(op) {
     case 'list.put': return ['PUT', `/api/lists/${op.id}`, op.data];
     case 'list.del': return ['DELETE', `/api/lists/${op.id}`];
     case 'list.clear': return ['POST', `/api/lists/${op.id}/clear-checked`];
-    case 'list.close': return ['POST', `/api/lists/${op.id}/close`, { ...op.data, trip_id: op.trip, by: st.member }];
-    case 'item.put': return ['PUT', `/api/items/${op.id}`, { ...op.data, by: st.member }];
+    case 'list.close': return ['POST', `/api/lists/${op.id}/close`, { ...op.data, trip_id: op.trip, by: op.by || st.member }];
+    case 'item.put': return ['PUT', `/api/items/${op.id}`, { ...op.data, by: op.by || st.member }];
     case 'item.del': return ['DELETE', `/api/items/${op.id}`];
     case 'product.put': return ['POST', '/api/products', { ...op.data, key: op.id }];
     case 'product.del': return ['POST', '/api/products/delete', { key: op.id }];
@@ -289,6 +305,7 @@ function opRequest(op) {
 
 function enqueue(op, { silent } = {}) {
   op.g = st.code;
+  op.by = st.member; // l'alias del gruppo, anche se la coda parte dopo un cambio di gruppo
   op.at = op.at || Date.now();
   applyLocal(op);
   if (op.k === 'item.put' && op.data.name) rememberProduct(op.data);
@@ -354,8 +371,9 @@ async function flush() {
 const flashIds = new Set();
 
 function applyEvents(evs) {
+  if (evs.some((e) => e && e.t === 'reload')) setTimeout(loadState, 0);
   for (const e of evs) {
-    if (!e) continue;
+    if (!e || e.t === 'reload') continue;
     const id = e.id || (e.data && (e.data.id || e.data.key));
     if (isPending(id)) continue; // c'è una nostra modifica più recente in coda
     if (e.t === 'household') {

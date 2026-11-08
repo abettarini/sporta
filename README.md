@@ -108,16 +108,28 @@ Ogni 4 minuti circa la funzione chiude la connessione per rispettare i limiti di
 
 ### Email
 
-L'invio delle email è facoltativo e si attiva con queste variabili d'ambiente (vedi `lib/mailer.js` per il formato delle richieste e le variabili di ogni modello):
+Le email (inviti, avvisi agli amministratori, esito delle richieste, recupero dell'accesso) passano da **inboundemail / Procmail**, con modelli **Liquid** salvati sul servizio. Sono facoltative: senza configurazione l'app funziona e nasconde le opzioni che le usano.
 
 | Variabile | Uso |
 |---|---|
-| `EMAIL_API_URL` | endpoint dell'API di invio |
-| `EMAIL_API_KEY` | chiave dell'API (**riservata**) |
-| `APP_URL` | indirizzo pubblico dell'app, usato nei link delle email |
-| `EMAIL_FROM` | mittente, se richiesto dall'API |
+| `EMAIL_API_KEY` | chiave API di Procmail (**riservata**) |
+| `EMAIL_FROM` | mittente, su un dominio verificato per l'invio (es. `Sporta <noreply@tuodominio.it>`) |
+| `APP_URL` | indirizzo pubblico dell'app, usato nei link (es. `https://sporta.vercel.app`) |
+| `EMAIL_API_URL` | facoltativa, default `https://api-eu.procmail.sh` |
 
-Senza queste variabili l'app funziona normalmente e nasconde le opzioni che usano le email.
+I modelli sono nel repository, in `emails/templates.js` (oggetto, HTML e testo per ognuno):
+
+```bash
+npm run emails:preview
+```
+
+controlla la sintassi e genera le anteprime in `emails/preview/` con dati di esempio;
+
+```bash
+EMAIL_API_KEY=... npm run emails:sync
+```
+
+crea o aggiorna i modelli sul servizio (si riconoscono per nome: `sporta-invite`, `sporta-join-request`, `sporta-request-approved`, `sporta-request-rejected`, `sporta-recovery`). Va rilanciato ogni volta che si modifica un modello.
 
 ## Avvio locale / self-hosted
 
@@ -231,5 +243,7 @@ public/js/webmcp.js    strumenti WebMCP per gli agenti AI
 public/js/settings.js  impostazioni, avvio e aggiornamenti
 public/sw.js           service worker versionato (offline e aggiornamenti)
 vercel.json            configurazione Vercel
-scripts/               db-init, sync-version, make-icons
+emails/templates.js    modelli Liquid delle email
+lib/mailer.js          invio delle email (inboundemail / Procmail)
+scripts/               db-init, sync-version, make-icons, email-templates
 ```

@@ -3,3 +3,4 @@ data/
 .vercel/
 .env
 .env.*
+emails/preview/

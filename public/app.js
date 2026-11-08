@@ -433,7 +433,7 @@ const Welcome = {
     const join = new URLSearchParams(location.search).get('join') || '';
     app.innerHTML = `<div class="welcome">
       <img class="logo" src="/icons/icon-192.png" alt="">
-      <h1>Lista della spesa</h1>
+      <h1>Sporta</h1>
       <p>Condivisa con la famiglia, aggiornata in tempo reale, con le tue ricette.</p>
       <label class="field"><span>Il tuo nome</span>
         <input class="input" id="w-name" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member)}"></label>
@@ -1000,7 +1000,7 @@ const Settings = {
       try { await navigator.clipboard.writeText(link()); toast('Link copiato'); } catch { prompt('Copia il link:', link()); }
     };
     $('#share').onclick = async () => {
-      const data = { title: 'Lista della spesa', text: `Unisciti alla nostra lista della spesa "${st.household?.name || ''}" (codice ${st.code})`, url: link() };
+      const data = { title: 'Sporta', text: `Unisciti alla nostra Sporta "${st.household?.name || ''}" (codice ${st.code})`, url: link() };
       if (navigator.share) { try { await navigator.share(data); } catch { /* annullato */ } }
       else $('#copy').click();
     };

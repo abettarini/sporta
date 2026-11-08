@@ -1,4 +1,6 @@
-# Lista della spesa 🛒
+# Sporta 🧺
+
+*La spesa di famiglia.*
 
 Lista della spesa condivisa in famiglia: è una PWA installabile sul telefono e si aggiorna in tempo reale.
 
@@ -30,8 +32,8 @@ L'app risponde su `http://localhost:3000`. I dati stanno in un file SQLite dentr
 ### Con Docker
 
 ```bash
-docker build -t lista-spesa .
-docker run -d --name spesa -p 3000:3000 -v spesa-data:/app/data --restart unless-stopped lista-spesa
+docker build -t sporta .
+docker run -d --name sporta -p 3000:3000 -v sporta-data:/app/data --restart unless-stopped sporta
 ```
 
 ### HTTPS (necessario per installarla come app)
@@ -39,7 +41,7 @@ docker run -d --name spesa -p 3000:3000 -v spesa-data:/app/data --restart unless
 I telefoni installano una PWA solo se è servita in HTTPS. Il modo più semplice è mettere [Caddy](https://caddyserver.com) davanti al server, che ottiene il certificato da solo:
 
 ```
-spesa.tuodominio.it {
+sporta.tuodominio.it {
     reverse_proxy localhost:3000
 }
 ```

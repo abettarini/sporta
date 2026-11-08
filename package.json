@@ -1,5 +1,5 @@
 {
-  "name": "lista-spesa",
+  "name": "sporta",
   "version": "1.0.0",
   "description": "PWA lista della spesa condivisa in tempo reale, con ricette",
   "main": "server.js",

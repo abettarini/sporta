@@ -390,7 +390,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log(`Lista della spesa in ascolto su http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Sporta in ascolto su http://localhost:${PORT}`));
 
 function shutdown() {
   for (const set of clients.values()) for (const r of set) r.end();

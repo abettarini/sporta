@@ -1,6 +1,6 @@
 {
-  "name": "Lista della spesa",
-  "short_name": "Spesa",
+  "name": "Sporta – la spesa di famiglia",
+  "short_name": "Sporta",
   "description": "Lista della spesa condivisa in tempo reale, con ricette.",
   "lang": "it",
   "start_url": "/",

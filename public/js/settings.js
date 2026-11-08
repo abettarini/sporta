@@ -14,6 +14,13 @@ Views.settings = {
           <p class="hint" id="sn-hint">È il nome che gli altri vedono su ciò che aggiungi o prendi: lo storico si aggiorna da solo. In ogni gruppo puoi usarne uno diverso.</p></form>
         <div class="me-line" id="me-line"></div>
       </div>
+      <div class="card" id="prof"><h3>Il tuo profilo in questo gruppo</h3>
+        <form id="em-f" class="inline-edit"><label class="field"><span>Email (facoltativa)</span>
+          <span class="row"><input class="input" id="em" type="email" inputmode="email" autocomplete="email" placeholder="nome@esempio.it"><button class="btn primary" id="em-save" disabled>Salva</button></span></label>
+          <p class="hint">Visibile solo agli amministratori. Serve per ricevere gli avvisi e per recuperare l'accesso se cambi telefono.</p></form>
+        <label class="switch"><input type="checkbox" id="hide"><span>Non mostrare quando sono online</span></label>
+        <button class="btn block" id="devs">I tuoi dispositivi</button>
+      </div>
       <a class="card link-card" href="#/m">${iconTile('home')}<span class="t"><b>Membri <i class="tab-badge inline" data-badge hidden></i></b><span id="mb-sub">Chi c'è nel gruppo, inviti e richieste</span></span><span class="chev">›</span></a>
       <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
       <div class="card"><h3>Invita</h3>
@@ -52,6 +59,19 @@ Views.settings = {
       } catch (x) { toast(x.message); }
     };
     $('#inv').onclick = () => inviteSheet();
+    const em = $('#em'), emSave = $('#em-save');
+    em.value = (st.me && st.me.email) || '';
+    em.oninput = () => { emSave.disabled = em.value.trim() === ((st.me && st.me.email) || ''); };
+    $('#em-f').onsubmit = async (e) => {
+      e.preventDefault();
+      try { const j = await api('PATCH', '/api/me', { email: em.value.trim() }); st.me = { ...st.me, ...j.me }; emSave.disabled = true; em.blur(); toast('Email salvata'); }
+      catch (x) { toast(x.message); }
+    };
+    $('#hide').onchange = async (e) => {
+      try { const j = await api('PATCH', '/api/me', { hide_presence: e.target.checked }); st.me = { ...st.me, ...j.me }; toast(e.target.checked ? 'Gli altri non vedranno quando sei online' : 'Gli altri vedranno quando sei online'); }
+      catch (x) { e.target.checked = !e.target.checked; toast(x.message); }
+    };
+    $('#devs').onclick = () => devicesSheet();
     $('#appr').onchange = async (e) => {
       try { await api('PATCH', '/api/household', { require_approval: e.target.checked }); toast(e.target.checked ? 'Chi usa il codice dovrà essere accettato' : 'Chi ha il codice entra subito'); this.update(); }
       catch (x) { e.target.checked = !e.target.checked; toast(x.message); }
@@ -109,6 +129,8 @@ Views.settings = {
       ? 'Crea un link personale (entra subito) oppure condividi il codice del gruppo.'
       : (approval ? 'Condividi il codice del gruppo: chi lo usa chiede di entrare e un amministratore lo accetta.' : 'Condividi il codice del gruppo: chi lo usa entra subito.');
     $('#adm').hidden = !admin || !tokenFor(st.code);
+    $('#prof').hidden = !st.me;
+    if (st.me && document.activeElement !== $('#hide')) $('#hide').checked = !!st.me.hide_presence;
     $('#appr').checked = approval;
     $('#groups').innerHTML = st.groups.map((g) => `<div class="group-row">
       <button class="row-btn" data-switch="${h(g.code)}"><span class="avatar">${h((g.name || '?').slice(0, 1).toUpperCase())}</span>
@@ -143,9 +165,10 @@ Views.settings = {
   window.addEventListener('online', upgradeLegacyGroups);
   // Link d'invito aperto da chi è già in altri gruppi.
   const q = new URLSearchParams(location.search);
-  if ((q.get('join') || q.get('invite')) && st.code && !st.notice) {
+  if ((q.get('join') || q.get('invite') || q.get('link')) && st.code && !st.notice) {
     history.replaceState(null, '', '/' + location.hash);
-    if (q.get('invite')) joinGroupSheet({ invite: q.get('invite') });
+    if (q.get('link')) linkDeviceConfirm(q.get('link'));
+    else if (q.get('invite')) joinGroupSheet({ invite: q.get('invite') });
     else {
       const code = normCode(q.get('join'));
       const g = st.groups.find((x) => x.code === code || (st.household && st.household.code === code && x.code === st.code));

@@ -16,6 +16,8 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
   - **nuovo gruppo**: nome della persona e nome del gruppo.
 - **Richieste**: gli amministratori le vedono in cima a *Membri* (con un contatore nella navigazione) e possono correggere il nome, scegliere relazione e permesso, poi accettare, rifiutare o rifiutare e bloccare.
 - **Rimozione**: un amministratore può rimuovere una persona; il suo accesso viene revocato subito e il suo telefono mostra "Non fai più parte del gruppo". Quello che aveva aggiunto resta nello storico.
+- **Profilo**: email facoltativa (vista solo dagli amministratori), opzione **"non mostrare quando sono online"**, e **dispositivi**: si collega un altro telefono, tablet o computer con un link valido 10 minuti, e si può uscire da tutti gli altri dispositivi.
+- **Email** (se configurate, vedi sotto): invito via email, avviso agli amministratori per ogni nuova richiesta, esito della richiesta e **recupero dell'accesso** ("Usavi già Sporta su un altro telefono?") con un link per ogni gruppo in cui l'email è registrata.
 - **Nomi**: unici nel gruppo (controllo mentre si scrive); in ogni gruppo ci si può presentare con un nome diverso e cambiarlo in *Altro*: lo storico si aggiorna da solo.
 
 ### Liste
@@ -103,6 +105,19 @@ Le funzioni Vercel non condividono la memoria, quindi gli aggiornamenti passano 
 Ogni 4 minuti circa la funzione chiude la connessione per rispettare i limiti di durata di Vercel; il browser si riconnette da solo e ricarica lo stato, quindi non si perde nulla. Se il tempo reale non è disponibile, l'app si aggiorna comunque ogni 10 secondi.
 
 `LISTEN` non funziona attraverso un pooler in modalità *transaction* (PgBouncer, il pooler di Neon): per questo serve l'URL diretto (`DATABASE_URL_UNPOOLED`), che le integrazioni Vercel forniscono già. Ogni telefono con l'app aperta occupa una connessione diretta per istanza di funzione, molto al di sotto dei limiti anche dei piani gratuiti.
+
+### Email
+
+L'invio delle email è facoltativo e si attiva con queste variabili d'ambiente (vedi `lib/mailer.js` per il formato delle richieste e le variabili di ogni modello):
+
+| Variabile | Uso |
+|---|---|
+| `EMAIL_API_URL` | endpoint dell'API di invio |
+| `EMAIL_API_KEY` | chiave dell'API (**riservata**) |
+| `APP_URL` | indirizzo pubblico dell'app, usato nei link delle email |
+| `EMAIL_FROM` | mittente, se richiesto dall'API |
+
+Senza queste variabili l'app funziona normalmente e nasconde le opzioni che usano le email.
 
 ## Avvio locale / self-hosted
 

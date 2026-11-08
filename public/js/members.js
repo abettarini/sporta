@@ -22,6 +22,17 @@ function fmtAgo(t) {
   return fmtDate(t, { day: 'numeric', month: 'short' });
 }
 
+// --------------------------------------------------------------- configurazione del server
+// email: true se il server può inviare email (inviti, recupero dell'accesso).
+const serverConfig = ls.json('config', { email: false });
+fetch('/api/config').then((r) => (r.ok ? r.json() : null)).then((j) => {
+  if (!j) return;
+  Object.assign(serverConfig, j);
+  ls.setJson('config', serverConfig);
+  if (view === Views.welcome && Views.welcome.step === 'start') Views.welcome.show('start');
+  else if (view === Views.settings) render();
+}).catch(() => {});
+
 // --------------------------------------------------------------- chiamate per entrare nei gruppi
 async function publicApi(method, url, body) {
   let r;
@@ -131,6 +142,7 @@ Views.welcome = {
     Object.assign(this, { code: null, group: null, approval: true, invite: null, inviteInfo: null, err: '', fromLink: false, prefill: '' });
     const q = new URLSearchParams(location.search);
     if (q.get('invite')) return this.openInvite(q.get('invite'));
+    if (q.get('link')) return this.openLink(q.get('link'));
     const join = q.get('join');
     if (join == null) return this.show('start');
     this.fromLink = true;
@@ -140,6 +152,15 @@ Views.welcome = {
     previewCode(code)
       .then((j) => { this.code = code; this.group = j.household.name; this.approval = j.household.require_approval; this.show('alias'); })
       .catch((e) => { this.fromLink = false; this.err = e.code === 'bad_code' ? 'Il link non contiene un codice valido: inseriscilo qui.' : e.message; this.prefill = code; this.show('code'); });
+  },
+  openLink(token) {
+    this.link = token;
+    this.show('checking');
+    publicApi('GET', '/api/link/' + encodeURIComponent(token)).then((j) => {
+      this.linkInfo = j; this.group = j.household.name;
+      if (!j.valid) { this.err = 'Questo link non è più valido: creane uno nuovo dal dispositivo già collegato.'; return this.show('start'); }
+      this.show('link');
+    }).catch(() => { this.err = 'Link non trovato.'; this.show('start'); });
   },
   openInvite(token) {
     this.invite = token;
@@ -162,7 +183,24 @@ Views.welcome = {
         <p>La lista della spesa condivisa con la famiglia, gli amici o la squadra: aggiornata in tempo reale, con le tue ricette.</p>
         <button class="btn primary block lg" data-to="code">Ho un codice d'invito</button>
         <button class="btn block lg" data-to="create" style="margin-top:10px">Crea un nuovo gruppo</button>
-        <p class="muted small center" style="margin-top:18px">Se qualcuno ti ha invitato, apri il link che ti ha mandato: basterà scrivere il tuo nome.</p>`;
+        <p class="muted small center" style="margin-top:18px">Se qualcuno ti ha invitato, apri il link che ti ha mandato: basterà scrivere il tuo nome.</p>
+        ${serverConfig.email ? '<button class="btn ghost block" data-to="recover">Usavi già Sporta su un altro telefono? Recupera l\'accesso</button>' : ''}
+        ${this.err ? `<p class="err center">${h(this.err)}</p>` : ''}`;
+    } else if (step === 'link') {
+      body = `<div class="invite-card">${groupAvatar(this.group)}<small>Collega questo dispositivo al gruppo</small><b>${h(this.group)}</b>
+          <span class="tagline">come ${h(this.linkInfo.alias)}</span></div>
+        <p class="muted center">Userai il gruppo con lo stesso nome e gli stessi permessi dell'altro dispositivo.</p>
+        ${err}<button class="btn primary block lg" id="w-link">Collega questo dispositivo</button>`;
+    } else if (step === 'recover') {
+      body = `${back('start')}
+        <h2>Recupera l'accesso</h2>
+        <p class="muted">Scrivi l'email che avevi indicato nei tuoi gruppi: ti invieremo un link per ogni gruppo, valido 24 ore.</p>
+        <form id="w-rec-f"><input class="input" id="w-email" type="email" inputmode="email" autocomplete="email" required placeholder="nome@esempio.it">
+        ${err}<button class="btn primary block lg">Invia il link</button></form>`;
+    } else if (step === 'recover-sent') {
+      body = `<div class="big-ico">${icon('done')}</div><h2 class="center">Controlla la posta</h2>
+        <p class="muted center">Se l'email è registrata in qualche gruppo, riceverai a breve un messaggio con i link per collegare questo dispositivo.</p>
+        <button class="btn block lg" data-to="start">Torna all'inizio</button>`;
     } else if (step === 'checking') {
       body = `<div class="empty">${emptyArt('link')}Verifico l'invito…</div>`;
     } else if (step === 'code') {
@@ -231,6 +269,22 @@ Views.welcome = {
           done();
           if (res.me.status === 'active') toast(`Benvenuto nel gruppo "${this.group}"`);
         } catch (x) { fail(x.message); btn.disabled = false; }
+      };
+    }
+    if (step === 'link') {
+      $('#w-link').onclick = async (e) => {
+        e.target.disabled = true;
+        try {
+          const res = await publicApi('POST', `/api/link/${encodeURIComponent(this.link)}/accept`);
+          await enterGroup(res); done(); toast(`Dispositivo collegato a "${this.group}"`);
+        } catch (x) { fail(x.message); e.target.disabled = false; }
+      };
+    }
+    if (step === 'recover') {
+      focusLater('#w-email');
+      $('#w-rec-f').onsubmit = async (e) => {
+        e.preventDefault();
+        try { await publicApi('POST', '/api/recover', { email: $('#w-email').value.trim() }); this.show('recover-sent'); } catch (x) { fail(x.message); }
       };
     }
     if (step === 'create') {
@@ -340,6 +394,50 @@ function joinGroupSheet(prefill) {
       previewCode(code).then((j) => stepPresent({ code, name: j.household.name, approval: j.household.require_approval }))
         .catch((err) => stepCode(err.code === 'bad_code' ? 'Il link non contiene un codice valido: inseriscilo qui.' : err.message, code));
     } else stepCode(prefill ? 'Il link non contiene un codice valido: inseriscilo qui.' : '', prefill ? normCode(prefill) : '');
+  });
+}
+
+// Link per collegare questo dispositivo, aperto da chi usa già Sporta per altri gruppi.
+function linkDeviceConfirm(token) {
+  openSheet('<div id="ld"><div class="empty">Verifico il link…</div></div>', async (sh) => {
+    const box = $('#ld', sh);
+    let info;
+    try { info = await publicApi('GET', '/api/link/' + encodeURIComponent(token)); } catch { box.innerHTML = '<p class="err">Link non trovato.</p>'; return; }
+    if (!info.valid) { box.innerHTML = '<h2>Link scaduto</h2><p class="muted">Creane uno nuovo dal dispositivo già collegato.</p>'; return; }
+    box.innerHTML = `<div class="invite-head">${groupAvatar(info.household.name)}<div><small>Collega questo dispositivo come ${h(info.alias)}</small><b>${h(info.household.name)}</b></div></div>
+      <p class="err" id="ld-err"></p><div class="actions"><button class="btn" data-close>Annulla</button><button class="btn primary" id="ld-ok">Collega</button></div>`;
+    $('#ld-ok', sh).onclick = async () => {
+      try { const res = await publicApi('POST', `/api/link/${encodeURIComponent(token)}/accept`); await enterGroup(res); closeSheetAndGo('#/'); toast('Dispositivo collegato'); }
+      catch (x) { $('#ld-err', sh).textContent = x.message; }
+    };
+  });
+}
+
+// Il mio profilo nel gruppo attivo: dispositivi collegati.
+function devicesSheet() {
+  openSheet(`<h2>I tuoi dispositivi</h2>
+    <p class="muted" id="dv-n">Dispositivi collegati come <b>${h(st.member)}</b> in ${h(groupName())}…</p>
+    <div class="opt"><b>Collega un altro dispositivo</b><small>Crea un link valido 10 minuti e aprilo sull'altro telefono, tablet o computer (per esempio mandandolo a te stesso).</small>
+      <div id="dv-out"></div><button class="btn primary block" id="dv-make">Crea il link</button></div>
+    <div class="actions"><button class="btn danger" id="dv-rev">Esci dagli altri dispositivi</button></div>`, async (sh) => {
+    const count = async () => {
+      try { const j = await api('GET', '/api/me/devices'); $('#dv-n', sh).innerHTML = `Sei collegato come <b>${h(st.member)}</b> in ${h(groupName())} su <b>${j.count}</b> ${j.count === 1 ? 'dispositivo' : 'dispositivi'}.`; } catch { /* offline */ }
+    };
+    count();
+    $('#dv-make', sh).onclick = async () => {
+      try {
+        const j = await api('POST', '/api/me/devices/link', {});
+        const url = `${location.origin}/?link=${encodeURIComponent(j.token)}`;
+        $('#dv-out', sh).innerHTML = `<div class="code small-code">${h(url)}</div><div class="actions" style="margin-bottom:8px"><button type="button" class="btn" id="dv-c">Copia</button><button type="button" class="btn primary" id="dv-s">Condividi</button></div>`;
+        $('#dv-make', sh).hidden = true;
+        $('#dv-c', sh).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('Link copiato'); } catch { prompt('Copia il link:', url); } };
+        $('#dv-s', sh).onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Sporta', url }); } catch { /* */ } } else $('#dv-c', sh).click(); };
+      } catch (x) { toast(x.message); }
+    };
+    $('#dv-rev', sh).onclick = async () => {
+      if (!confirm('Scollegare tutti gli altri dispositivi? Resterà collegato solo questo.')) return;
+      try { await api('POST', '/api/me/devices/revoke-others', {}); toast('Altri dispositivi scollegati'); count(); } catch (x) { toast(x.message); }
+    };
   });
 }
 
@@ -554,7 +652,9 @@ function inviteSheet() {
     ${isAdmin() && tokenFor(st.code) ? `<div class="opt on"><b>Link personale</b><small>Entra subito, senza approvazione. Vale per una persona e scade tra 7 giorni.</small>
       <form id="iv"><div class="field" style="margin-bottom:8px">${relationPicker('relation', 'amico')}</div>
       <div class="field" style="margin-bottom:10px">${roleSeg('role', 'member')}</div>
-      <div id="iv-out"></div><button class="btn primary block" id="iv-make">Crea link personale</button></form></div>` : ''}
+      <div id="iv-out"></div><button class="btn primary block" id="iv-make">Crea link personale</button>
+      ${serverConfig.email ? `<div class="or">oppure invialo per email</div>
+        <div class="row"><input class="input" id="iv-email" type="email" inputmode="email" placeholder="nome@esempio.it"><button type="button" class="btn" id="iv-send">Invia</button></div>` : ''}</form></div>` : ''}
     <div class="opt"><b>Codice del gruppo</b><small>${approval ? 'Chi lo usa <i>chiede</i> di entrare: un amministratore deve accettarlo.' : 'Chi lo usa entra subito nel gruppo.'}</small>
       <div class="code">${h(code)}</div>
       <div class="actions"><button class="btn" id="iv-copy">Copia link</button><button class="btn primary" id="iv-share">Condividi</button></div></div>`, (sh) => {
@@ -564,6 +664,15 @@ function inviteSheet() {
     if (!f) return;
     bindRelationPicker(f, 'relation');
     bindSeg(f, 'role');
+    const send = $('#iv-send', sh);
+    if (send) send.onclick = async () => {
+      const email = $('#iv-email', sh).value.trim();
+      if (!email) return $('#iv-email', sh).focus();
+      send.disabled = true;
+      try { await api('POST', '/api/invites', { email, relation: f.elements.relation.value, role: f.elements.role.value }); toast(`Invito inviato a ${email}`); $('#iv-email', sh).value = ''; }
+      catch (x) { toast(x.message); }
+      send.disabled = false;
+    };
     f.onsubmit = async (e) => {
       e.preventDefault();
       try {

@@ -599,3 +599,6 @@ small.as { display: block; color: var(--muted); font-size: 13px; }
 .tab-badge.inline { position: static; display: inline-block; vertical-align: 2px; margin-left: 4px; }
 .tab-badge.inline[hidden] { display: none; }
 .link-card .t b { display: flex; align-items: center; }
+.or { text-align: center; color: var(--muted); font-size: 13px; margin: 12px 0 8px; }
+.opt .row { display: flex; gap: 8px; }
+.opt .row .input { flex: 1; }

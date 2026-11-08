@@ -223,6 +223,7 @@ function unauthorized() {
 
 function logout() {
   if (rt) { rt.close(); rt = null; }
+  clearInterval(pollTimer); pollTimer = null;
   for (const k of ['code', 'cache', 'outbox', 'lastList']) ls.set(k, null);
   st.code = null; st.outbox = []; st.household = null;
   st.lists.clear(); st.items.clear(); st.recipes.clear(); st.history = [];
@@ -231,99 +232,49 @@ function logout() {
 }
 
 // =============================================================== tempo reale
-// Tre modalità, scelte dal server (/api/config):
-//  - "sse": server Node sempre acceso (self-hosted)
-//  - "supabase": Supabase Realtime Broadcast (deploy serverless, es. Vercel)
-//  - "poll": nessun push disponibile, aggiornamento periodico
-const SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
-let rt = null; // { type, close(), isOpen() }
-let rtRetry = null;
+// Stream SSE dal server (su Vercel la funzione lo chiude dopo qualche minuto e il browser
+// si riconnette da solo). Finché lo stream non è attivo ci aggiorniamo a intervalli.
+let rt = null;          // EventSource
+let downTimer = null;   // evita di segnalare "offline" durante le riconnessioni brevi
+let pollTimer = null;
 
-async function rtConfig() {
-  try {
-    const r = await fetch('/api/config', { cache: 'no-store' });
-    if (r.ok) { const j = await r.json(); ls.setJson('rtconfig', j.realtime); return j.realtime; }
-  } catch { /* offline */ }
-  return ls.json('rtconfig', { type: 'sse' });
+function setLive(v) {
+  clearTimeout(downTimer);
+  if (v) { st.live = true; updateStatus(); return; }
+  downTimer = setTimeout(() => { st.live = false; updateStatus(); }, 4000);
 }
 
-let sbLoad = null;
-function loadSupabase() {
-  if (window.supabase) return Promise.resolve(window.supabase);
-  return (sbLoad ||= new Promise((resolve, reject) => {
-    const sc = document.createElement('script');
-    sc.src = SUPABASE_JS;
-    sc.async = true;
-    sc.crossOrigin = 'anonymous';
-    sc.onload = () => resolve(window.supabase);
-    sc.onerror = () => { sbLoad = null; reject(new Error('supabase-js non caricato')); };
-    document.head.appendChild(sc);
-  }));
-}
-
-function onLive() { st.live = true; updateStatus(); loadState(); flush(); }
-function onDown(retry) {
-  st.live = false; updateStatus();
-  if (retry) { clearTimeout(rtRetry); rtRetry = setTimeout(connect, 5000); }
-}
-
-function connectSse() {
-  const es = new EventSource('/api/events?k=' + encodeURIComponent(st.code));
-  es.addEventListener('hello', onLive);
-  es.onmessage = (e) => { try { applyEvents(JSON.parse(e.data)); } catch { /* */ } };
-  es.onerror = () => onDown(es.readyState === EventSource.CLOSED);
-  return { type: 'sse', close: () => es.close(), isOpen: () => es.readyState === EventSource.OPEN };
-}
-
-let sbClient = null;
-async function connectSupabase(cfg) {
-  if (!st.household || !st.household.id) await loadState();
-  if (!st.household || !st.household.id) throw new Error('famiglia non caricata');
-  const lib = await loadSupabase();
-  sbClient ||= lib.createClient(cfg.url, cfg.key, { auth: { persistSession: false, autoRefreshToken: false } });
-  let open = false;
-  const ch = sbClient.channel('hh-' + st.household.id, { config: { broadcast: { self: false } } });
-  ch.on('broadcast', { event: 'ev' }, (m) => { if (m.payload && m.payload.events) applyEvents(m.payload.events); });
-  ch.subscribe((status) => {
-    if (status === 'SUBSCRIBED') { open = true; onLive(); }
-    else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') { open = false; onDown(false); }
-  });
-  // Finché il canale non è attivo ci aggiorniamo a intervalli.
-  const timer = setInterval(() => { if (!open && document.visibilityState === 'visible' && navigator.onLine) loadState(); }, 10000);
-  return { type: 'supabase', close: () => { clearInterval(timer); sbClient.removeChannel(ch); }, isOpen: () => open };
-}
-
-function connectPoll() {
-  const tick = () => { if (document.visibilityState === 'visible' && navigator.onLine) loadState(); };
-  const timer = setInterval(tick, 5000);
-  if (navigator.onLine) onLive();
-  return { type: 'poll', close: () => clearInterval(timer), isOpen: () => navigator.onLine };
-}
-
-let connecting = false;
-async function connect() {
-  if (!st.code || connecting) return;
-  connecting = true;
-  clearTimeout(rtRetry);
-  try {
-    if (rt) { rt.close(); rt = null; }
-    const cfg = await rtConfig();
-    if (cfg.type === 'supabase') {
-      try { rt = await connectSupabase(cfg); }
-      catch { rt = connectPoll(); rtRetry = setTimeout(connect, 15000); } // ripiego finché Supabase non risponde
-    } else if (cfg.type === 'poll') rt = connectPoll();
-    else rt = connectSse();
-  } finally { connecting = false; }
+function connect() {
+  if (!st.code) return;
+  if (rt) rt.close();
+  rt = new EventSource('/api/events?k=' + encodeURIComponent(st.code));
+  rt.addEventListener('hello', () => { setLive(true); loadState(); flush(); });
+  rt.onmessage = (e) => {
+    let msg;
+    try { msg = JSON.parse(e.data); } catch { return; }
+    if (Array.isArray(msg)) applyEvents(msg);
+    else if (msg && msg.reload) loadState();
+  };
+  rt.onerror = () => {
+    setLive(false);
+    // Chiusura definitiva (es. errore HTTP): riproviamo noi.
+    if (rt.readyState === EventSource.CLOSED) setTimeout(connect, 5000);
+  };
+  if (!pollTimer) {
+    pollTimer = setInterval(() => {
+      if (!st.live && st.code && document.visibilityState === 'visible' && navigator.onLine) loadState();
+    }, 10000);
+  }
 }
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || !st.code) return;
   // I telefoni chiudono le connessioni in background: al ritorno ci riallineiamo.
-  if (!rt || !rt.isOpen()) connect(); else loadState();
+  if (!rt || rt.readyState === EventSource.CLOSED) connect(); else loadState();
   flush();
 });
 window.addEventListener('online', () => { connect(); flush(); });
-window.addEventListener('offline', () => { st.live = false; updateStatus(); });
+window.addEventListener('offline', () => { clearTimeout(downTimer); st.live = false; updateStatus(); });
 
 function updateStatus() {
   const dot = $('#status'), pend = $('#pending');

@@ -1,5 +1,5 @@
 // Service worker: rende l'app disponibile offline (le API restano sempre in rete).
-const VERSION = 'sporta-v2';
+const VERSION = 'sporta-v3';
 const SHELL = ['/', '/index.html', '/styles.css', '/app.js', '/shared.js', '/manifest.webmanifest',
   '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png'];
 

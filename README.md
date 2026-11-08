@@ -7,7 +7,7 @@ Lista della spesa condivisa in famiglia: è una PWA installabile sul telefono e 
 ## Funzioni
 
 - **Più liste** per famiglia (Supermercato, Farmacia…), ognuna con la sua icona.
-- **Tempo reale**: articoli aggiunti, modificati, spuntati o riordinati compaiono subito su tutti i telefoni (Server-Sent Events).
+- **Tempo reale**: articoli aggiunti, modificati, spuntati o riordinati compaiono subito su tutti i telefoni (Server-Sent Events, con Postgres LISTEN/NOTIFY).
 - **Inserimento rapido** in una sola riga, con i dettagli facoltativi:
   - `latte` → solo il nome
   - `2 kg patate`, `500g farina`, `latte x3`, `uova 6` → quantità e unità
@@ -21,15 +21,12 @@ Lista della spesa condivisa in famiglia: è una PWA installabile sul telefono e 
 
 ## Pubblicazione su Vercel (consigliata)
 
-Su Vercel il server gira come funzioni serverless, senza disco persistente e senza connessioni sempre aperte. Per questo servono due cose, entrambe fornite da **Supabase** (il piano gratuito basta per una famiglia):
-
-- un database **Postgres** per i dati;
-- **Supabase Realtime** per gli aggiornamenti in tempo reale tra i telefoni.
+Serve solo un database **Postgres**: Neon dal Marketplace di Vercel (piano gratuito), Vercel Postgres o un Postgres tuo raggiungibile da internet.
 
 ### Passi
 
 1. **Importa il progetto**: su Vercel, *Add New → Project*, scegli il repository `sporta`. *Framework Preset*: **Other**. Non serve configurare build né output, lo fa `vercel.json`.
-2. **Collega Supabase**: dal progetto Vercel, *Storage* (o *Integrations*) → **Supabase** → crea un nuovo progetto e collegalo. L'integrazione imposta da sola le variabili d'ambiente.
+2. **Collega Postgres**: dal progetto Vercel, *Storage* → **Neon** (o un altro Postgres) → crea il database e collegalo al progetto. L'integrazione imposta da sola `DATABASE_URL` e `DATABASE_URL_UNPOOLED`.
 3. **Rifai il deploy** (*Deployments → Redeploy*) per far leggere all'app le nuove variabili.
 4. Apri l'URL `https://….vercel.app` dal telefono: è già in HTTPS e quindi installabile.
 
@@ -37,19 +34,24 @@ Le tabelle vengono create in automatico alla prima richiesta.
 
 ### Variabili d'ambiente
 
-Se preferisci configurarle a mano (*Settings → Environment Variables*):
-
-| Variabile | Dove trovarla in Supabase |
+| Variabile | Uso |
 |---|---|
-| `DATABASE_URL` (o `POSTGRES_URL`) | *Connect → Connection string → Transaction pooler* (porta 6543) |
-| `SUPABASE_URL` | *Project Settings → API → Project URL* |
-| `SUPABASE_ANON_KEY` | *Project Settings → API Keys → anon / publishable* |
-| `SUPABASE_SERVICE_ROLE_KEY` | *Project Settings → API Keys → service_role / secret* (**riservata**: non condividerla) |
+| `DATABASE_URL` (o `POSTGRES_URL`) | connessione per le query. Può essere quella con pooler. |
+| `DATABASE_URL_UNPOOLED` (o `POSTGRES_URL_NON_POOLING`) | connessione **diretta**, senza pooler, usata per il tempo reale. Se manca si usa `DATABASE_URL`. |
+| `SSE_MAX_SECONDS` | facoltativa, default `240`: durata di ogni connessione in tempo reale, da tenere sotto il `maxDuration` di `vercel.json` (300 s). |
 
-Note:
-- Il tempo reale usa canali *Broadcast* pubblici. In Supabase, in *Realtime → Settings*, l'opzione **"Allow public access"** deve restare attiva (lo è di default). Il nome del canale contiene l'identificativo segreto della famiglia, visibile solo ai suoi membri.
-- La chiave `anon` viene mandata al browser, ma i dati restano protetti: su tutte le tabelle è attiva la **Row Level Security** senza policy, quindi solo il server (con la `service_role` e la connessione Postgres) può leggerli e scriverli.
-- **Senza Supabase Realtime** (per esempio con Neon come database), l'app funziona lo stesso ma si aggiorna ogni 5 secondi invece che all'istante.
+Se hai un solo URL senza pooler (per esempio un Postgres tuo), basta `DATABASE_URL`.
+
+### Come funziona il tempo reale
+
+Le funzioni Vercel non condividono la memoria, quindi gli aggiornamenti passano da Postgres con **LISTEN/NOTIFY**:
+
+1. ogni modifica fa una `NOTIFY` sul canale della famiglia;
+2. ogni telefono con l'app aperta tiene una connessione SSE verso una funzione, che è in `LISTEN` su quel canale e inoltra subito la modifica.
+
+Ogni 4 minuti circa la funzione chiude la connessione per rispettare i limiti di durata di Vercel; il browser si riconnette da solo e ricarica lo stato, quindi non si perde nulla. Se il tempo reale non è disponibile, l'app si aggiorna comunque ogni 10 secondi.
+
+`LISTEN` non funziona attraverso un pooler in modalità *transaction* (PgBouncer, il pooler di Neon): per questo serve l'URL diretto (`DATABASE_URL_UNPOOLED`), che le integrazioni Vercel forniscono già. Ogni telefono con l'app aperta occupa una connessione diretta per istanza di funzione, molto al di sotto dei limiti anche dei piani gratuiti.
 
 ## Avvio locale / self-hosted
 
@@ -63,7 +65,7 @@ npm install
 npm start
 ```
 
-L'app risponde su `http://localhost:3000`. Senza configurazione i dati stanno in un file SQLite dentro `./data` e il tempo reale passa per il server stesso (SSE). Le variabili `PORT` e `DATA_DIR` cambiano porta e cartella. Con `DATABASE_URL` si usa invece Postgres, e con le variabili `SUPABASE_*` Supabase Realtime.
+L'app risponde su `http://localhost:3000`. Senza configurazione i dati stanno in un file SQLite dentro `./data`. Le variabili `PORT` e `DATA_DIR` cambiano porta e cartella. Con `DATABASE_URL` si usa invece Postgres, e in quel caso si possono avviare anche più istanze del server: il tempo reale passa da LISTEN/NOTIFY.
 
 ### Con Docker
 
@@ -94,7 +96,7 @@ Chi crea la famiglia riceve un **codice d'invito** (es. `ABCD-EFGH-JKLM`). In *I
 api/index.js         funzione serverless per Vercel (tutte le /api/*)
 server.js            server locale/self-hosted: statici + API + SSE
 lib/core.js          logica delle API e schema del database
-lib/backends.js      adattatori: SQLite o Postgres, SSE o Supabase Realtime
+lib/backends.js      adattatori: SQLite o Postgres, tempo reale in memoria o LISTEN/NOTIFY
 lib/http.js          adattamento richiesta/risposta HTTP
 public/index.html    shell dell'app
 public/app.js        interfaccia, coda offline, sincronizzazione, drag & drop

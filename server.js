@@ -1,7 +1,7 @@
 'use strict';
 // Server locale / self-hosted: file statici + API + tempo reale.
 // Database: SQLite in ./data (default) oppure Postgres se è impostata DATABASE_URL.
-// Tempo reale: SSE integrato (default) oppure Supabase se configurato.
+// Tempo reale: SSE; con Postgres passa da LISTEN/NOTIFY (funziona anche con più istanze).
 
 const http = require('node:http');
 const fs = require('node:fs');
@@ -14,8 +14,8 @@ const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const db = createDb();
-const realtime = createRealtime({ allowSse: true });
-const core = createCore({ db, realtime, realtimeConfig: realtime.config });
+const realtime = createRealtime(db);
+const core = createCore({ db, realtime });
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -47,18 +47,17 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname.startsWith('/api/')) {
     const parts = url.pathname.split('/').filter(Boolean).slice(1);
-    return handleApi(core, req, res, parts, url, realtime.open ? (rq, rs, hh) => realtime.open(rq, rs, hh.id) : null);
+    return handleApi(core, req, res, parts, url, (rq, rs, hh) => realtime.open(rq, rs, hh.id));
   }
   if (req.method === 'GET' || req.method === 'HEAD') return serveStatic(req, res, url);
   res.writeHead(405); res.end();
 });
 
 server.listen(PORT, () => {
-  console.log(`Sporta in ascolto su http://localhost:${PORT} (db: ${db.kind}, tempo reale: ${realtime.config.type})`);
+  console.log(`Sporta in ascolto su http://localhost:${PORT} (database: ${db.kind})`);
 });
 
 function shutdown() {
-  if (realtime.closeAll) realtime.closeAll();
   server.close(async () => { await db.close(); process.exit(0); });
   setTimeout(() => process.exit(0), 2000).unref();
 }

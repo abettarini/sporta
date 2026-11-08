@@ -564,6 +564,49 @@ function bindTagField(root, name) {
   };
 }
 
+// =============================================================== codice d'invito
+// Inserimento guidato: maiuscole automatiche, trattini inseriti da soli (XXXX-XXXX-XXXX),
+// solo i caratteri ammessi nei codici (niente I, O, 0, 1, che si confondono).
+const CODE_LEN = 12;
+function cleanCode(v) {
+  const s = String(v || '').toUpperCase();
+  const link = s.match(/JOIN=([A-Z0-9-]+)/); // incollato un link d'invito intero
+  return (link ? link[1] : s).replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ2-9]/g, '').slice(0, CODE_LEN);
+}
+const formatCode = (c) => c.replace(/(.{4})(?=.)/g, '$1-');
+const normCode = (v) => formatCode(cleanCode(v));
+
+function bindCodeInput(input, onChange) {
+  Object.assign(input, { autocomplete: 'off', spellcheck: false, maxLength: CODE_LEN + 2 });
+  input.setAttribute('autocapitalize', 'characters');
+  input.setAttribute('autocorrect', 'off');
+  input.setAttribute('inputmode', 'text');
+  input.classList.add('code-input');
+  let prev = input.value = normCode(input.value);
+  const notify = () => onChange && onChange(cleanCode(input.value).length === CODE_LEN);
+  input.addEventListener('input', (e) => {
+    const raw = input.value;
+    let clean, n;
+    if (/JOIN=/i.test(raw)) { clean = cleanCode(raw); n = clean.length; }
+    else {
+      const caret = input.selectionStart == null ? raw.length : input.selectionStart;
+      n = cleanCode(raw.slice(0, caret)).length; // caratteri validi prima del cursore
+      clean = cleanCode(raw);
+      // Cancellato solo un trattino: togliamo il carattere che lo precede (Backspace)
+      // o quello che lo segue (Canc), altrimenti il trattino tornerebbe al suo posto.
+      if (clean === cleanCode(prev)) {
+        if (e.inputType === 'deleteContentBackward' && n > 0) { clean = clean.slice(0, n - 1) + clean.slice(n); n -= 1; }
+        else if (e.inputType === 'deleteContentForward') clean = clean.slice(0, n) + clean.slice(n + 1);
+      }
+    }
+    input.value = prev = formatCode(clean);
+    const pos = n + Math.floor(Math.max(0, n - 1) / 4);
+    try { input.setSelectionRange(pos, pos); } catch { /* campo non attivo */ }
+    notify();
+  });
+  notify();
+}
+
 // =============================================================== drag & drop
 // Riordino con pointer events: funziona con dito e mouse, tramite la maniglia.
 let dragging = false, renderQueued = false;

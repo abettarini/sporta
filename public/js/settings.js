@@ -13,7 +13,7 @@ Views.welcome = {
       <div class="card">
         <h3>Hai un codice d'invito?</h3>
         <form id="w-join">
-          <input class="input" id="w-code" placeholder="XXXX-XXXX-XXXX" autocapitalize="characters" autocomplete="off" value="${h(join)}">
+          <input class="input" id="w-code" placeholder="XXXX-XXXX-XXXX" value="${h(join)}">
           <button class="btn primary block" style="margin-top:10px">Unisciti al gruppo</button>
         </form>
       </div>
@@ -27,6 +27,8 @@ Views.welcome = {
       <p class="err" id="w-err"></p>
     </div>`;
     const err = (m) => { $('#w-err').textContent = m; };
+    const joinBtn = $('#w-join button');
+    bindCodeInput($('#w-code'), (complete) => { joinBtn.disabled = !complete; });
     const saveName = () => {
       const n = $('#w-name').value.trim();
       if (!n) { err('Inserisci il tuo nome: serve per vedere chi ha aggiunto cosa.'); $('#w-name').focus(); return false; }
@@ -144,11 +146,12 @@ Views.settings = {
   const join = new URLSearchParams(location.search).get('join');
   if (join && st.code) {
     history.replaceState(null, '', '/' + location.hash);
-    if (!st.groups.some((g) => g.code === join.toUpperCase())) {
+    const code = normCode(join);
+    if (!st.groups.some((g) => g.code === code)) {
       joinGroupSheet();
       const input = document.querySelector('#jg [name="gcode"]');
-      if (input) input.value = join;
-    } else switchGroup(join.toUpperCase());
+      if (input) { input.value = code; input.dispatchEvent(new Event('input')); }
+    } else switchGroup(code);
   }
   setupServiceWorker();
 })();

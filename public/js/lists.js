@@ -91,10 +91,13 @@ function newGroupSheet() {
 
 function joinGroupSheet() {
   openSheet(`<h2>Unisciti a un gruppo</h2>
-    <form id="jg"><label class="field"><span>Codice d'invito</span><input class="input" name="gcode" required placeholder="XXXX-XXXX-XXXX" autocapitalize="characters" autocomplete="off"></label>
+    <form id="jg"><label class="field"><span>Codice d'invito</span><input class="input" name="gcode" required placeholder="XXXX-XXXX-XXXX"></label>
+    <p class="hint">Basta scrivere lettere e numeri: maiuscole e trattini si mettono da soli. Puoi anche incollare il link d'invito.</p>
     <p class="err" id="jg-err"></p>
     <div class="actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn primary">Unisciti</button></div></form>`, (sh) => {
     const f = $('#jg', sh);
+    const ok = f.querySelector('button.primary');
+    bindCodeInput(f.elements.gcode, (complete) => { ok.disabled = !complete; });
     setTimeout(() => f.elements.gcode.focus(), 50);
     f.onsubmit = async (e) => {
       e.preventDefault();
@@ -120,8 +123,9 @@ async function createGroup(name) {
 }
 
 async function joinGroup(rawCode) {
-  const code = String(rawCode || '').trim().toUpperCase().replace(/\s+/g, '');
+  const code = normCode(rawCode);
   if (!code) throw new Error('Inserisci il codice d\'invito.');
+  if (cleanCode(code).length !== CODE_LEN) throw new Error('Il codice è di 12 caratteri.');
   let r;
   try { r = await fetch('/api/state', { headers: { Authorization: 'Bearer ' + code } }); } catch { throw new Error('Nessuna connessione.'); }
   if (r.status === 401) throw new Error('Codice non valido.');

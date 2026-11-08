@@ -30,7 +30,25 @@ Serve solo un database **Postgres**: Neon dal Marketplace di Vercel (piano gratu
 3. **Rifai il deploy** (*Deployments → Redeploy*) per far leggere all'app le nuove variabili.
 4. Apri l'URL `https://….vercel.app` dal telefono: è già in HTTPS e quindi installabile.
 
-Le tabelle vengono create in automatico alla prima richiesta.
+### Inizializzazione del database
+
+Non serve fare nulla: alla prima richiesta l'app crea da sola le tabelle (`households`, `lists`, `items`, `recipes`, `history`). L'operazione è idempotente e protetta da un lock, quindi è sicura anche con più istanze che partono insieme.
+
+Se preferisci creare le tabelle prima del primo accesso, o verificare che la connessione funzioni, recupera le variabili da Vercel e lancia lo script:
+
+```bash
+npx vercel env pull .env.local
+```
+
+```bash
+node --env-file=.env.local scripts/db-init.js
+```
+
+Oppure passa direttamente la stringa di connessione copiata da Neon:
+
+```bash
+DATABASE_URL="postgres://utente:password@host/db?sslmode=require" npm run db:init
+```
 
 ### Variabili d'ambiente
 

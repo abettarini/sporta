@@ -48,7 +48,7 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname.startsWith('/api/')) {
     const parts = url.pathname.split('/').filter(Boolean).slice(1);
-    return handleApi(core, req, res, parts, url, (rq, rs, hh) => realtime.open(rq, rs, hh.id));
+    return handleApi(core, req, res, parts, url, (rq, rs, ctx) => realtime.open(rq, rs, ctx.hh.id, 0, core.streamHooks(ctx)));
   }
   if (req.method === 'GET' || req.method === 'HEAD') return serveStatic(req, res, url);
   res.writeHead(405); res.end();

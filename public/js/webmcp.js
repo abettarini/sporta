@@ -54,6 +54,17 @@
       }),
     },
     {
+      name: 'sporta_get_members',
+      description: 'Elenca le persone del gruppo attivo: nome, ruolo (amministratore o partecipante), relazione, se sono online e quale lista stanno guardando. Sola lettura: accettare o rimuovere persone si fa solo dall\'app.',
+      inputSchema: { type: 'object', properties: {} },
+      annotations: { readOnlyHint: true },
+      execute: () => needGroup() || ok([...st.members.values()].filter((m) => m.status === 'active').map((m) => ({
+        name: m.alias, role: m.role === 'admin' ? 'amministratore' : 'partecipante', relation: m.relation || undefined,
+        online: !!m.online, viewing_list: m.viewing && st.lists.get(m.viewing) ? st.lists.get(m.viewing).name : undefined,
+        last_seen: m.last_seen ? new Date(m.last_seen).toISOString() : undefined, is_me: !!(st.me && st.me.id === m.id),
+      }))),
+    },
+    {
       name: 'sporta_switch_group',
       description: 'Passa a un altro gruppo (es. famiglia, amici, evento) tra quelli a cui il dispositivo partecipa.',
       inputSchema: { type: 'object', properties: { group: { type: 'string', description: 'Nome del gruppo' } }, required: ['group'] },

@@ -1,110 +1,5 @@
 'use strict';
-/* Sporta — benvenuto, impostazioni (nome, gruppi, inviti, installazione) e avvio. */
-
-// Primo accesso. Tre percorsi:
-//  - link d'invito con codice valido -> solo il proprio nome (alias);
-//  - "Ho un codice" (o link senza codice valido) -> 1) codice, 2) nome;
-//  - "Crea un gruppo" -> nome + nome del gruppo/famiglia.
-const focusLater = (sel) => setTimeout(() => { const el = $(sel); if (el) el.focus(); }, 50);
-
-Views.welcome = {
-  mount() {
-    this.code = null; this.group = null; this.err = ''; this.fromLink = false; this.prefill = '';
-    const join = new URLSearchParams(location.search).get('join');
-    if (join == null) return this.show('start');
-    this.fromLink = true;
-    const code = normCode(join);
-    if (cleanCode(code).length !== CODE_LEN) { this.fromLink = false; this.err = 'Il link non contiene un codice valido: inseriscilo qui.'; this.prefill = code; return this.show('code'); }
-    this.show('checking');
-    previewGroup(code)
-      .then((name) => { this.code = code; this.group = name; this.show('alias'); })
-      .catch((e) => { this.fromLink = false; this.err = e.message === 'Codice non valido.' ? 'Il link non contiene un codice valido: inseriscilo qui.' : e.message; this.prefill = code; this.show('code'); });
-  },
-  show(step) {
-    this.step = step;
-    const back = (to) => `<button type="button" class="icon-btn wback" data-to="${to}" aria-label="Indietro">${I.back}</button>`;
-    const err = `<p class="err" id="w-err">${h(this.err || '')}</p>`;
-    const steps = (n) => `<div class="steps-dots"><span class="${n === 1 ? 'on' : ''}"></span><span class="${n === 2 ? 'on' : ''}"></span></div>`;
-    let body = '';
-    if (step === 'start') {
-      body = `<img class="logo" src="/icons/icon-192.png" alt="">
-        <h1>Sporta</h1>
-        <p>La lista della spesa condivisa con la famiglia, gli amici o la squadra: aggiornata in tempo reale, con le tue ricette.</p>
-        <button class="btn primary block lg" data-to="code">Ho un codice d'invito</button>
-        <button class="btn block lg" data-to="create" style="margin-top:10px">Crea un nuovo gruppo</button>
-        <p class="muted small center" style="margin-top:18px">Se qualcuno ti ha invitato, apri il link che ti ha mandato: basterà scrivere il tuo nome.</p>`;
-    } else if (step === 'checking') {
-      body = `<div class="empty">${emptyArt('link')}Verifico l'invito…</div>`;
-    } else if (step === 'code') {
-      body = `${back('start')}${steps(1)}
-        <h2>Inserisci il codice d'invito</h2>
-        <p class="muted">Lo trovi nel messaggio di chi ti ha invitato. Basta scrivere lettere e numeri: maiuscole e trattini si mettono da soli.</p>
-        <form id="w-code-f"><input class="input" id="w-code" placeholder="XXXX-XXXX-XXXX" value="${h(this.prefill || '')}">
-        ${err}<button class="btn primary block lg" id="w-next">Continua</button></form>`;
-    } else if (step === 'alias') {
-      body = `${this.fromLink ? '' : back('code')}${this.fromLink ? '' : steps(2)}
-        <div class="invite-card">${groupAvatar(this.group)}<small>${this.fromLink ? 'Sei stato invitato nel gruppo' : 'Stai entrando nel gruppo'}</small><b>${h(this.group)}</b></div>
-        <form id="w-alias-f"><label class="field"><span>Come ti chiami?</span>
-          <input class="input" id="w-name" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member)}"></label>
-          <p class="hint">È il nome che gli altri vedranno sugli articoli che aggiungi o prendi.</p>
-          ${err}<button class="btn primary block lg">Entra nel gruppo</button></form>
-        ${this.fromLink ? `<button class="btn ghost block" data-to="code" style="margin-top:8px">Non è il tuo invito? Inserisci un altro codice</button>` : ''}`;
-    } else if (step === 'create') {
-      body = `${back('start')}
-        <h2>Crea un gruppo</h2>
-        <p class="muted">Una famiglia, la squadra di calcetto, una festa… Poi potrai invitare gli altri con un link.</p>
-        <form id="w-create-f">
-          <label class="field"><span>Il tuo nome</span><input class="input" id="w-name" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member)}"></label>
-          <label class="field"><span>Nome del gruppo o famiglia</span><input class="input" id="w-fam" required maxlength="80" placeholder="es. Casa Rossi, Calcetto, Festa di Anna"></label>
-          ${err}<button class="btn primary block lg">Crea il gruppo</button></form>`;
-    }
-    app.innerHTML = `<div class="welcome">${body}</div>`;
-    this.err = '';
-    app.querySelectorAll('[data-to]').forEach((b) => {
-      b.onclick = () => { if (b.dataset.to === 'code') this.prefill = ''; this.fromLink = this.fromLink && b.dataset.to !== 'code'; this.show(b.dataset.to); };
-    });
-    const fail = (m) => { $('#w-err').textContent = m; };
-    const saveName = () => {
-      const n = $('#w-name').value.trim();
-      if (!n) { fail('Scrivi il tuo nome.'); $('#w-name').focus(); return false; }
-      st.member = n; ls.set('member', n); return true;
-    };
-    const enter = (j) => { addGroup(j); history.replaceState(null, '', '/#/'); mount(); };
-    if (step === 'code') {
-      const next = $('#w-next');
-      bindCodeInput($('#w-code'), (complete) => { next.disabled = !complete; });
-      focusLater('#w-code');
-      $('#w-code-f').onsubmit = async (e) => {
-        e.preventDefault();
-        next.disabled = true;
-        try {
-          const code = normCode($('#w-code').value);
-          this.group = await previewGroup(code);
-          this.code = code;
-          this.show('alias');
-        } catch (x) { fail(x.message); next.disabled = false; }
-      };
-    }
-    if (step === 'alias') {
-      if (!st.member) focusLater('#w-name');
-      $('#w-alias-f').onsubmit = async (e) => {
-        e.preventDefault();
-        if (!saveName()) return;
-        try { enter(await joinGroup(this.code)); toast(`Benvenuto nel gruppo "${this.group}"`); } catch (x) { fail(x.message); }
-      };
-    }
-    if (step === 'create') {
-      focusLater(st.member ? '#w-fam' : '#w-name');
-      $('#w-create-f').onsubmit = async (e) => {
-        e.preventDefault();
-        if (!saveName()) return;
-        const fam = $('#w-fam').value.trim();
-        if (!fam) { fail('Dai un nome al gruppo.'); return; }
-        try { enter(await createGroup(fam)); toast('Gruppo creato! Invita gli altri da Altro'); } catch (x) { fail(x.message); }
-      };
-    }
-  },
-};
+/* Sporta — impostazioni (gruppo, nome, inviti, ingresso, installazione), avvio e aggiornamenti. */
 
 let installEvt = null;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; if (view === Views.settings) Views.settings.update(); });
@@ -113,18 +8,24 @@ Views.settings = {
   mount() {
     app.innerHTML = topBar('Altro') + `<main class="settings wide">
       <div class="card"><h3>Gruppo attuale</h3>
-        <form id="hn-f" class="inline-edit"><label class="field"><span>Nome del gruppo</span>
-          <span class="row"><input class="input" id="hn" required maxlength="80"><button class="btn primary" id="hn-save" disabled>Salva</button></span></label></form>
+        <div id="hn-box"></div>
         <form id="sn-f" class="inline-edit"><label class="field"><span>Il tuo nome in questo gruppo</span>
           <span class="row"><input class="input" id="sn" required maxlength="40" autocomplete="given-name"><button class="btn primary" id="sn-save" disabled>Salva</button></span></label>
-          <label class="switch small-switch" id="sn-past" hidden><input type="checkbox" id="sn-rename" checked><span>Aggiorna anche articoli e spese già registrati come «<b id="sn-old"></b>»</span></label>
-          <p class="hint">È il nome che gli altri vedono su ciò che aggiungi o prendi. In ogni gruppo puoi usarne uno diverso.</p></form>
+          <p class="hint" id="sn-hint">È il nome che gli altri vedono su ciò che aggiungi o prendi: lo storico si aggiorna da solo. In ogni gruppo puoi usarne uno diverso.</p></form>
+        <div class="me-line" id="me-line"></div>
       </div>
+      <a class="card link-card" href="#/m">${iconTile('home')}<span class="t"><b>Membri <i class="tab-badge inline" data-badge hidden></i></b><span id="mb-sub">Chi c'è nel gruppo, inviti e richieste</span></span><span class="chev">›</span></a>
       <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
       <div class="card"><h3>Invita</h3>
-        <p>Per invitare qualcuno condividi il link o il codice: chi lo inserisce vede e modifica liste, ricette e spese di questo gruppo.</p>
+        <p id="inv-p"></p>
         <div class="code" id="hc"></div>
-        <div class="actions"><button class="btn" id="copy">Copia link</button><button class="btn primary" id="share">Condividi invito</button></div>
+        <div class="actions"><button class="btn primary block" id="inv">Invita qualcuno</button></div>
+      </div>
+      <div class="card" id="adm" hidden><h3>Ingresso nel gruppo</h3>
+        <label class="switch"><input type="checkbox" id="appr"><span>Chi usa il codice deve essere accettato</span></label>
+        <p>Se lo spegni, chi ha il codice entra subito (comodo per un evento). I link personali entrano sempre senza approvazione.</p>
+        <button class="btn" id="regen">Rigenera il codice</button>
+        <p class="hint">Il vecchio codice smette di funzionare; chi è già nel gruppo non è toccato.</p>
       </div>
       <div class="card"><h3>I tuoi gruppi</h3>
         <p>Puoi far parte di più gruppi: la famiglia, gli amici del calcetto, un evento…</p>
@@ -134,72 +35,84 @@ Views.settings = {
       <div class="card" id="inst"></div>
       <p class="muted small center">Sporta v${h(window.SPORTA_VERSION || 'dev')}</p>
     </main>` + tabBar('settings');
-    // --- nome del gruppo (arriva a tutti i membri in tempo reale)
-    const hn = $('#hn'), hnSave = $('#hn-save');
-    hn.oninput = () => { hnSave.disabled = !hn.value.trim() || hn.value.trim() === groupName(); };
-    $('#hn-f').onsubmit = (e) => {
-      e.preventDefault();
-      const v = hn.value.trim(); if (!v || v === groupName()) return;
-      enqueue({ k: 'hh.put', id: 'hh', data: { name: v } }, { silent: true });
-      const g = st.groups.find((x) => x.code === st.code);
-      if (g) { g.name = v; ls.setJson('groups', st.groups); }
-      hn.blur();
-      toast('Nome del gruppo aggiornato per tutti');
-      this.update();
-    };
-    // --- alias in questo gruppo
+    // --- il mio nome in questo gruppo
     const sn = $('#sn'), snSave = $('#sn-save');
     sn.value = st.member;
-    sn.oninput = () => {
-      const v = sn.value.trim();
-      snSave.disabled = !v || v === st.member;
-      $('#sn-past').hidden = !st.member || !v || v === st.member;
-      $('#sn-old').textContent = st.member;
-    };
+    sn.oninput = () => { const v = sn.value.trim(); snSave.disabled = !v || v === st.member; };
     $('#sn-f').onsubmit = async (e) => {
       e.preventDefault();
-      const v = sn.value.trim(), old = st.member;
-      if (!v || v === old) return;
-      const renamePast = old && $('#sn-rename').checked;
-      setMember(v);
-      snSave.disabled = true;
-      $('#sn-past').hidden = true;
-      sn.blur();
-      if (!renamePast) { toast('Nome aggiornato'); return; }
+      const v = sn.value.trim(); if (!v || v === st.member) return;
+      if (!tokenFor(st.code)) return toast('Un momento: sto collegando questo telefono al gruppo');
       try {
-        await api('POST', '/api/member/rename', { from: old, to: v });
-        toast('Nome aggiornato anche su articoli e spese');
-      } catch (x) { toast('Nome aggiornato. Articoli e spese passati non aggiornati: ' + x.message); }
+        await api('PATCH', '/api/me', { alias: v });
+        setMember(v);
+        snSave.disabled = true; sn.blur();
+        toast('Nome aggiornato, anche su articoli e spese');
+        refreshMembers();
+      } catch (x) { toast(x.message); }
     };
-    const link = () => `${location.origin}/?join=${encodeURIComponent(st.code)}`;
-    $('#copy').onclick = async () => {
-      try { await navigator.clipboard.writeText(link()); toast('Link copiato'); } catch { prompt('Copia il link:', link()); }
+    $('#inv').onclick = () => inviteSheet();
+    $('#appr').onchange = async (e) => {
+      try { await api('PATCH', '/api/household', { require_approval: e.target.checked }); toast(e.target.checked ? 'Chi usa il codice dovrà essere accettato' : 'Chi ha il codice entra subito'); this.update(); }
+      catch (x) { e.target.checked = !e.target.checked; toast(x.message); }
     };
-    $('#share').onclick = async () => {
-      const data = { title: 'Sporta', text: `Ti invito nel gruppo "${groupName()}" su Sporta: apri il link e scrivi il tuo nome. (Codice: ${st.code})`, url: link() };
-      if (navigator.share) { try { await navigator.share(data); } catch { /* annullato */ } } else $('#copy').click();
+    $('#regen').onclick = async () => {
+      if (!confirm('Generare un nuovo codice? Il codice attuale e i link che lo contengono smetteranno di funzionare.')) return;
+      try { await api('POST', '/api/household/code', {}); toast('Nuovo codice creato'); this.update(); } catch (x) { toast(x.message); }
     };
     $('#g-new').onclick = () => newGroupSheet();
     $('#g-join').onclick = () => joinGroupSheet();
-    $('#groups').onclick = (e) => {
+    $('#groups').onclick = async (e) => {
       const leave = e.target.closest('[data-leave]');
       if (leave) {
-        const g = st.groups.find((x) => x.code === leave.dataset.leave);
-        if (confirm(`Uscire dal gruppo "${g.name}" su questo telefono? Il gruppo resta per gli altri e potrai rientrare con il codice.`)) leaveGroup(g.code);
+        const g = groupOf(leave.dataset.leave);
+        if (!confirm(`Uscire dal gruppo "${g.name}"? Il gruppo resta per gli altri; per rientrare servirà un nuovo invito.`)) return;
+        try { await leaveGroup(g.code); toast(`Sei uscito da "${g.name}"`); } catch (x) { toast(x.message); }
         return;
       }
       const sw = e.target.closest('[data-switch]');
       if (sw) switchGroup(sw.dataset.switch, '#/s');
     };
+    refreshMembers();
     this.update();
   },
   update() {
-    const hn = $('#hn');
-    if (hn && document.activeElement !== hn) { hn.value = groupName(); $('#hn-save').disabled = true; }
-    if ($('#hc')) $('#hc').textContent = st.code;
+    const admin = isAdmin();
+    const box = $('#hn-box');
+    const hnFocused = document.activeElement && document.activeElement.id === 'hn';
+    if (box && !hnFocused) {
+      box.outerHTML = admin
+        ? `<form id="hn-box" class="inline-edit"><label class="field"><span>Nome del gruppo</span>
+            <span class="row"><input class="input" id="hn" required maxlength="80" value="${h(groupName())}"><button class="btn primary" id="hn-save" disabled>Salva</button></span></label></form>`
+        : `<div id="hn-box" class="field"><span>Nome del gruppo</span><div class="ro">${h(groupName())}</div><p class="hint">Solo gli amministratori possono cambiarlo.</p></div>`;
+    }
+    // Nome del gruppo (solo amministratori): il riquadro può essere stato ridisegnato, ricollego gli eventi.
+    const nb = $('#hn-box');
+    if (nb && nb.tagName === 'FORM' && !nb.dataset.bound) {
+      nb.dataset.bound = '1';
+      nb.onsubmit = async (e) => {
+        e.preventDefault();
+        const hn = $('#hn'); const v = hn.value.trim(); if (!v || v === groupName()) return;
+        try { await api('PATCH', '/api/household', { name: v }); const g = groupOf(st.code); if (g) { g.name = v; saveGroups(); } hn.blur(); toast('Nome del gruppo aggiornato per tutti'); this.update(); }
+        catch (x) { toast(x.message); }
+      };
+      nb.oninput = () => { const hn = $('#hn'); $('#hn-save').disabled = !hn.value.trim() || hn.value.trim() === groupName(); };
+    }
+    const me = st.me;
+    $('#me-line').innerHTML = me ? `${avatar({ ...me, online: st.live })}<span>${h(roleLabel(me.role))}${me.relation ? ' · ' + h(relLabel(me.relation)) : ''}</span>` : '';
+    const n = [...st.members.values()].filter((m) => m.status === 'active');
+    const on = n.filter((m) => m.online).length;
+    $('#mb-sub').textContent = n.length ? `${n.length} ${n.length === 1 ? 'persona' : 'persone'}${on ? ` · ${on} online` : ''}${pendingRequests() ? ` · ${pendingRequests()} ${pendingRequests() === 1 ? 'richiesta' : 'richieste'} in attesa` : ''}` : "Chi c'è nel gruppo, inviti e richieste";
+    const approval = !st.household || st.household.require_approval !== false;
+    $('#hc').textContent = inviteCode();
+    $('#inv-p').textContent = admin
+      ? 'Crea un link personale (entra subito) oppure condividi il codice del gruppo.'
+      : (approval ? 'Condividi il codice del gruppo: chi lo usa chiede di entrare e un amministratore lo accetta.' : 'Condividi il codice del gruppo: chi lo usa entra subito.');
+    $('#adm').hidden = !admin || !tokenFor(st.code);
+    $('#appr').checked = approval;
     $('#groups').innerHTML = st.groups.map((g) => `<div class="group-row">
       <button class="row-btn" data-switch="${h(g.code)}"><span class="avatar">${h((g.name || '?').slice(0, 1).toUpperCase())}</span>
-        <span class="t">${h(g.name)}${g.code === st.code ? ' <small>(attuale)</small>' : ''}${memberFor(g.code) ? `<small class="as">sei ${h(memberFor(g.code))}</small>` : ''}</span></button>
+        <span class="t">${h(g.name)}${g.code === st.code ? ' <small>(attuale)</small>' : ''}<small class="as">${g.status === 'pending' ? 'richiesta in attesa' : memberFor(g.code) ? 'sei ' + h(memberFor(g.code)) + (g.role === 'admin' ? ' · amministratore' : '') : ''}</small></span></button>
       <button class="btn ghost danger-text" data-leave="${h(g.code)}">Esci</button></div>`).join('');
     const inst = $('#inst'); if (!inst) return;
     const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -225,13 +138,19 @@ Views.settings = {
     flush();
   }
   mount();
+  // Passaggio dalla versione 2: i gruppi senza chiave personale si presentano da soli.
+  upgradeLegacyGroups();
+  window.addEventListener('online', upgradeLegacyGroups);
   // Link d'invito aperto da chi è già in altri gruppi.
-  const join = new URLSearchParams(location.search).get('join');
-  if (join && st.code) {
+  const q = new URLSearchParams(location.search);
+  if ((q.get('join') || q.get('invite')) && st.code && !st.notice) {
     history.replaceState(null, '', '/' + location.hash);
-    const code = normCode(join);
-    if (st.groups.some((g) => g.code === code)) switchGroup(code);
-    else joinGroupSheet(code);
+    if (q.get('invite')) joinGroupSheet({ invite: q.get('invite') });
+    else {
+      const code = normCode(q.get('join'));
+      const g = st.groups.find((x) => x.code === code || (st.household && st.household.code === code && x.code === st.code));
+      if (g) switchGroup(g.code); else joinGroupSheet(code);
+    }
   }
   setupServiceWorker();
 })();

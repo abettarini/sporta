@@ -6,16 +6,17 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 
 ## Funzioni
 
-### Gruppi
-- Un telefono può partecipare a **più gruppi** (la famiglia, la squadra di calcetto, una festa…) e passare dall'uno all'altro toccando il nome in alto. Ogni gruppo ha liste, ricette, prodotti e spese separati.
-- Ogni gruppo ha un **codice d'invito** (es. `ABCD-EFGH-JKLM`), condivisibile come link da *Altro → Condividi invito*.
-- **Ingresso guidato**:
-  - chi apre il **link d'invito** vede il nome del gruppo e deve solo scrivere il proprio nome;
-  - se il link non contiene un codice valido, o si entra senza link, si inserisce prima il codice (maiuscole e trattini si mettono da soli; si può incollare anche il link intero) e poi il nome;
-  - per **creare un gruppo** bastano il proprio nome e il nome del gruppo o della famiglia;
-  - chi usa già Sporta e apre un invito conferma con un tocco e il nuovo gruppo si aggiunge ai suoi.
-- **Nome del gruppo** modificabile da *Altro*: il nuovo nome arriva in tempo reale a tutti i membri.
-- **Il tuo nome (alias) per gruppo**: in ogni gruppo puoi presentarti in modo diverso (es. "Papà" in famiglia, "Andrea" al calcetto). Quando lo cambi puoi aggiornare anche gli articoli e le spese già registrati con il vecchio nome.
+### Gruppi e persone
+- Un telefono può partecipare a **più gruppi** (la famiglia, la squadra di calcetto, una festa…) e passare dall'uno all'altro toccando il nome del gruppo. Ogni gruppo ha liste, ricette, prodotti e spese separati.
+- **Ruoli**: ogni persona ha un *permesso* — **Amministratore** o **Partecipante** — e una *relazione* descrittiva (Familiare, Amico, Collega, Ospite o personalizzata). Chi crea il gruppo ne è l'amministratore; deve sempre restarcene almeno uno.
+- **Membri**: elenco delle persone con chi è **online ora**, l'ultimo accesso e quale lista sta guardando; nelle liste compaiono gli avatar di chi la sta guardando.
+- **Come si entra**:
+  - **link personale** creato da un amministratore (relazione e permesso già impostati, vale per una persona, scade in 7 giorni): si scrive solo il proprio nome e si entra subito;
+  - **codice del gruppo** (chiunque nel gruppo può condividerlo): ci si presenta con nome, relazione, email facoltativa e un messaggio; per impostazione predefinita un amministratore deve **accettare** la richiesta, e intanto si vede una schermata di attesa che si sblocca da sola. L'amministratore può spegnere l'approvazione (utile per un evento) e **rigenerare il codice**;
+  - **nuovo gruppo**: nome della persona e nome del gruppo.
+- **Richieste**: gli amministratori le vedono in cima a *Membri* (con un contatore nella navigazione) e possono correggere il nome, scegliere relazione e permesso, poi accettare, rifiutare o rifiutare e bloccare.
+- **Rimozione**: un amministratore può rimuovere una persona; il suo accesso viene revocato subito e il suo telefono mostra "Non fai più parte del gruppo". Quello che aveva aggiunto resta nello storico.
+- **Nomi**: unici nel gruppo (controllo mentre si scrive); in ogni gruppo ci si può presentare con un nome diverso e cambiarlo in *Altro*: lo storico si aggiorna da solo.
 
 ### Liste
 - **Più liste** per gruppo (Supermercato, Farmacia…), ognuna con la sua icona.
@@ -163,6 +164,7 @@ Sporta espone i suoi strumenti agli agenti AI del browser tramite [WebMCP](https
 | Strumento | Cosa fa |
 |---|---|
 | `sporta_get_overview` | gruppo attivo, gruppi, liste con il numero di articoli |
+| `sporta_get_members` | persone del gruppo, ruoli, chi è online (sola lettura) |
 | `sporta_switch_group` | passa a un altro gruppo |
 | `sporta_get_list` | articoli di una lista (da prendere e nel carrello) |
 | `sporta_add_items` | aggiunge articoli con quantità, unità, marca, nota e tag facoltativi |
@@ -179,10 +181,17 @@ Gli strumenti usano le stesse funzioni dell'interfaccia: le modifiche passano da
 
 ## Condivisione e sicurezza
 
-- Chi ha il **codice d'invito** di un gruppo vede e modifica tutto quel gruppo, quindi il codice va trattato come una password. I tentativi con codici sbagliati sono limitati. Ogni gruppo è isolato dagli altri.
+- Ogni persona, su ogni dispositivo, ha una **chiave personale** (conservata sul server solo come impronta). Il **codice del gruppo** serve solo a chiedere di entrare: da solo non apre nulla. I permessi da amministratore sono controllati dal server.
+- Una persona rimossa perde subito l'accesso, anche alla connessione in tempo reale e alle modifiche rimaste in coda offline.
+- Le email (facoltative) e i messaggi delle richieste sono visibili solo agli amministratori.
+- Tentativi con codici o chiavi sbagliati e richieste di accesso sono limitati; il numero di richieste in attesa per gruppo è limitato.
 - Le **ricette condivise** sono raggiungibili solo da chi ha il link (identificativo casuale non indovinabile). La pagina non mostra dati del gruppo e il link si può disattivare in qualsiasi momento.
 - Le **foto** sono servite tramite identificativi casuali non indovinabili, come i link condivisi.
 - L'app chiede ai motori di ricerca di non indicizzare le pagine (`noindex`).
+
+### Passaggio dalla versione 2
+
+Fino alla versione 2 il codice del gruppo bastava per entrare. Per i gruppi creati prima della versione 3 c'è un **periodo di transizione di 30 giorni** in cui il vecchio codice funziona ancora: ogni telefono aggiornato si presenta da solo con il nome che usava e riceve la sua chiave personale. Tutti diventano amministratori (come prima, tutti potevano tutto) e i ruoli si possono poi sistemare da *Membri*. Due dispositivi con lo stesso nome sono considerati la stessa persona, e gli articoli scritti con quel nome vengono collegati a lei. Finito il periodo, chi non si è aggiornato dovrà chiedere di entrare.
 
 ## Struttura
 
@@ -190,6 +199,8 @@ Gli strumenti usano le stesse funzioni dell'interfaccia: le modifiche passano da
 api/index.js           funzione serverless per Vercel (tutte le /api/*)
 server.js              server locale/self-hosted: statici + API + SSE
 lib/core.js            logica delle API, schema del database e migrazioni
+lib/members.js         membri: chiavi personali, ruoli, richieste, inviti, presenza
+lib/util.js            funzioni di supporto del server
 lib/backends.js        adattatori: SQLite o Postgres, tempo reale in memoria o LISTEN/NOTIFY
 lib/http.js            adattamento richiesta/risposta HTTP
 public/index.html      shell dell'app
@@ -198,10 +209,11 @@ public/shared.js       inserimento rapido, unità, scalatura, reparti (usato da 
 public/js/icons.js     set di icone (reparti, liste, interfaccia) e relativi colori
 public/js/core.js      stato multi-gruppo, coda offline, sincronizzazione, componenti comuni
 public/js/lists.js     liste, articoli, abituali, conclusione spesa, catalogo prodotti
+public/js/members.js   ingresso nei gruppi, membri, richieste, inviti, attesa
 public/js/recipes.js   ricette, foto, condivisione
 public/js/trips.js     storico delle spese
 public/js/webmcp.js    strumenti WebMCP per gli agenti AI
-public/js/settings.js  benvenuto, gruppi, impostazioni, avvio e aggiornamenti
+public/js/settings.js  impostazioni, avvio e aggiornamenti
 public/sw.js           service worker versionato (offline e aggiornamenti)
 vercel.json            configurazione Vercel
 scripts/               db-init, sync-version, make-icons

@@ -32,5 +32,5 @@ module.exports = async (req, res) => {
     console.error(e);
     return send(res, 500, { error: e.message });
   }
-  return handleApi(c.core, req, res, parts, url, (rq, rs, hh) => c.realtime.open(rq, rs, hh.id, SSE_MAX_MS));
+  return handleApi(c.core, req, res, parts, url, (rq, rs, ctx) => c.realtime.open(rq, rs, ctx.hh.id, SSE_MAX_MS, c.core.streamHooks(ctx)));
 };

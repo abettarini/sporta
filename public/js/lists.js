@@ -54,131 +54,6 @@ function addToList(listId, p) {
   return { id };
 }
 
-// --------------------------------------------------------------- selettore gruppo
-function groupSheet() {
-  openSheet(`<h2>I tuoi gruppi</h2>
-    <div class="items">${st.groups.map((g) => `<button class="row-btn" data-code="${h(g.code)}">
-      <span class="avatar">${h((g.name || '?').slice(0, 1).toUpperCase())}</span>
-      <span class="t">${h(g.name)}${memberFor(g.code) ? `<small class="as">sei ${h(memberFor(g.code))}</small>` : ''}</span>${g.code === st.code ? `<span class="ok">${I.check}</span>` : ''}</button>`).join('')}</div>
-    <p class="muted small">Nome del gruppo e il tuo nome si cambiano da <a href="#/s">Altro</a>.</p>
-    <div class="actions"><button class="btn" id="g-join">Unisciti con codice</button><button class="btn primary" id="g-new">Nuovo gruppo</button></div>`, (sh) => {
-    sh.querySelectorAll('[data-code]').forEach((b) => { b.onclick = () => { closeSheet(true); switchGroup(b.dataset.code); }; });
-    $('#g-new', sh).onclick = () => newGroupSheet();
-    $('#g-join', sh).onclick = () => joinGroupSheet();
-  });
-}
-
-function newGroupSheet() {
-  openSheet(`<h2>Nuovo gruppo</h2>
-    <p class="muted">Una famiglia, la squadra di calcetto, una festa… Ogni gruppo ha le sue liste, ricette e spese, e un codice per invitare gli altri.</p>
-    <form id="ng"><label class="field"><span>Nome</span><input class="input" name="gname" required maxlength="80" placeholder="es. Calcetto del giovedì"></label>
-    <p class="err" id="ng-err"></p>
-    <div class="actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn primary">Crea</button></div></form>`, (sh) => {
-    const f = $('#ng', sh);
-    setTimeout(() => f.elements.gname.focus(), 50);
-    f.onsubmit = async (e) => {
-      e.preventDefault();
-      try {
-        const j = await createGroup(f.elements.gname.value.trim());
-        closeSheet(true);
-        addGroup(j);
-        history.replaceState(null, '', '#/');
-        mount();
-        toast(`Gruppo "${j.household.name}" creato: invita gli altri da Altro`);
-      } catch (err) { $('#ng-err', sh).textContent = err.message; }
-    };
-  });
-}
-
-// Unirsi a un altro gruppo (per chi usa già Sporta): 1) codice, se non arriva da un link;
-// 2) conferma del gruppo trovato e del proprio nome.
-function joinGroupSheet(prefill) {
-  openSheet(`<div id="jg-body"></div>`, (sh) => {
-    const body = $('#jg-body', sh);
-    const stepCode = (msg = '') => {
-      body.innerHTML = `<h2>Unisciti a un gruppo</h2>
-        <form id="jg"><label class="field"><span>Codice d'invito</span><input class="input" name="gcode" required placeholder="XXXX-XXXX-XXXX" value="${h(prefill || '')}"></label>
-        <p class="hint">Basta scrivere lettere e numeri: maiuscole e trattini si mettono da soli. Puoi anche incollare il link d'invito.</p>
-        <p class="err" id="jg-err">${h(msg)}</p>
-        <div class="actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn primary">Continua</button></div></form>`;
-      const f = $('#jg', sh);
-      const ok = f.querySelector('button.primary');
-      bindCodeInput(f.elements.gcode, (complete) => { ok.disabled = !complete; });
-      setTimeout(() => f.elements.gcode.focus(), 50);
-      f.onsubmit = async (e) => {
-        e.preventDefault();
-        ok.disabled = true;
-        try { stepConfirm(normCode(f.elements.gcode.value), await previewGroup(f.elements.gcode.value)); }
-        catch (err) { $('#jg-err', sh).textContent = err.message; ok.disabled = false; }
-      };
-    };
-    const stepConfirm = (code, name) => {
-      if (st.groups.some((g) => g.code === code)) { closeSheet(true); switchGroup(code); toast(`Sei già nel gruppo "${name}"`); return; }
-      body.innerHTML = `<div class="invite-head">${groupAvatar(name)}<div><small>Invito al gruppo</small><b>${h(name)}</b></div></div>
-        <form id="jg2"><label class="field"><span>Il tuo nome</span><input class="input" name="alias" required maxlength="40" autocomplete="given-name" value="${h(st.member)}" placeholder="Come ti vedranno gli altri"></label>
-        <p class="err" id="jg-err"></p>
-        <div class="actions"><button type="button" class="btn" id="jg-back">Altro codice</button><button class="btn primary">Entra nel gruppo</button></div></form>`;
-      const f = $('#jg2', sh);
-      $('#jg-back', sh).onclick = () => { prefill = ''; stepCode(); };
-      if (!st.member) setTimeout(() => f.elements.alias.focus(), 50);
-      f.onsubmit = async (e) => {
-        e.preventDefault();
-        const alias = f.elements.alias.value.trim(); if (!alias) return;
-        try {
-          const j = await joinGroup(code);
-          ls.set('member', alias);
-          st.member = alias;
-          closeSheet(true);
-          addGroup(j);
-          history.replaceState(null, '', '#/');
-          mount();
-          toast(`Benvenuto nel gruppo "${j.household.name}"`);
-        } catch (err) { $('#jg-err', sh).textContent = err.message; }
-      };
-    };
-    // Dal link d'invito: se il codice è valido si va subito alla conferma.
-    if (prefill && cleanCode(prefill).length === CODE_LEN) {
-      body.innerHTML = '<div class="empty">Verifico l\'invito…</div>';
-      previewGroup(prefill).then((name) => stepConfirm(normCode(prefill), name))
-        .catch((err) => stepCode(err.message === 'Codice non valido.' ? 'Il link non contiene un codice valido: inseriscilo qui.' : err.message));
-    } else stepCode(prefill ? 'Il link non contiene un codice valido: inseriscilo qui.' : '');
-  });
-}
-
-const groupAvatar = (name) => `<span class="avatar lg">${h((name || '?').slice(0, 1).toUpperCase())}</span>`;
-
-// Verifica un codice e restituisce il nome del gruppo (senza entrarci).
-async function previewGroup(rawCode) {
-  const code = normCode(rawCode);
-  if (cleanCode(code).length !== CODE_LEN) throw new Error('Il codice è di 12 caratteri.');
-  let r;
-  try { r = await fetch('/api/household', { headers: { Authorization: 'Bearer ' + code } }); } catch { throw new Error('Nessuna connessione.'); }
-  if (r.status === 401) throw new Error('Codice non valido.');
-  if (r.status === 429) throw new Error('Troppi tentativi, riprova più tardi.');
-  if (!r.ok) throw new Error('Errore, riprova.');
-  return (await r.json()).household.name;
-}
-
-async function createGroup(name) {
-  let r;
-  try {
-    r = await fetch('/api/households', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name || 'Gruppo' }) });
-  } catch { throw new Error('Nessuna connessione.'); }
-  if (!r.ok) throw new Error('Errore, riprova.');
-  return r.json();
-}
-
-async function joinGroup(rawCode) {
-  const code = normCode(rawCode);
-  if (!code) throw new Error('Inserisci il codice d\'invito.');
-  if (cleanCode(code).length !== CODE_LEN) throw new Error('Il codice è di 12 caratteri.');
-  let r;
-  try { r = await fetch('/api/state', { headers: { Authorization: 'Bearer ' + code } }); } catch { throw new Error('Nessuna connessione.'); }
-  if (r.status === 401) throw new Error('Codice non valido.');
-  if (!r.ok) throw new Error('Errore, riprova.');
-  return r.json();
-}
-
 // --------------------------------------------------------------- home: liste
 Views.home = {
   mount() {
@@ -307,7 +182,7 @@ Views.list = {
     if (this.listId !== list.id) { this.listId = list.id; this.tag = null; }
     app.innerHTML = topBar(`<span id="lt"></span>`, {
       back: hasPane() ? '' : '#/',
-      right: `<button class="icon-btn" id="list-menu" aria-label="Opzioni lista">${I.more}</button>`,
+      right: `<span id="lv" class="viewers"></span><button class="icon-btn" id="list-menu" aria-label="Opzioni lista">${I.more}</button>`,
     }) + (hasPane() ? `<aside class="pane" id="pane-lists"></aside>` : '') + `<main class="wide">
       <div class="quick">
         <form id="qf" autocomplete="off">
@@ -369,6 +244,7 @@ Views.list = {
     const list = st.lists.get(this.route.id);
     if (!list) { toast('La lista è stata eliminata'); history.replaceState(null, '', '#/'); return mount(); }
     $('#lt').innerHTML = `${listTile(list, 'sm')} ${h(list.name)}`;
+    $('#lv').innerHTML = viewersHtml(list.id);
     const pane = $('#pane-lists');
     if (pane) { pane.innerHTML = listsPaneBody(list.id); if (!pane.onclick) bindListsPane(list.id); }
     const mode = list.sort_mode || 'manual';

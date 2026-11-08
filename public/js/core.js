@@ -74,6 +74,9 @@ const st = {
   recipes: new Map(),
   products: new Map(), // chiave: nome normalizzato
   trips: new Map(),
+  me: null,            // io nel gruppo attivo (ruolo, relazione, stato)
+  members: new Map(),  // membri del gruppo attivo (con presenza)
+  notice: null,        // avviso da mostrare (es. rimozione dal gruppo)
   outbox: ls.json('outbox', []),
   live: false,
 };
@@ -93,6 +96,16 @@ function setMember(alias) {
 st.member = memberFor(st.code);
 
 const myOps = () => st.outbox.filter((o) => o.g === st.code);
+// Ogni gruppo salvato sul telefono: { code (chiave locale), hid, name, alias, token, memberId, role, status }.
+// "code" è il codice con cui il gruppo è stato aggiunto e resta la chiave locale anche se viene rigenerato;
+// il codice da condividere è sempre quello attuale del gruppo (inviteCode).
+const groupOf = (code) => st.groups.find((g) => g.code === code);
+const tokenFor = (code) => (groupOf(code) || {}).token;
+const saveGroups = () => ls.setJson('groups', st.groups);
+const inviteCode = () => (st.household && st.household.code) || st.code;
+const isAdmin = () => !!(st.me ? st.me.role === 'admin' : groupOf(st.code) && !tokenFor(st.code));
+const isPendingGroup = (code = st.code) => (groupOf(code) || {}).status === 'pending';
+const pendingRequests = () => (isAdmin() ? [...st.members.values()].filter((m) => m.status === 'pending').length : 0);
 const groupName = () => (st.household && st.household.name) || (st.groups.find((g) => g.code === st.code) || {}).name || '';
 
 function setState(j) {
@@ -102,14 +115,22 @@ function setState(j) {
   st.recipes = new Map((j.recipes || []).map((x) => [x.id, x]));
   st.products = new Map((j.products || []).map((x) => [x.key, x]));
   st.trips = new Map((j.trips || []).map((x) => [x.id, x]));
-  // Aggiorna il nome del gruppo salvato.
-  const g = st.groups.find((x) => x.code === st.code);
-  if (g && j.household && g.name !== j.household.name) { g.name = j.household.name; ls.setJson('groups', st.groups); }
+  st.me = j.me || null;
+  st.members = new Map((j.members || []).map((x) => [x.id, x]));
+  // Aggiorna i dati del gruppo salvati sul telefono.
+  const g = groupOf(st.code);
+  if (g) {
+    if (j.household) { g.name = j.household.name; g.hid = j.household.id; }
+    if (j.me) Object.assign(g, { alias: j.me.alias, role: j.me.role, status: j.me.status, memberId: j.me.id });
+    saveGroups();
+    if (j.me) st.member = j.me.alias;
+  }
 }
 
 function clearState() {
   st.household = null;
-  for (const k of ['lists', 'items', 'recipes', 'products', 'trips']) st[k] = new Map();
+  for (const k of ['lists', 'items', 'recipes', 'products', 'trips', 'members']) st[k] = new Map();
+  st.me = null;
 }
 
 let cacheTimer = null;
@@ -120,6 +141,7 @@ function writeCache() {
   ls.setJson('cache.' + st.code, {
     household: st.household, lists: [...st.lists.values()], items: [...st.items.values()],
     recipes: [...st.recipes.values()], products: [...st.products.values()], trips: [...st.trips.values()],
+    me: st.me, members: [...st.members.values()],
   });
 }
 function saveCache() {
@@ -142,14 +164,24 @@ function loadGroupFromCache() {
   for (const op of myOps()) applyLocal(op);
 }
 
-function addGroup(j) {
-  const code = j.household.code;
-  if (!st.groups.some((g) => g.code === code)) st.groups.push({ code, name: j.household.name, alias: st.member || ls.get('member') || '' });
-  ls.setJson('groups', st.groups);
+// Aggiunge (o aggiorna) un gruppo sul telefono e lo rende attivo.
+// j: stato del gruppo (o almeno { household }); auth: { token, me } ricevuti entrando.
+function addGroup(j, auth = {}) {
+  const hh = j.household;
+  let g = st.groups.find((x) => (hh.id && x.hid === hh.id) || x.code === hh.code);
+  if (!g) { g = { code: hh.code }; st.groups.push(g); }
+  const me = auth.me || j.me;
+  Object.assign(g, {
+    hid: hh.id || g.hid, name: hh.name, token: auth.token || g.token,
+    alias: (me && me.alias) || g.alias || st.member || ls.get('member') || '',
+    memberId: me ? me.id : g.memberId, role: me ? me.role : g.role, status: me ? me.status : g.status || 'active',
+  });
+  saveGroups();
   if (cacheTimer) writeCache();
-  st.code = code;
-  ls.set('active', code);
-  st.member = memberFor(code);
+  st.code = g.code;
+  ls.set('active', g.code);
+  st.member = memberFor(g.code);
+  if (g.status === 'pending') { clearState(); st.household = hh; st.me = me || null; if (rt) { rt.close(); rt = null; } return; }
   setState(j);
   for (const op of myOps()) applyLocal(op);
   writeCache();
@@ -169,22 +201,28 @@ function switchGroup(code, hash = '#/') {
   mount();
 }
 
-// Toglie il gruppo da questo telefono (il gruppo continua a esistere per gli altri).
-function leaveGroup(code) {
+// Toglie il gruppo da questo telefono (dati locali e modifiche in coda).
+function dropGroup(code) {
   st.groups = st.groups.filter((g) => g.code !== code);
-  ls.setJson('groups', st.groups);
+  saveGroups();
   st.outbox = st.outbox.filter((o) => o.g !== code);
   saveOutbox();
   ls.set('cache.' + code, null);
   ls.set('lastList.' + code, null);
-  if (code !== st.code) return;
+  if (code !== st.code) { if (view && view.update) render(); return; }
   if (rt) { rt.close(); rt = null; }
   st.code = st.groups[0] ? st.groups[0].code : null;
   ls.set('active', st.code);
   st.member = memberFor(st.code);
   if (st.code) { loadGroupFromCache(); connect(); } else clearState();
-  history.replaceState(null, '', '#/');
+  history.replaceState(null, '', '/#/');
   mount();
+}
+
+// Uscire da un gruppo (azione della persona): lo comunica al server, poi pulisce il telefono.
+async function leaveGroup(code) {
+  if (tokenFor(code)) await api('POST', '/api/me/leave', {}, code);
+  dropGroup(code);
 }
 
 // =============================================================== catalogo prodotti
@@ -321,7 +359,7 @@ function enqueue(op, { silent } = {}) {
 }
 
 const isPending = (id) => st.outbox.some((o) => o.g === st.code && (o.id === id || o.trip === id));
-const authHeaders = (code = st.code) => ({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + code });
+const authHeaders = (code = st.code) => ({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + (tokenFor(code) || code) });
 
 // Richiesta diretta (non in coda): per foto, condivisione e operazioni che richiedono la rete.
 async function api(method, url, body, code = st.code) {
@@ -330,7 +368,8 @@ async function api(method, url, body, code = st.code) {
     res = await fetch(url, { method, headers: authHeaders(code), body: body ? JSON.stringify(body) : undefined });
   } catch { throw new Error('Serve la connessione a internet'); }
   const j = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(j.error || 'Operazione non riuscita');
+  if (res.status === 401 && groupOf(code) && ['removed', 'rejected', 'legacy_expired'].includes(j.code)) unauthorized(code, j.code);
+  if (!res.ok) { const err = new Error(j.error || 'Operazione non riuscita'); err.code = j.code; err.status = res.status; throw err; }
   if (j.events && code === st.code) applyEvents(j.events);
   return j;
 }
@@ -355,7 +394,15 @@ async function flush() {
         res = await fetch(url, { method, headers: authHeaders(op.g), body: body ? JSON.stringify(body) : undefined });
       } catch { scheduleRetry(); break; }
       if (res.status >= 500 || res.status === 429) { scheduleRetry(); break; }
-      if (res.status === 401) { unauthorized(op.g); continue; }
+      if (res.status === 401) {
+        const j = await res.json().catch(() => ({}));
+        unauthorized(op.g, j.code);
+        continue;
+      }
+      if (res.status === 403) {
+        const j = await res.clone().json().catch(() => ({}));
+        if (j.code === 'pending') { scheduleRetry(); break; }
+      }
       st.outbox.shift();
       saveOutbox();
       const j = await res.json().catch(() => null);
@@ -378,10 +425,18 @@ function applyEvents(evs) {
     if (isPending(id)) continue; // c'è una nostra modifica più recente in coda
     if (e.t === 'household') {
       st.household = { ...st.household, ...e.data };
-      const g = st.groups.find((x) => x.code === st.code);
-      if (g) { g.name = e.data.name; ls.setJson('groups', st.groups); }
+      const g = groupOf(st.code);
+      if (g) { g.name = e.data.name; saveGroups(); }
       continue;
     }
+    if (e.t === 'members') { refreshMembers(); continue; }
+    if (e.t === 'presence') {
+      const m = st.members.get(e.id);
+      if (m) Object.assign(m, { online: e.online, viewing: e.viewing ?? m.viewing, last_seen: e.last_seen });
+      continue;
+    }
+    if (e.t === 'kick') { if (st.me && e.id === st.me.id) { unauthorized(st.code, 'removed'); return; } continue; }
+    if (e.t === 'joined') { if (!st.me || e.id !== st.me.id) toast(`${e.alias} è entrato nel gruppo`); continue; }
     const map = { list: st.lists, item: st.items, recipe: st.recipes, product: st.products, trip: st.trips }[e.t];
     if (!map) continue;
     if (e.op === 'put') {
@@ -403,7 +458,12 @@ async function loadState() {
   if (!code) return;
   try {
     const r = await fetch('/api/state', { headers: authHeaders(code) });
-    if (r.status === 401) return unauthorized(code);
+    if (r.status === 401) { const j = await r.json().catch(() => ({})); return unauthorized(code, j.code); }
+    if (r.status === 403) {
+      const j = await r.json().catch(() => ({}));
+      if (j.code === 'pending') { const g = groupOf(code); if (g && g.status !== 'pending') { g.status = 'pending'; saveGroups(); mount(); } }
+      return;
+    }
     if (!r.ok || code !== st.code) return;
     setState(await r.json());
     for (const op of myOps()) applyLocal(op);
@@ -412,10 +472,60 @@ async function loadState() {
   } catch { /* offline: restiamo sulla cache */ }
 }
 
-function unauthorized(code) {
-  const g = st.groups.find((x) => x.code === code);
-  toast(`Il codice del gruppo ${g ? '"' + g.name + '" ' : ''}non è più valido`);
-  leaveGroup(code);
+// Il server non riconosce più questo telefono nel gruppo: rimosso, richiesta rifiutata,
+// oppure fine del periodo di transizione dalla versione 2.
+function unauthorized(code, reason) {
+  const g = groupOf(code);
+  if (!g) return;
+  if (!g.token && !reason) reason = 'legacy_expired';
+  st.notice = { name: g.name, reason: reason || 'removed', code: g.code };
+  dropGroup(code);
+}
+
+// Elenco dei membri aggiornato (con un piccolo ritardo per raggruppare più segnali).
+let membersTimer = null;
+function refreshMembers() {
+  clearTimeout(membersTimer);
+  membersTimer = setTimeout(async () => {
+    if (!tokenFor(st.code) || isPendingGroup()) return;
+    try {
+      const code = st.code;
+      const j = await api('GET', '/api/members');
+      if (code !== st.code) return;
+      st.members = new Map(j.members.map((m) => [m.id, m]));
+      st.household = { ...st.household, ...j.household };
+      const me = st.me && st.members.get(st.me.id);
+      if (me) { st.me = { ...st.me, ...me }; Object.assign(groupOf(code) || {}, { role: me.role, alias: me.alias }); saveGroups(); st.member = me.alias; }
+      saveCache();
+      render();
+    } catch { /* offline */ }
+  }, 250);
+}
+
+// Presenza: dico al gruppo quale lista sto guardando (per "chi c'è in questa lista").
+let lastViewing = { code: null, id: null, at: 0 };
+function reportViewing(listId = '') {
+  if (!tokenFor(st.code) || isPendingGroup() || !navigator.onLine) return;
+  const t = Date.now();
+  if (lastViewing.code === st.code && lastViewing.id === listId && t - lastViewing.at < 25000) return;
+  lastViewing = { code: st.code, id: listId, at: t };
+  api('POST', '/api/me/presence', { viewing: listId }).catch(() => {});
+}
+
+// Passaggio dalla versione 2: i gruppi salvati solo con il codice si "presentano" con il loro nome
+// e ricevono la chiave personale (durante il periodo di transizione).
+async function upgradeLegacyGroups() {
+  for (const g of st.groups.filter((x) => !x.token)) {
+    try {
+      const r = await fetch('/api/join/legacy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: g.code, alias: g.alias || ls.get('member') || 'Membro' }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 201) {
+        Object.assign(g, { token: j.token, memberId: j.me.id, role: j.me.role, status: j.me.status, alias: j.me.alias, hid: j.household.id });
+        saveGroups();
+        if (g.code === st.code) { connect(); loadState(); }
+      } else if (r.status === 410 || r.status === 404) unauthorized(g.code, 'legacy_expired');
+    } catch { /* offline: riproveremo */ }
+  }
 }
 
 // =============================================================== tempo reale
@@ -433,10 +543,11 @@ function setLive(v) {
 
 function connect() {
   if (rt) { rt.close(); rt = null; }
-  if (!st.code) return;
-  const es = new EventSource('/api/events?k=' + encodeURIComponent(st.code));
+  if (!st.code || isPendingGroup()) return;
+  const es = new EventSource('/api/events?k=' + encodeURIComponent(tokenFor(st.code) || st.code));
   rt = es;
   es.addEventListener('hello', () => { setLive(true); loadState(); flush(); });
+  es.addEventListener('kicked', () => { if (rt === es) { es.close(); rt = null; unauthorized(st.code, 'removed'); } });
   es.onmessage = (e) => {
     if (rt !== es) return;
     let msg;
@@ -472,6 +583,8 @@ function updateStatus() {
   dot.title = st.live ? 'Sincronizzato in tempo reale' : 'Non connesso: le modifiche verranno inviate appena possibile';
   const gn = $('.nav-group .g-name');
   if (gn) gn.textContent = groupName();
+  const pr = pendingRequests();
+  document.querySelectorAll('[data-badge]').forEach((b) => { b.hidden = !pr; b.textContent = pr || ''; });
   const n = myOps().length;
   if (pend) pend.textContent = n ? `${n} in attesa` : '';
 }
@@ -528,12 +641,13 @@ function topBar(title, { back, right = '' } = {}) {
 
 // Barra di navigazione: in basso sul telefono, laterale su tablet e desktop (vedi CSS).
 function tabBar(active) {
-  const t = (id, href, icon, label, cls = '') => `<a href="${href}" class="${active === id ? 'on' : ''} ${cls}" title="${label}">${icon}<span>${label}</span></a>`;
+  // data-badge: numero di richieste di accesso in attesa (solo per gli amministratori).
+  const t = (id, href, icon, label, cls = '', badge = false) => `<a href="${href}" class="${active === id ? 'on' : ''} ${cls}" title="${label}">${icon}<span>${label}</span>${badge ? '<i class="tab-badge" data-badge hidden></i>' : ''}</a>`;
   const g = groupName();
   return `<nav class="tabs">
     <button type="button" class="nav-group wide-only" id="nav-grp" title="Cambia gruppo"><span class="avatar">${h((g || '?').slice(0, 1).toUpperCase())}</span><span class="g-name">${h(g)}</span>${I.down}</button>
     ${t('lists', '#/', I.cart, 'Liste')}${t('recipes', '#/r', I.book, 'Ricette')}${t('trips', '#/t', I.receipt, 'Spese')}
-    ${t('products', '#/p', icon('tag'), 'Prodotti', 'wide-only')}${t('settings', '#/s', I.gear, 'Altro')}</nav>`;
+    ${t('products', '#/p', icon('tag'), 'Prodotti', 'wide-only')}${t('members', '#/m', I.users, 'Membri', 'wide-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'narrow-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'wide-only')}</nav>`;
 }
 
 // --------------------------------------------------------------- schermi larghi
@@ -763,6 +877,7 @@ function parseRoute() {
   if (p[0] === 't') return { name: 'trips' };
   if (p[0] === 'p') return { name: 'products' };
   if (p[0] === 's') return { name: 'settings' };
+  if (p[0] === 'm') return { name: 'members' };
   return { name: 'home' };
 }
 
@@ -770,7 +885,9 @@ function mount() {
   closeSheet(true);
   const r = parseRoute();
   if (r.name === 'shared') view = Views.shared;
+  else if (st.notice) view = Views.notice;
   else if (!st.code) view = Views.welcome;
+  else if (isPendingGroup()) view = Views.pending;
   else view = Views[r.name] || Views.home;
   // Con la colonna laterale la home delle liste coincide con l'ultima lista aperta.
   if (view === Views.home && hasPane() && st.lists.size) {
@@ -783,6 +900,7 @@ function mount() {
   app.classList.toggle('with-nav', !!app.querySelector(':scope > .tabs'));
   const ng = $('#nav-grp');
   if (ng) ng.onclick = () => groupSheet();
+  if (st.code && !isPendingGroup() && view !== Views.notice) reportViewing(view === Views.list ? r.id : '');
   updateStatus();
   window.scrollTo(0, 0);
 }

@@ -309,6 +309,20 @@ Il file JSON può essere un elenco di ricette, un oggetto `{ "recipes": [...] }`
 
 Le ricette pubbliche non possono contenere indirizzi web: nel ricettario vengono scartate, negli altri gruppi restano private.
 
+### Ricette di prova da siti di cucina
+
+Per popolare e provare un'istanza c'è `scripts/fetch-recipes.js`: legge i dati strutturati *schema.org/Recipe* che pubblicano quasi tutti i siti di cucina (provato con GialloZafferano, Misya, ricetta.it, Cucchiaio d'Argento) dagli indirizzi elencati in un file, uno per riga.
+
+```bash
+node scripts/fetch-recipes.js urls.txt --push http://localhost:3000 --token m_…
+```
+
+```bash
+node scripts/fetch-recipes.js urls.txt --out ricette.json --images foto
+```
+
+Con `--push` carica ricette e foto (fino a `--photos 4`) direttamente nel gruppo della chiave indicata: nell'app, dalla console del browser, `tokenFor(st.code)`. Con `--out` scrive un file per *Importa ricette* (che non importa le foto) e, con `--images`, salva le foto in una cartella. Le ricette sono **sempre private**, con l'indirizzo della fonte nella descrizione (che impedisce di renderle pubbliche); lo script si rifiuta di scrivere in un Ricettario. Testi e foto restano di chi li ha pubblicati: servono solo per provare. Legge solo gli indirizzi indicati (al massimo 300), rispetta `robots.txt`, aspetta `--delay` secondi (default 2) tra una richiesta e l'altra e si presenta come `SportaTestImporter`. Le ricette con un nome già presente si saltano (`--duplicates` per caricarle comunque). Dietro un proxy aziendale serve `NODE_USE_ENV_PROXY=1`.
+
 ## Condivisione e sicurezza
 
 - Si entra con un **codice usa e getta via email** (6 cifre, valido 10 minuti, al massimo 5 tentativi, un nuovo codice ogni minuto e non più di 5 l'ora per email, con limiti anche per indirizzo IP); i codici sono conservati solo come impronta e la risposta non rivela se un'email è registrata.

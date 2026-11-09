@@ -7,7 +7,7 @@
 const RECENT_DAYS = 7;
 
 function menuEntries() {
-  return [...st.menuEntries.values()].filter((e) => st.recipes.has(e.recipe_id)).sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
+  return [...st.menuEntries.values()].filter((e) => recipeById(e.recipe_id)).sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
 }
 const inMenu = (recipeId) => menuEntries().find((e) => e.recipe_id === recipeId);
 
@@ -16,7 +16,7 @@ function menuRows() {
   const rows = [];
   const byName = new Map();
   for (const e of menuEntries()) {
-    const r = st.recipes.get(e.recipe_id);
+    const r = recipeById(e.recipe_id);
     for (const i of r.ingredients || []) {
       const name = S.normName(i.name); if (!name) continue;
       const qb = i.unit === 'q.b.';
@@ -75,11 +75,13 @@ function menuSummary() {
 }
 
 function addRecipeToMenu(recipeId, servings) {
-  const r = st.recipes.get(recipeId); if (!r) return null;
+  const r = recipeById(recipeId); if (!r) return null;
   const ex = inMenu(recipeId);
   if (ex) { if (servings && servings !== ex.servings) enqueue({ k: 'menu.put', id: ex.id, data: { servings } }, { silent: true }); return ex.id; }
   const id = uid();
-  enqueue({ k: 'menu.put', id, data: { recipe_id: r.id, servings: servings || r.servings } }, { silent: true });
+  // Ricetta pubblica di un altro gruppo: i dati viaggiano con la voce, così il menu funziona subito (anche offline).
+  const external = !st.recipes.has(r.id);
+  enqueue({ k: 'menu.put', id, data: { recipe_id: r.id, servings: servings || r.servings, ...(external ? { recipe: r } : {}) } }, { silent: true });
   return id;
 }
 
@@ -115,13 +117,16 @@ function addToMenuSheet() {
   openSheet(`<h2>Aggiungi una ricetta</h2><input class="input search" id="mq" type="search" placeholder="Cerca ricetta o ingrediente…"><div class="menu-pick" id="ml"></div>`, (sh) => {
     const draw = () => {
       const n = S.normName(q);
-      const rs = [...st.recipes.values()].filter((r) => !inMenu(r.id))
-        .filter((r) => !n || S.normName(r.name).includes(n) || r.ingredients.some((i) => S.normName(i.name).includes(n)))
-        .sort((a, b) => a.name.localeCompare(b.name, 'it'));
-      $('#ml', sh).innerHTML = rs.length ? rs.map((r) => `<button type="button" class="mp-row" data-add="${r.id}">
+      const match = (r) => !inMenu(r.id) && (!n || S.normName(r.name).includes(n) || r.ingredients.some((i) => S.normName(i.name).includes(n)));
+      const byName = (a, b) => a.name.localeCompare(b.name, 'it');
+      const row = (r, sub) => `<button type="button" class="mp-row" data-add="${r.id}">
           ${r.photos && r.photos.length ? `<img class="pthumb" src="${photoUrl(r.photos[0])}" alt="" loading="lazy">` : `<span class="pthumb ph">${icon('dish')}</span>`}
-          <span class="t"><b>${h(r.name)}</b><small>${h(recipeMeta(r))}</small></span><span class="add-ico">${I.plus}</span></button>`).join('')
-        : `<div class="empty">${st.recipes.size ? 'Nessuna altra ricetta.' : 'Nessuna ricetta.'}</div>`;
+          <span class="t"><b>${h(r.name)}</b><small>${h(sub)}</small></span><span class="add-ico">${I.plus}</span></button>`;
+      const mine = [...st.recipes.values()].filter(match).sort(byName);
+      const favs = [...st.bookmarks.values()].map((b) => b.recipe).filter((r) => r && !st.recipes.has(r.id) && match(r)).sort(byName);
+      $('#ml', sh).innerHTML = (mine.length ? `<div class="section-h">Le tue ricette</div>${mine.map((r) => row(r, recipeMeta(r))).join('')}` : '')
+        + (favs.length ? `<div class="section-h">${I.starFill} Preferite</div>${favs.map((r) => row(r, 'di ' + authorLabel(r.author_name))).join('')}` : '')
+        || `<div class="empty">${st.recipes.size || st.bookmarks.size ? 'Nessuna altra ricetta.' : 'Nessuna ricetta.'}</div>`;
     };
     $('#mq', sh).oninput = (e) => { q = e.target.value; draw(); };
     $('#ml', sh).onclick = (e) => {
@@ -186,9 +191,9 @@ Views.cook = {
     box.innerHTML = `<div class="cook-grid"><section class="cook-recipes">
         <div class="section-h">Ricette</div>
         <ul class="card menu-recipes">${entries.map((en) => {
-          const r = st.recipes.get(en.recipe_id);
+          const r = recipeById(en.recipe_id), own = st.recipes.has(r.id);
           return `<li>${r.photos && r.photos.length ? `<img class="pthumb" src="${photoUrl(r.photos[0])}" alt="" loading="lazy">` : `<span class="pthumb ph">${icon('dish')}</span>`}
-            <a class="t" href="#/r/${r.id}"><b>${h(r.name)}</b><small>${en.added_by ? 'aggiunta da ' + h(en.added_by) : ''}</small></a>
+            <a class="t" href="${own ? `#/r/${r.id}` : `#/r/pub/${r.id}`}"><b>${h(r.name)}</b><small>${[!own && 'di ' + authorLabel(r.author_name), en.added_by && 'aggiunta da ' + en.added_by].filter(Boolean).map(h).join(' · ')}</small></a>
             <div class="stepper sm"><button type="button" data-step="${en.id}" data-d="-1" aria-label="Meno persone">−</button><output>${en.servings}</output><button type="button" data-step="${en.id}" data-d="1" aria-label="Più persone">+</button></div>
             <button type="button" class="icon-btn" data-rm="${en.id}" aria-label="Togli ${h(r.name)} dal menu">${I.x}</button></li>`;
         }).join('')}</ul>

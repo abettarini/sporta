@@ -7,7 +7,62 @@ const REPORT_REASONS = [['spam', 'Pubblicità o spam'], ['offensiva', 'Contenuto
 
 const recipeTabs = (on) => `<div class="seg-tabs" role="tablist">
   <a href="#/r" class="${on === 'mine' ? 'on' : ''}" role="tab">Mie</a>
+  <a href="#/r/preferite" class="${on === 'favorites' ? 'on' : ''}" role="tab">Preferite</a>
   <a href="#/r/scopri" class="${on === 'discover' ? 'on' : ''}" role="tab">Scopri</a></div>`;
+
+// --------------------------------------------------------------- preferite
+const isFav = (id) => st.bookmarks.has(id);
+const starBtn = (id, cls = '') => `<button type="button" class="star-btn ${cls} ${isFav(id) ? 'on' : ''}" data-star="${id}" aria-pressed="${isFav(id)}" aria-label="${isFav(id) ? 'Togli dalle preferite' : 'Aggiungi alle preferite'}">${isFav(id) ? I.starFill : I.star}</button>`;
+// card: dati della scheda (anche solo quelli brevi della ricerca); i dati completi arrivano dopo.
+function toggleBookmark(card) {
+  const id = card.id;
+  if (isFav(id)) {
+    enqueue({ k: 'bm.del', id }, { silent: true });
+    toast('Tolta dalle preferite');
+  } else {
+    const full = card.ingredients ? card : pubCache.get(id) || null;
+    enqueue({ k: 'bm.put', id, data: { name: card.name, author_name: card.author_name || '', created_at: Date.now(), recipe: full, gone: '' } }, { silent: true });
+    vibrate(10);
+    toast('Aggiunta alle preferite');
+    if (!full) api('GET', `/api/recipes/${id}/public`).then((j) => { pubCache.set(id, j.recipe); const b = st.bookmarks.get(id); if (b) { b.recipe = j.recipe; saveCache(); } }).catch(() => {});
+  }
+  render();
+}
+
+Views.favorites = {
+  q: '',
+  mount() {
+    app.innerHTML = topBar('Ricette', {
+      right: `<a class="icon-btn" href="#/r/new/edit" aria-label="Nuova ricetta">${I.plus}</a>`,
+    }) + `<main class="wide">${recipeTabs('favorites')}
+      <input class="input search" id="fq" type="search" placeholder="Cerca nelle preferite…" value="${h(this.q)}">
+      <div class="list-cards recipe-grid" id="fl"></div></main>` + tabBar('recipes');
+    $('#fq').oninput = (e) => { this.q = e.target.value; this.update(); };
+    $('#fl').addEventListener('click', (e) => {
+      const s = e.target.closest('[data-star]');
+      if (s) { e.preventDefault(); const b = st.bookmarks.get(s.dataset.star); if (b) toggleBookmark({ id: b.recipe_id, ...(b.recipe || {}), name: b.name }); return; }
+      const rm = e.target.closest('[data-unfav]');
+      if (rm) { e.preventDefault(); enqueue({ k: 'bm.del', id: rm.dataset.unfav }, { silent: true }); render(); }
+    });
+    this.update();
+  },
+  update() {
+    const box = $('#fl'); if (!box) return;
+    const q = S.normName(this.q);
+    const all = [...st.bookmarks.values()].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+    const shown = all.filter((b) => !q || S.normName(b.name).includes(q) || (b.recipe && b.recipe.ingredients.some((i) => S.normName(i.name).includes(q))));
+    const ok = shown.filter((b) => b.recipe), gone = shown.filter((b) => !b.recipe && b.gone);
+    const pending = shown.filter((b) => !b.recipe && !b.gone);
+    const goneText = { private: 'l’autore l’ha resa privata', deleted: 'l’autore l’ha eliminata', hidden: 'nascosta dopo alcune segnalazioni' };
+    box.innerHTML = all.length ? [
+      ...ok.map((b) => { const r = b.recipe; return `<a class="card recipe-card pub-card" href="${r.mine ? `#/r/${r.id}` : `#/r/pub/${r.id}`}">
+        ${thumbHtml(r)}<span class="t"><b>${h(r.name)}</b><span>${h(pubMeta(r))}</span>${tagsHtml({ traits: r.traits })}${inMenu(r.id) ? '<i class="in-menu">nel menu</i>' : ''}</span>${starBtn(r.id)}</a>`; }),
+      ...pending.map((b) => `<a class="card recipe-card pub-card" href="#/r/pub/${b.recipe_id}"><span class="thumb ph">${icon('dish')}</span><span class="t"><b>${h(b.name)}</b><span>di ${h(authorLabel(b.author_name))}</span></span>${starBtn(b.recipe_id)}</a>`),
+      ...gone.map((b) => `<div class="card recipe-card gone"><span class="thumb ph">${icon('dish')}</span><span class="t"><b>${h(b.name)}</b><span>Non più disponibile: ${goneText[b.gone] || 'non è più pubblica'}</span></span><button type="button" class="btn danger-text" data-unfav="${b.recipe_id}">Togli</button></div>`),
+    ].join('') || `<div class="empty">Nessuna preferita trovata.</div>`
+      : `<div class="empty">${emptyArt('book')}Nessuna preferita.<br>In <a href="#/r/scopri">Scopri</a> tocca ${I.star} sulle ricette che ti piacciono: le ritrovi qui in tutti i tuoi gruppi.</div>`;
+  },
+};
 
 const authorLabel = (a) => (a ? a : 'Anonimo');
 const defaultAuthor = () => (isPersonal() ? (st.me && st.me.alias) || '' : `${(st.me && st.me.alias) || ''} da ${groupName()}`).slice(0, 80);
@@ -55,6 +110,12 @@ Views.discover = {
       this.search();
     };
     $('#dmore').onclick = (e) => { if (e.target.closest('button')) this.search(true); };
+    $('#dres').addEventListener('click', (e) => {
+      const s = e.target.closest('[data-star]'); if (!s) return;
+      e.preventDefault();
+      const r = (this.results || []).find((x) => x.id === s.dataset.star);
+      if (r) toggleBookmark(r);
+    });
     this.search();
   },
   filterCount() { return this.with.length + this.without.length + (this.maxMin ? 1 : 0) + (this.sort ? 1 : 0); },
@@ -107,7 +168,7 @@ Views.discover = {
       $('#dres').innerHTML = `<div class="empty">${emptyArt('book')}Nessuna ricetta trovata.<br>Prova a togliere qualche filtro.</div>`;
     } else {
       $('#dres').innerHTML = res.map((r) => `<a class="card recipe-card pub-card" href="${r.mine ? `#/r/${r.id}` : `#/r/pub/${r.id}`}">
-        ${thumbHtml(r)}<span class="t"><b>${h(r.name)}</b><span>${h(pubMeta(r))}</span>${tagsHtml({ traits: r.traits })}${r.mine ? '<i class="in-menu">tua</i>' : ''}</span></a>`).join('');
+        ${thumbHtml(r)}<span class="t"><b>${h(r.name)}</b><span>${h(pubMeta(r))}</span>${tagsHtml({ traits: r.traits })}${r.mine ? '<i class="in-menu">tua</i>' : ''}</span>${r.mine ? '' : starBtn(r.id)}</a>`).join('');
     }
     $('#dmore').innerHTML = res && res.length < this.total ? `<div class="actions"><button class="btn" type="button" ${this.loading ? 'disabled' : ''}>Mostra altre</button></div>` : '';
   },
@@ -176,16 +237,25 @@ Views.pubRecipe = {
     if (own) { history.replaceState(null, '', '#/r/' + id); return mount(); }
     app.innerHTML = topBar('<span id="rt">Ricetta</span>', {
       back: '#/r/scopri',
-      right: `<button class="icon-btn" id="pmore" aria-label="Altre azioni">${I.more}</button>`,
+      right: `<span id="pstar"></span><button class="icon-btn" id="pmore" aria-label="Altre azioni">${I.more}</button>`,
     }) + `<main class="wide"><div id="rbody"><div class="empty muted">Caricamento…</div></div>
       <div class="sticky-cta" id="pcta" hidden><div class="card">
+        <button class="btn cook-btn" id="rcook">${icon('dish')} La faccio</button>
         <select class="input" id="tl"></select><button class="btn primary" id="addr">Aggiungi</button></div></div></main>` + tabBar('recipes');
     let r = pubCache.get(id);
     if (!r) {
       try { r = (await api('GET', `/api/recipes/${id}/public`)).recipe; pubCache.set(id, r); } catch (e) {
         if (view !== this) return;
-        $('#rbody').innerHTML = `<div class="empty">${emptyArt('book')}${h(e.message)}</div>`;
-        return;
+        // Senza rete si usano i dati salvati con le preferite o con il menu.
+        r = e.status ? null : recipeById(id);
+        if (!r) {
+          const fav = st.bookmarks.get(id);
+          $('#rbody').innerHTML = `<div class="empty">${emptyArt('book')}${h(e.message)}${fav && e.status === 404 ? `<div class="actions"><button class="btn" id="punfav">Togli dalle preferite</button></div>` : ''}</div>`;
+          const u = $('#punfav');
+          if (u) u.onclick = () => { enqueue({ k: 'bm.del', id }, { silent: true }); location.hash = '#/r/preferite'; };
+          if (fav && e.status === 404) { fav.recipe = null; fav.gone = fav.gone || 'private'; }
+          return;
+        }
       }
     }
     if (view !== this || this.route.id !== id) return;
@@ -214,6 +284,11 @@ Views.pubRecipe = {
       toast(`${ings.length} ingredienti aggiunti a ${list.name}`, { label: 'Apri', run: () => { location.hash = '#/l/' + listId; } });
     };
     $('#pmore').onclick = () => pubActions(r);
+    $('#pstar').onclick = (e) => { if (e.target.closest('[data-star]')) toggleBookmark(r); };
+    $('#rcook').onclick = () => { addRecipeToMenu(r.id, this.people); location.hash = '#/cook'; };
+    // Le preferite tengono i dati aggiornati (servono offline e in "La faccio").
+    const fav = st.bookmarks.get(r.id);
+    if (fav) { fav.recipe = r; fav.name = r.name; fav.gone = ''; saveCache(); }
     this.update();
   },
   update() {
@@ -228,6 +303,10 @@ Views.pubRecipe = {
     const n = scaledSelected(r, this.people, this.off).length;
     $('#addr').textContent = n ? `Aggiungi ${n}` : 'Aggiungi';
     $('#addr').disabled = !n || !shoppingLists().length;
+    $('#pstar').innerHTML = starBtn(r.id, 'icon-btn');
+    const en = inMenu(r.id);
+    $('#rcook').innerHTML = `${icon('dish')} ${en ? 'Nel menu' : 'La faccio'}`;
+    $('#rcook').classList.toggle('on', !!en);
   },
 };
 

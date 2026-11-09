@@ -405,7 +405,7 @@
       execute: () => {
         const ng = needGroup(); if (ng) return ng;
         return ok({
-          recipes: menuEntries().map((e) => ({ name: st.recipes.get(e.recipe_id).name, people: e.servings })),
+          recipes: menuEntries().map((e) => ({ name: recipeById(e.recipe_id).name, people: e.servings })),
           ingredients: menuRows().map((r) => ({ name: r.name, qty: r.qb ? 'q.b.' : S.fmtQty(r.qty, r.unit), for: r.recipes, state: rowState(r) })),
         });
       },

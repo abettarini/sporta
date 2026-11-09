@@ -987,3 +987,12 @@ button.link { border: 0; background: none; color: var(--accent); font: inherit; 
   .chip.without { color: #e6b75a; }
 }
 .recipe-card .t > b { color: var(--text); }
+/* preferite */
+.pub-card { position: relative; }
+.star-btn { border: 0; background: none; color: var(--muted); width: 40px; height: 40px; display: grid; place-items: center; flex: none; cursor: pointer; border-radius: 10px; }
+.star-btn svg { width: 24px; height: 24px; }
+.star-btn.on { color: #e0a100; }
+.star-btn:hover { background: var(--surface-2); }
+.recipe-card.gone { opacity: .7; }
+.recipe-card.gone .btn { flex: none; }
+#pstar { display: contents; }

@@ -84,6 +84,8 @@ const st = {
   events: new Map(),   // eventi del gruppo attivo (con le risposte)
   menuEntries: new Map(), // menu "La faccio": ricette da preparare (con le persone)
   menuMarks: new Map(),   // scelte condivise per ingrediente: 'have' (Ce l'ho) / 'buy' (Da comprare)
+  menuRecipes: new Map(), // ricette pubbliche di altri gruppi presenti nel menu
+  bookmarks: new Map(),   // preferite della persona (recipe_id -> { name, author_name, recipe | null, gone })
   me: null,            // io nel gruppo attivo (ruolo, relazione, stato)
   members: new Map(),  // membri del gruppo attivo (con presenza)
   notice: null,        // avviso da mostrare (es. rimozione dal gruppo)
@@ -111,6 +113,8 @@ const myOps = () => st.outbox.filter((o) => o.g === st.code);
 // il codice da condividere è sempre quello attuale del gruppo (inviteCode).
 const groupOf = (code) => st.groups.find((g) => g.code === code);
 // Gruppo personale: solo tuo, niente membri, inviti, presenza o assegnazioni.
+// Una ricetta usabile da questo gruppo: sua, pubblica nel menu, tra le preferite o già aperta.
+const recipeById = (id) => st.recipes.get(id) || st.menuRecipes.get(id) || ((st.bookmarks.get(id) || {}).recipe) || (typeof pubCache !== 'undefined' && pubCache.get(id)) || null;
 const isPersonal = (code = st.code) => !!((groupOf(code) || {}).personal || (code === st.code && st.household && st.household.personal));
 // I gruppi in ordine: prima quello personale, poi gli altri come sono stati aggiunti.
 const orderedGroups = () => [...st.groups].sort((a, b) => (b.personal ? 1 : 0) - (a.personal ? 1 : 0));
@@ -133,6 +137,8 @@ function setState(j) {
   st.events = new Map((j.events || []).map((x) => [x.id, x]));
   st.menuEntries = new Map(((j.menu && j.menu.entries) || []).map((x) => [x.id, x]));
   st.menuMarks = new Map(((j.menu && j.menu.marks) || []).map((x) => [x.key, x]));
+  st.menuRecipes = new Map(((j.menu && j.menu.recipes) || []).map((x) => [x.id, x]));
+  st.bookmarks = new Map((j.bookmarks || []).map((x) => [x.recipe_id, x]));
   st.me = j.me || null;
   st.platformAdmin = !!j.platform_admin;
   st.members = new Map((j.members || []).map((x) => [x.id, x]));
@@ -148,7 +154,7 @@ function setState(j) {
 
 function clearState() {
   st.household = null;
-  for (const k of ['lists', 'items', 'recipes', 'products', 'trips', 'members', 'events', 'menuEntries', 'menuMarks']) st[k] = new Map();
+  for (const k of ['lists', 'items', 'recipes', 'products', 'trips', 'members', 'events', 'menuEntries', 'menuMarks', 'menuRecipes', 'bookmarks']) st[k] = new Map();
   st.me = null;
 }
 
@@ -160,7 +166,8 @@ function writeCache() {
   ls.setJson('cache.' + st.code, {
     household: st.household, lists: [...st.lists.values()], items: [...st.items.values()],
     recipes: [...st.recipes.values()], products: [...st.products.values()], trips: [...st.trips.values()],
-    events: [...st.events.values()], menu: { entries: [...st.menuEntries.values()], marks: [...st.menuMarks.values()] }, me: st.me, members: [...st.members.values()],
+    events: [...st.events.values()], menu: { entries: [...st.menuEntries.values()], marks: [...st.menuMarks.values()], recipes: [...st.menuRecipes.values()] },
+    bookmarks: [...st.bookmarks.values()], platform_admin: st.platformAdmin, me: st.me, members: [...st.members.values()],
   });
 }
 function saveCache() {
@@ -350,7 +357,10 @@ function applyLocal(op) {
       });
       break;
     }
+    case 'bm.put': st.bookmarks.set(op.id, { ...op.data, recipe_id: op.id }); break;
+    case 'bm.del': st.bookmarks.delete(op.id); break;
     case 'menu.put': {
+      if (op.data.recipe) st.menuRecipes.set(op.data.recipe.id, op.data.recipe);
       const ex = st.menuEntries.get(op.id);
       st.menuEntries.set(op.id, { ...(ex || { id: op.id, added_by: st.member, created_at: t }), ...op.data, updated_at: t });
       break;
@@ -392,7 +402,9 @@ function opRequest(op) {
     case 'trip.del': return ['DELETE', `/api/trips/${op.id}`];
     case 'hh.put': return ['PATCH', '/api/household', op.data];
     case 'event.put': return ['PUT', `/api/events/${op.id}`, op.data];
-    case 'menu.put': return ['PUT', `/api/menu/${op.id}`, op.data];
+    case 'menu.put': return ['PUT', `/api/menu/${op.id}`, { recipe_id: op.data.recipe_id, servings: op.data.servings }];
+    case 'bm.put': return ['PUT', `/api/bookmarks/${op.id}`, {}];
+    case 'bm.del': return ['DELETE', `/api/bookmarks/${op.id}`];
     case 'menu.del': return ['DELETE', `/api/menu/${op.id}`];
     case 'menu.clear': return ['POST', '/api/menu/clear', {}];
     case 'mark.put': return ['PUT', '/api/menu/marks', { key: op.id, state: op.data.state || null }];
@@ -505,6 +517,7 @@ function applyEvents(evs) {
     if (!map) continue;
     if (e.op === 'put') {
       const prev = map.get(id);
+      if (e.t === 'menu' && e.data.recipe) { st.menuRecipes.set(e.data.recipe.id, e.data.recipe); delete e.data.recipe; }
       map.set(id, e.data);
       if (e.t === 'item' && prev && !prev.checked && e.data.checked === false && prev.qty !== e.data.qty) flashIds.add(id);
       if (e.t === 'item' && !prev) flashIds.add(id);
@@ -948,6 +961,7 @@ function parseRoute() {
   if (p[0] === 'e' && p[1]) return { name: 'event', id: p[1] };
   if (p[0] === 'e') return { name: 'events' };
   if (p[0] === 'r' && p[1] === 'scopri') return { name: 'discover' };
+  if (p[0] === 'r' && p[1] === 'preferite') return { name: 'favorites' };
   if (p[0] === 'r' && p[1] === 'pub' && p[2]) return { name: 'pubRecipe', id: p[2] };
   if (p[0] === 'r' && p[1] && p[2] === 'edit') return { name: 'recipeEdit', id: p[1] };
   if (p[0] === 'r' && p[1]) return { name: 'recipe', id: p[1] };

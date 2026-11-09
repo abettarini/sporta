@@ -79,7 +79,7 @@ Views.recipes = {
     $('#rbanner').innerHTML = sum.recipes ? `<a class="card menu-banner" href="#/cook">${icon('dish')}<span class="t"><b>Preparo: ${sum.recipes} ${sum.recipes === 1 ? 'ricetta' : 'ricette'}</b><span>${sum.buy ? `${sum.buy} da comprare` : 'Hai tutto'}</span></span><span class="btn small">Apri</span></a>` : '';
     $('#rl').innerHTML = rs.length ? rs.map((r) => `<a class="card recipe-card" href="#/r/${r.id}">
         ${r.photos && r.photos.length ? `<img class="thumb" src="${photoUrl(r.photos[0])}" alt="" loading="lazy">` : `<span class="thumb ph">${icon('dish')}</span>`}
-        <span class="t"><b>${h(r.name)}</b><span>${h(recipeMeta(r))}</span><span class="badges"><i class="vis ${r.visibility === 'public' ? 'pub' : 'prv'}">${r.visibility === 'public' ? (r.hidden ? 'Pubblica · nascosta' : 'Pubblica') : 'Privata'}</i>${inMenu(r.id) ? '<i class="in-menu">nel menu</i>' : ''}</span></span>
+        <span class="t"><b>${h(r.name)}</b><span>${h(recipeMeta(r))}</span><span class="badges"><i class="vis ${r.visibility === 'public' ? 'pub' : 'prv'}">${r.visibility === 'public' ? (r.hidden ? 'Pubblica · nascosta' : 'Pubblica') + (r.saves ? ` · ★ ${r.saves}` : '') : 'Privata'}</i>${inMenu(r.id) ? '<i class="in-menu">nel menu</i>' : ''}</span></span>
         ${r.share_token ? `<span class="shared-ico" title="Condivisa">${I.share}</span>` : ''}</a>`).join('')
       : `<div class="empty">${emptyArt('book')}${st.recipes.size ? 'Nessuna ricetta trovata.' : 'Nessuna ricetta.<br>Aggiungine una con il +'}</div>`;
   },

@@ -196,6 +196,18 @@ function splitLong(steps) {
   return out;
 }
 
+// Procedimento mancante nei dati strutturati (succede in pagine più vecchie): il testo
+// sotto un titolo "Procedimento" o "Preparazione", fino al titolo successivo.
+function stepsFromHtml(html) {
+  const m = String(html || '').match(/<h[1-5][^>]*>\s*(?:<[^>]+>\s*)*(procedimento|preparazione)\s*(?:<[^>]+>\s*)*<\/h[1-5]>([\s\S]{0,12000}?)(?=<h[1-5][\s>]|<\/article|<footer)/i);
+  if (!m) return [];
+  const text = m[2].split(/<(?:button|form|nav|aside|figure|iframe)[\s>]/i)[0] // fino a bottoni, voti, condivisioni…
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
+    .replace(/<br\s*\/?>|<\/p>|<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ');
+  return splitLong(text.split(/\n+/).map(decode).filter((t) => t.length > 20).map((t) => ({ text: t.slice(0, 3000) })));
+}
+
 // Ricetta schema.org -> formato di Sporta (lo stesso di "Importa ricette").
 function toSporta(r, url) {
   const ingredients = [].concat(r.recipeIngredient || r.ingredients || []).map(ingredientOf).filter(Boolean).slice(0, 200);
@@ -244,7 +256,7 @@ async function main() {
   if (a.push && !a.token) throw new Error('Con --push serve --token (la chiave del gruppo)');
   const urls = fs.readFileSync(a.urls, 'utf8').split(/\r?\n/).map((s) => s.trim()).filter((s) => s && !s.startsWith('#'));
   if (!urls.length) throw new Error('Nessun indirizzo nel file');
-  if (urls.length > 300) throw new Error('Al massimo 300 indirizzi per volta');
+  if (urls.length > 500) throw new Error('Al massimo 500 indirizzi per volta');
 
   let existing = new Set();
   if (a.push) {
@@ -264,9 +276,11 @@ async function main() {
     try {
       if (!/^https?:\/\//.test(url)) throw new Error('indirizzo non valido');
       if (!await allowedByRobots(url)) { console.log(`${tag} saltata (robots.txt non lo permette): ${url}`); skipped++; continue; }
-      const raw = findRecipe(await getPage(url));
+      const html = await getPage(url);
+      const raw = findRecipe(html);
       if (!raw) throw new Error('nessuna ricetta schema.org nella pagina');
       const r = toSporta(raw, url);
+      if (!r.steps.length) r.steps = stepsFromHtml(html).slice(0, 100);
       if (!r.name) throw new Error('ricetta senza nome');
       if (!a.duplicates && existing.has(S.foldText(r.name))) { console.log(`${tag} già presente: ${r.name}`); skipped++; await sleep(a.delay); continue; }
 
@@ -316,4 +330,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch((e) => { console.error('Errore:', e.message); process.exit(1); });
-module.exports = { findRecipe, toSporta, parseRobots, matchRobots, minutesOf, ingredientOf };
+module.exports = { findRecipe, toSporta, parseRobots, matchRobots, minutesOf, ingredientOf, stepsFromHtml };

@@ -125,14 +125,17 @@ function parseImport(text) {
     let visibility = cook ? 'public' : (x.visibility === 'public' || x.public === true ? 'public' : 'private');
     if (!ingredients.length) warn.push('nessun ingrediente');
     if (existing.has(fold(name))) warn.push('c’è già una ricetta con questo nome');
-    if (x.image || x.photos) warn.push('le foto non vengono importate: aggiungile dopo');
+    // Foto dentro il file: "photos_data" (o "image") come data URL base64; gli indirizzi web non si scaricano.
+    const DATA_IMG = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+    const photosData = [...[].concat(x.photos_data || []), ...[].concat(x.image || [])].filter((d) => typeof d === 'string' && DATA_IMG.test(d)).slice(0, 4);
+    if (!photosData.length && (x.image || x.photos)) warn.push('le foto da indirizzi web non vengono importate: aggiungile dopo');
     const texts = [name, description, ...steps.map((s) => s.text), ...ingredients.map((i) => i.name)];
     if (visibility === 'public' && texts.some(hasUrl)) {
       if (cook) err.push('contiene indirizzi web: le ricette pubbliche non possono averne');
       else { visibility = 'private'; warn.push('contiene indirizzi web: resterà privata'); }
     }
     return {
-      k, ok: !err.length, warn, err, dup: existing.has(fold(name)),
+      k, ok: !err.length, warn, err, dup: existing.has(fold(name)), photosData,
       data: {
         name, description, servings: Math.max(1, Math.min(100, yieldN || 4)), prep_min: prep, cook_min: cookMin, difficulty: diff,
         course: courseOf(x.course ?? x.recipeCategory), traits: traitsOf(x), ingredients, steps, notes: '', photos: [], visibility,
@@ -157,7 +160,7 @@ function importRecipesSheet() {
     let items = [];
     const pick = () => {
       body.innerHTML = `<p class="muted">Scegli un file <b>.json</b> con una o più ricette (al massimo ${IMPORT_MAX}). Va bene il formato di Sporta (scarica l’esempio) e anche quello <i>schema.org/Recipe</i> usato da molti siti e programmi di ricette.</p>
-        <p class="muted">${cook ? `Nel ricettario le ricette diventano subito <b>pubbliche</b>, firmate “${h(groupName())}”.` : 'Le ricette importate restano <b>private</b>, salvo quelle con <code>"visibility": "public"</code> nel file.'} Le foto non vengono importate.</p>
+        <p class="muted">${cook ? `Nel ricettario le ricette diventano subito <b>pubbliche</b>, firmate “${h(groupName())}”.` : 'Le ricette importate restano <b>private</b>, salvo quelle con <code>"visibility": "public"</code> nel file.'} Le foto si importano solo se sono dentro il file (<code>photos_data</code>).</p>
         <input type="file" id="imp-file" accept=".json,application/json" hidden>
         <div class="actions"><button type="button" class="btn" id="imp-ex">Scarica un esempio</button><button type="button" class="btn primary" id="imp-pick">Scegli il file</button></div>
         <p class="err" id="imp-err"></p>`;
@@ -166,7 +169,7 @@ function importRecipesSheet() {
       $('#imp-pick', sh).onclick = () => file.click();
       file.onchange = async () => {
         const f = file.files[0]; if (!f) return;
-        if (f.size > 5e6) { $('#imp-err', sh).textContent = 'Il file è troppo grande (massimo 5 MB)'; return; }
+        if (f.size > 40e6) { $('#imp-err', sh).textContent = 'Il file è troppo grande (massimo 40 MB): dividilo in più file'; return; }
         try { items = parseImport(await f.text()); preview(f.name); } catch (e) { $('#imp-err', sh).textContent = e.message; }
       };
     };
@@ -175,7 +178,7 @@ function importRecipesSheet() {
       body.innerHTML = `<p class="muted">${h(fname)}: ${items.length} ${items.length === 1 ? 'ricetta' : 'ricette'}${items.some((x) => !x.ok) ? `, ${items.filter((x) => !x.ok).length} da correggere` : ''}. Togli la spunta a quelle che non vuoi importare.</p>
         <ul class="items card imp-list">${items.map((x) => `<li class="item ${x.ok && x.on !== false ? 'done' : ''} ${x.ok ? '' : 'bad'}" data-k="${x.k}"><button class="tap" type="button" ${x.ok ? '' : 'disabled'}><span class="check">${I.check}</span>
           <span class="txt"><span class="name">${h(x.data.name || 'Senza nome')}</span>
-          <span class="meta">${[S.courseLabel(x.data.course), `${x.data.ingredients.length} ingredienti`, `${x.data.steps.length} passaggi`, x.data.visibility === 'public' ? 'pubblica' : 'privata'].filter(Boolean).join(' · ')}</span>
+          <span class="meta">${[S.courseLabel(x.data.course), `${x.data.ingredients.length} ingredienti`, `${x.data.steps.length} passaggi`, x.photosData.length ? `${x.photosData.length} ${x.photosData.length === 1 ? 'foto' : 'foto'}` : '', x.data.visibility === 'public' ? 'pubblica' : 'privata'].filter(Boolean).join(' · ')}</span>
           ${[...x.err.map((e) => `<span class="imp-msg err">${h(e)}</span>`), ...x.warn.map((w) => `<span class="imp-msg">${h(w)}</span>`)].join('')}</span></button></li>`).join('')}</ul>
         <div class="actions"><button type="button" class="btn" id="imp-back">Altro file</button><button type="button" class="btn primary" id="imp-go" ${sel.length ? '' : 'disabled'}>Importa ${sel.length} ${sel.length === 1 ? 'ricetta' : 'ricette'}</button></div>`;
       $('.imp-list', sh).onclick = (e) => {
@@ -187,15 +190,27 @@ function importRecipesSheet() {
       $('#imp-back', sh).onclick = pick;
       $('#imp-go', sh).onclick = () => {
         const chosen = items.filter((x) => x.ok && x.on !== false);
-        const run = (author) => {
+        const run = async (author) => {
+          const go = $('#imp-go', sh), back = $('#imp-back', sh);
+          if (go) go.disabled = true;
+          if (back) back.disabled = true;
+          let photoFails = 0, n = 0;
           for (const x of chosen) {
-            const data = { ...x.data };
+            n++;
+            const id = uid();
+            const data = { ...x.data, photos: [] };
             if (data.visibility === 'public' && author === null) data.visibility = 'private';
             if (data.visibility === 'public' && author !== undefined && author !== null) data.author_name = author;
-            enqueue({ k: 'recipe.put', id: uid(), data }, { silent: true });
+            // Le foto vanno caricate prima (serve la rete); se una non riesce, la ricetta arriva senza.
+            for (const d of x.photosData) {
+              if (go) go.textContent = `Importo ${n} di ${chosen.length}…`;
+              const [, mime, b64] = d.match(/^data:(image\/[a-z]+);base64,(.*)$/);
+              try { data.photos.push((await api('POST', '/api/photos', { recipe_id: id, mime, data: b64 })).id); } catch { photoFails++; }
+            }
+            enqueue({ k: 'recipe.put', id, data }, { silent: true });
           }
           render();
-          toast(`${chosen.length} ${chosen.length === 1 ? 'ricetta importata' : 'ricette importate'}`);
+          toast(`${chosen.length} ${chosen.length === 1 ? 'ricetta importata' : 'ricette importate'}${photoFails ? ` (${photoFails} foto non caricate)` : ''}`);
           closeSheetAndGo('#/r');
         };
         const needSig = !cook && chosen.some((x) => x.data.visibility === 'public') && (!st.me || st.me.author_name == null);

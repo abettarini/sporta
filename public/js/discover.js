@@ -407,3 +407,77 @@ Views.reports = {
       : `<div class="empty">${emptyArt('done')}Nessuna segnalazione.</div>`;
   },
 };
+
+// --------------------------------------------------------------- gruppi di sistema (amministratore)
+// Gruppi senza proprietario, per esempio "Ricette di Sporta": il token serve agli script
+// (scripts/fetch-recipes.js). Le ricette scaricate da altri siti vanno in un gruppo normale, non in un Ricettario.
+function scriptTokenSheet(g, token) {
+  const base = location.origin;
+  const cmd = `node scripts/fetch-recipes.js scripts/urls-esempio.txt --push ${base} --token ${token}`;
+  openSheet(`<h2>Token per gli script</h2>
+    <p class="muted">Gruppo <b>${h(g.name)}</b>. Il token dà accesso completo al gruppo: tienilo come una password. Generandone uno nuovo, i precedenti smettono di funzionare.</p>
+    <div class="code small-code" id="tk">${h(token)}</div>
+    <div class="actions"><button class="btn primary" id="tk-copy">Copia il token</button></div>
+    <label class="field"><span>Comando</span><textarea class="input mono" rows="3" readonly>${h(cmd)}</textarea></label>
+    <div class="actions"><button class="btn" id="tk-cmd">Copia il comando</button></div>`, (sh) => {
+    const copy = async (text, msg) => { try { await navigator.clipboard.writeText(text); toast(msg); } catch { prompt('Copia:', text); } };
+    $('#tk-copy', sh).onclick = () => copy(token, 'Token copiato');
+    $('#tk-cmd', sh).onclick = () => copy(cmd, 'Comando copiato');
+  });
+}
+
+Views.systemGroups = {
+  async mount() {
+    app.innerHTML = topBar('Gruppi di sistema', { back: '#/s' }) + `<main class="wide">
+      <p class="muted">Gruppi che non appartengono a nessuno: dentro c’è il membro “${'Sporta'}”, il cui token usano gli script per caricare ricette. Tu ci entri come amministratore.</p>
+      <div id="sgl"><div class="empty muted">Caricamento…</div></div>
+      <div class="card"><h3>Nuovo gruppo di sistema</h3>
+        <form id="sgf">
+          <label class="field"><span>Nome</span><input class="input" name="name" maxlength="80" value="Ricette di Sporta" required></label>
+          <label class="radio-row"><input type="radio" name="kind" value="group" checked><span><b>Gruppo privato per le prove</b><small>Le ricette restano private: le vedono solo i membri. È dove vanno le ricette scaricate da altri siti.</small></span></label>
+          <label class="radio-row"><input type="radio" name="kind" value="cookbook"><span><b>${icon('book')} Ricettario pubblico</b><small>Ricette pubbliche e sul web, firmate con il nome del gruppo. Solo per ricette vostre: lo script di scaricamento non ci scrive.</small></span></label>
+          <div class="actions"><button class="btn primary">Crea</button></div>
+        </form></div></main>` + tabBar('settings');
+    $('#sgf').onsubmit = async (e) => {
+      e.preventDefault();
+      const f = e.target.elements;
+      try {
+        const j = await api('POST', '/api/admin/system-groups', { name: f.name.value.trim(), kind: f.kind.value });
+        if (j.token) addGroup(j, { token: j.token, me: j.me });
+        scriptTokenSheet(j.group, j.script_token);
+        this.load();
+      } catch (err) { toast(err.message); }
+    };
+    $('#sgl').onclick = async (e) => {
+      const b = e.target.closest('[data-act]'); if (!b) return;
+      const g = (this.groups || []).find((x) => x.id === b.dataset.id); if (!g) return;
+      try {
+        if (b.dataset.act === 'open') return switchGroup(g.code, '#/r');
+        if (b.dataset.act === 'join') {
+          const j = await api('POST', `/api/admin/system-groups/${g.id}/join`);
+          if (j.token) addGroup(j, { token: j.token, me: j.me });
+          toast(`Sei entrato in "${g.name}"`);
+          return this.load();
+        }
+        if (b.dataset.act === 'token') {
+          if (!confirm('Generare un nuovo token? Quello precedente smetterà di funzionare.')) return;
+          const j = await api('POST', `/api/admin/system-groups/${g.id}/token`);
+          scriptTokenSheet(g, j.script_token);
+        }
+      } catch (err) { toast(err.message); }
+    };
+    this.load();
+  },
+  async load() {
+    let j;
+    try { j = await api('GET', '/api/admin/system-groups'); } catch (e) { $('#sgl').innerHTML = `<div class="empty">${h(e.message)}</div>`; return; }
+    if (view !== this) return;
+    this.groups = j.groups;
+    $('#sgl').innerHTML = j.groups.length ? j.groups.map((g) => `<div class="card sys-group">
+        <div class="rc-h"><span class="avatar ${g.kind === 'cookbook' ? 'cookbook' : ''}">${g.kind === 'cookbook' ? icon('book') : h(g.name.slice(0, 1))}</span>
+          <span class="t"><b>${h(g.name)}</b><span>${g.kind === 'cookbook' ? 'Ricettario pubblico' : 'Gruppo privato'} · ${g.recipes} ${g.recipes === 1 ? 'ricetta' : 'ricette'}</span></span></div>
+        <div class="actions">${g.member ? `<button class="btn" data-act="open" data-id="${g.id}">Apri</button>` : `<button class="btn" data-act="join" data-id="${g.id}">Entra</button>`}
+          <button class="btn primary" data-act="token" data-id="${g.id}">Nuovo token per gli script</button></div></div>`).join('')
+      : '<div class="empty muted">Nessun gruppo di sistema.</div>';
+  },
+};

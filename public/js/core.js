@@ -976,6 +976,7 @@ function parseRoute() {
   if (p[0] === 'a') return { name: 'account' };
   if (p[0] === 'share') return { name: 'shareIn' };
   if (p[0] === 'cook') return { name: 'cook' };
+  if (p[0] === 'admin' && p[1] === 'gruppi') return { name: 'systemGroups' };
   if (p[0] === 'admin') return { name: 'reports' };
   return { name: 'home' };
 }

@@ -1010,3 +1010,6 @@ button.link-card { width: 100%; border: 0; font: inherit; text-align: left; curs
 .hint svg { width: 16px; height: 16px; vertical-align: -3px; }
 @media (prefers-color-scheme: dark) { .avatar.cookbook { background: #3a2e14; color: #e6ac3a; } .imp-msg { color: #e6b75a; } }
 .imp-list .item.done .name, .share-lines .item.done .name { text-decoration: none; color: var(--text); }
+.sys-group { padding: 12px 14px; margin-bottom: 12px; }
+.sys-group .actions { margin-top: 10px; }
+.input.mono { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }

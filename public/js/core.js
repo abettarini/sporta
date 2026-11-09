@@ -900,6 +900,8 @@ const app = $('#app');
 function parseRoute() {
   const shared = location.pathname.match(/^\/r\/([A-Za-z0-9_-]{16,64})\/?$/);
   if (shared) return { name: 'shared', token: shared[1] };
+  const invite = location.pathname.match(/^\/e\/([A-Za-z0-9_-]{16,64})\/?$/);
+  if (invite) return { name: 'publicEvent', token: invite[1] };
   const p = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   if (p[0] === 'l' && p[1]) return { name: 'list', id: p[1] };
   if (p[0] === 'l') return { name: 'lists' };
@@ -924,6 +926,7 @@ function mount() {
   closeSheet(true);
   const r = parseRoute();
   if (r.name === 'shared') view = Views.shared;
+  else if (r.name === 'publicEvent') view = Views.publicEvent;
   else if (st.notice) view = Views.notice;
   else if (!st.code) view = Views.welcome;
   // Account: condizioni da accettare, oppure conferma dell'email non più rimandabile.

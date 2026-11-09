@@ -44,6 +44,8 @@ function eventTally(e, members) {
     const p = by.get(m.id);
     (p ? { yes, maybe, no }[p.rsvp] || none : none).push({ m, p });
   }
+  // Ospiti dal link pubblico (senza account).
+  for (const g of e.guests || []) ({ yes, maybe, no }[g.rsvp] || none).push({ m: { id: 'g:' + g.id, alias: g.name }, p: { guests: g.guests }, guest: g });
   const guests = yes.reduce((n, x) => n + (x.p.guests || 0), 0);
   const maybeGuests = maybe.reduce((n, x) => n + (x.p.guests || 0), 0);
   return { yes, maybe, no, none, guests, maybeGuests, total: yes.length + guests };
@@ -170,6 +172,13 @@ Views.event = {
         if (n !== mine.guests) enqueue({ k: 'event.rsvp', id: e2.id, data: { rsvp: mine.rsvp, guests: n } });
         return;
       }
+      const rg = ev.target.closest('[data-rmguest]');
+      if (rg) {
+        const g = (e2.guests || []).find((x) => x.id === rg.dataset.rmguest);
+        if (g && confirm(`Togliere la risposta di ${g.name}?`)) api('DELETE', `/api/events/${e2.id}/guests/${encodeURIComponent(g.id)}`).then(() => toast('Risposta tolta')).catch((x) => toast(x.message));
+        return;
+      }
+      if (ev.target.closest('#ev-linkbtn')) return eventLinkSheet(e2);
       const nl = ev.target.closest('[data-newlist]');
       if (nl) return createEventList(e2, nl.dataset.newlist);
       if (ev.target.closest('#ev-link')) return linkListSheet(e2);
@@ -187,7 +196,13 @@ Views.event = {
     const t = eventTally(e, activeMembers());
     const past = e.date < todayYmd();
     const maps = e.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}` : '';
-    const who = (arr, extra) => arr.map(({ m, p }) => `<span class="who">${avatar(m, 'sm')}<span>${h(memberLabel(m.id) || m.alias)}${p && p.guests ? ` <b class="plus">+${p.guests}</b>` : ''}</span></span>`).join('') + (extra || '');
+    const edit = canEditEvent(e);
+    const who = (arr, extra) => arr.map(({ m, p, guest }) => `<span class="who ${guest ? 'is-guest' : ''}">${avatar(m, 'sm')}<span>${h(guest ? m.alias : memberLabel(m.id) || m.alias)}${p && p.guests ? ` <b class="plus">+${p.guests}</b>` : ''}${guest ? ' <i class="rbadge g">dal link</i>' : ''}</span>${guest && edit ? `<button class="gx" data-rmguest="${h(guest.id)}" aria-label="Togli ${h(m.alias)}">${I.x}</button>` : ''}</span>`).join('') + (extra || '');
+    const link = e.link;
+    const inviteCard = !edit || past ? '' : link
+      ? `<div class="card pad ev-link on"><div><b>Link d'invito attivo</b><small class="muted">${(e.guests || []).length ? `${e.guests.length} ${e.guests.length === 1 ? 'risposta' : 'risposte'} dal link` : 'Ancora nessuna risposta dal link'}${link.capacity ? ` · ${link.capacity} posti` : ''}${link.rsvp_until ? ' · entro ' + h(S.fromYmd(link.rsvp_until).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })) : ''}</small></div>
+          <button class="btn" id="ev-linkbtn">Gestisci</button></div>`
+      : `<div class="card pad ev-link"><b>Invita anche chi non usa Sporta</b><small class="muted">Un link per rispondere senza iscriversi.</small><button class="btn primary block" id="ev-linkbtn">Invita con un link</button></div>`;
     const lists = eventLists(e.id);
     const hasSpesa = lists.some((l) => typeOf(l) === 'spesa'), hasTodo = lists.some((l) => typeOf(l) === 'todo');
     $('#eb').innerHTML = `<div class="ev-col">
@@ -197,6 +212,8 @@ Views.event = {
           ${e.location ? `<a class="ev-loc" href="${maps}" target="_blank" rel="noopener">${I.pin}<span>${h(e.location)}</span></a>` : ''}</div>
       </div>
       ${e.notes ? `<div class="card pad ev-notes">${h(e.notes).replace(/\n/g, '<br>')}</div>` : ''}
+      ${e.source_url ? `<a class="card link-card ev-source" href="${h(e.source_url)}">${I.share}<span class="t"><b>Invito originale</b><span>Rispondi o cambia la risposta dalla pagina dell'invito</span></span><span class="chev">›</span></a>` : ''}
+      ${inviteCard}
       ${past || isPersonal() ? '' : `<div class="card pad ev-rsvp">
         <h3>${mine ? 'La tua risposta' : 'Ci sei?'}</h3>
         <div class="seg rsvp-seg">${Object.entries(RSVP).map(([k, r]) => `<button type="button" data-rsvp="${k}" class="${r.cls} ${mine && mine.rsvp === k ? 'on' : ''}">${h(r.label)}</button>`).join('')}</div>
@@ -206,7 +223,7 @@ Views.event = {
           <button type="button" class="icon-btn round" data-guests="1" aria-label="Un ospite in più">+</button>
           <small>${mine.guests ? (mine.guests === 1 ? 'ospite' : 'ospiti') : 'ospiti'}</small></div>` : ''}
       </div>`}
-      ${isPersonal() ? '' : `<div class="card pad ev-people">
+      ${isPersonal() && !link && !(e.guests || []).length ? '' : `<div class="card pad ev-people">
         <h3>${t.total} ${t.total === 1 ? 'persona' : 'persone'}${t.guests ? ` <small>(${t.yes.length} + ${t.guests} ${t.guests === 1 ? 'ospite' : 'ospiti'})</small>` : ''}</h3>
         ${t.yes.length ? `<div class="who-h yes">Ci sono</div><div class="whos">${who(t.yes)}</div>` : ''}
         ${t.maybe.length ? `<div class="who-h maybe">Forse${t.maybeGuests ? ` (+${t.maybeGuests})` : ''}</div><div class="whos">${who(t.maybe)}</div>` : ''}
@@ -228,6 +245,52 @@ Views.event = {
       </div>`;
   },
 };
+
+// --------------------------------------------------------------- link d'invito pubblico
+const eventLinkUrl = (e) => `${location.origin}/e/${e.link.token}`;
+
+async function eventLinkSheet(e) {
+  if (!e.link) {
+    try { await api('PUT', `/api/events/${e.id}/link`, { enabled: true }); } catch (x) { return toast(x.message); }
+    e = st.events.get(e.id);
+  }
+  openSheet('<div id="el"></div>', (sh) => {
+    const box = $('#el', sh);
+    const save = async (data, msg) => {
+      try { await api('PUT', `/api/events/${e.id}/link`, data); if (msg) toast(msg); } catch (x) { toast(x.message); }
+      e = st.events.get(e.id);
+      if (!e || !e.link) { closeSheet(); return; }
+      draw();
+    };
+    const draw = () => {
+      const l = e.link, url = eventLinkUrl(e);
+      box.innerHTML = `<h2>Invita con un link</h2>
+        <p class="muted">Chi apre il link vede l'evento e risponde con il suo nome, senza iscriversi a Sporta.</p>
+        <div class="code small-code">${h(url)}</div>
+        <div class="actions"><button type="button" class="btn" id="el-copy">Copia</button><button type="button" class="btn primary" id="el-share">Condividi</button></div>
+        <div class="field"><span>Chi apre il link vede</span><div class="seg" id="el-names"><button type="button" data-v="0" class="${l.names ? '' : 'on'}">Solo il numero</button><button type="button" data-v="1" class="${l.names ? 'on' : ''}">Anche i nomi</button></div></div>
+        <div class="row2">
+          <label class="field"><span>Posti (facoltativo)</span><input class="input" id="el-cap" type="number" inputmode="numeric" min="1" max="10000" placeholder="senza limite" value="${l.capacity || ''}"></label>
+          <label class="field"><span>Rispondere entro</span><input class="input" id="el-until" type="date" max="${h(e.date)}" value="${h(l.rsvp_until || '')}"></label>
+        </div>
+        <p class="hint">I posti contano chi dice “ci sono”, con i suoi ospiti, compresi i membri del gruppo.</p>
+        <div class="actions"><button type="button" class="btn" id="el-regen">Rigenera il link</button><button type="button" class="btn danger-text" id="el-off">Disattiva</button></div>
+        <p class="hint">Rigenerando o disattivando, il vecchio link smette subito di funzionare. Le risposte già date restano.</p>
+        <div class="actions"><button type="button" class="btn" data-close>Chiudi</button></div>`;
+      $('#el-copy', sh).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('Link copiato'); } catch { prompt('Copia il link:', url); } };
+      $('#el-share', sh).onclick = async () => {
+        const text = `${e.title} · ${eventWhen(e)}${e.location ? ' · ' + e.location : ''}\nRispondi qui:`;
+        if (navigator.share) { try { await navigator.share({ title: e.title, text, url }); } catch { /* annullato */ } } else $('#el-copy', sh).click();
+      };
+      $('#el-names', sh).onclick = (ev) => { const b = ev.target.closest('[data-v]'); if (b) save({ names: b.dataset.v === '1' }); };
+      $('#el-cap', sh).onchange = (ev) => save({ capacity: ev.target.value ? Number(ev.target.value) : null });
+      $('#el-until', sh).onchange = (ev) => save({ rsvp_until: ev.target.value });
+      $('#el-regen', sh).onclick = () => { if (confirm('Creare un nuovo link? Quello attuale smetterà di funzionare.')) save({ regenerate: true }, 'Nuovo link creato'); };
+      $('#el-off', sh).onclick = () => { if (confirm('Disattivare il link? Chi lo apre vedrà che non è più valido.')) save({ enabled: false }, 'Link disattivato'); };
+    };
+    draw();
+  });
+}
 
 function createEventList(e, type) {
   const id = uid();

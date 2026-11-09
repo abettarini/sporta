@@ -10,6 +10,10 @@
     {
       "source": "/r/:token",
       "destination": "/index.html"
+    },
+    {
+      "source": "/e/:token",
+      "destination": "/index.html"
     }
   ],
   "headers": [

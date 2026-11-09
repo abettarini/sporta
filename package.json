@@ -1,6 +1,6 @@
 {
   "name": "sporta",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "Sporta: PWA lista della spesa condivisa in tempo reale, con ricette",
   "main": "server.js",
   "private": true,
@@ -14,10 +14,12 @@
     "version": "node scripts/sync-version.js && git add public/version.js",
     "sync-version": "node scripts/sync-version.js",
     "emails:preview": "node scripts/email-templates.js preview",
-    "emails:sync": "node scripts/email-templates.js sync"
+    "emails:sync": "node scripts/email-templates.js sync",
+    "vapid": "node -e \"const k=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+k.publicKey+'\\nVAPID_PRIVATE_KEY='+k.privateKey)\""
   },
   "dependencies": {
-    "postgres": "3.4.5"
+    "postgres": "3.4.5",
+    "web-push": "3.6.7"
   },
   "devDependencies": {
     "liquidjs": "^10.21.1"

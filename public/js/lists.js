@@ -54,8 +54,8 @@ function addToList(listId, p) {
   return { id };
 }
 
-// --------------------------------------------------------------- home: liste
-Views.home = {
+// --------------------------------------------------------------- elenco delle liste del gruppo
+Views.lists = {
   mount() {
     app.innerHTML = topBar(`<button class="group-btn" id="grp">${h(groupName())} ${I.down}</button>`, {
       right: `<button class="icon-btn" id="new-list" aria-label="Nuova lista">${I.plus}</button>`,
@@ -142,7 +142,7 @@ function listSheet(list) {
     if (del) del.onclick = () => {
       if (!confirm(`Eliminare la lista "${list.name}" e tutti i suoi articoli?`)) return;
       enqueue({ k: 'list.del', id: list.id });
-      closeSheetAndGo('#/');
+      closeSheetAndGo('#/l');
     };
   });
 }
@@ -208,12 +208,12 @@ Views.list = {
   tag: null,
   mount() {
     const list = st.lists.get(this.route.id);
-    if (!list) { history.replaceState(null, '', '#/'); return mount(); }
+    if (!list) { history.replaceState(null, '', '#/l'); return mount(); }
     ls.set('lastList.' + st.code, list.id);
     if (this.listId !== list.id) { this.listId = list.id; this.tag = null; this.filter = 'all'; }
     const type = typeOf(list);
     app.innerHTML = topBar(`<span id="lt"></span>`, {
-      back: hasPane() ? '' : '#/',
+      back: hasPane() ? '' : '#/l',
       right: `<span id="lv" class="viewers"></span><button class="icon-btn" id="list-menu" aria-label="Opzioni lista">${I.more}</button>`,
     }) + (hasPane() ? `<aside class="pane" id="pane-lists"></aside>` : '') + `<main class="wide">
       <div class="quick">
@@ -283,7 +283,7 @@ Views.list = {
   },
   update() {
     const list = st.lists.get(this.route.id);
-    if (!list) { toast('La lista è stata eliminata'); history.replaceState(null, '', '#/'); return mount(); }
+    if (!list) { toast('La lista è stata eliminata'); history.replaceState(null, '', '#/l'); return mount(); }
     $('#lt').innerHTML = `${listTile(list, 'sm')} ${h(list.name)}`;
     $('#lv').innerHTML = viewersHtml(list.id);
     const pane = $('#pane-lists');

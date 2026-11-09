@@ -124,6 +124,40 @@ Se pensi che sia un errore, chiedi a chi ti ha invitato di mandarti un link pers
 I link valgono {{ expires_hours }} ore e si possono usare una volta sola.
 Se non hai chiesto tu il recupero, ignora questa email.`,
   },
+  {
+    // Qualcuno ti ha assegnato una cosa da fare (solo se hai scelto gli avvisi per email).
+    name: 'sporta-assigned',
+    variables: ['group', 'alias', 'actor', 'item', 'list', 'due', 'link'],
+    subject: '{{ actor }} ti ha assegnato «{{ item }}»',
+    html: layout('Nuova cosa da fare',
+      h1('Ciao {{ alias }}, c\'è una cosa per te') +
+      p('<b>{{ actor }}</b> ti ha assegnato <b>{{ item }}</b> nella lista <b>{{ list }}</b> del gruppo <b>{{ group }}</b>.') +
+      '{% if due != blank %}' + p('Da fare entro <b>{{ due }}</b>.') + '{% endif %}' +
+      p('Se non puoi occupartene, apri la cosa da fare e tocca <b>Non posso</b>: {{ actor }} lo saprà.') +
+      button('{{ link }}', 'Apri la lista') +
+      muted('Ricevi questi avvisi per email perché li hai attivati nelle impostazioni del gruppo «{{ group }}». Puoi disattivarli da Altro → Avvisi.')),
+    text: `Ciao {{ alias }}, {{ actor }} ti ha assegnato "{{ item }}" nella lista "{{ list }}" del gruppo "{{ group }}".
+{% if due != blank %}Da fare entro {{ due }}.
+{% endif %}Se non puoi occupartene, apri la cosa da fare e tocca "Non posso".
+Apri la lista: {{ link }}
+
+Puoi disattivare gli avvisi per email da Altro → Avvisi.`,
+  },
+  {
+    // Promemoria di una scadenza (oggi, domani o già passata).
+    name: 'sporta-reminder',
+    variables: ['group', 'alias', 'item', 'list', 'due', 'when', 'title', 'link'],
+    subject: '{% if when == "late" %}Scaduta{% elsif when == "today" %}Scade oggi{% else %}Scade domani{% endif %}: «{{ item }}»',
+    html: layout('Promemoria',
+      h1('{% if when == "late" %}È scaduta una cosa da fare{% elsif when == "today" %}Oggi scade una cosa da fare{% else %}Domani scade una cosa da fare{% endif %}') +
+      p('Ciao {{ alias }}, <b>{{ item }}</b> (lista <b>{{ list }}</b>, gruppo <b>{{ group }}</b>) {% if when == "late" %}doveva essere fatta entro {{ due }}{% else %}va fatta entro {{ due }}{% endif %}.') +
+      button('{{ link }}', 'Apri la lista') +
+      muted('Ricevi questi avvisi per email perché li hai attivati nelle impostazioni del gruppo «{{ group }}». Puoi disattivarli da Altro → Avvisi.')),
+    text: `Ciao {{ alias }}, "{{ item }}" (lista "{{ list }}", gruppo "{{ group }}") {% if when == "late" %}doveva essere fatta entro {{ due }}{% else %}va fatta entro {{ due }}{% endif %}.
+Apri la lista: {{ link }}
+
+Puoi disattivare gli avvisi per email da Altro → Avvisi.`,
+  },
 ];
 
 // Dati di esempio per l'anteprima (npm run emails:preview).
@@ -139,6 +173,8 @@ const SAMPLES = {
     ],
     expires_hours: 24,
   },
+  'sporta-assigned': { group: 'Calcetto del giovedì', alias: 'Luca', actor: 'Marco', item: 'Prenotare il campo', list: 'Torneo', due: 'giovedì 12 novembre', link: 'https://sporta.example.it/#/go/abc/def' },
+  'sporta-reminder': { group: 'Calcetto del giovedì', alias: 'Luca', item: 'Prenotare il campo', list: 'Torneo', due: 'giovedì 12 novembre', when: 'tomorrow', title: '', link: 'https://sporta.example.it/#/go/abc/def' },
 };
 
 module.exports = { TEMPLATES, SAMPLES };

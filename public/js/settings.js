@@ -21,6 +21,7 @@ Views.settings = {
         <label class="switch"><input type="checkbox" id="hide"><span>Non mostrare quando sono online</span></label>
         <button class="btn block" id="devs">I tuoi dispositivi</button>
       </div>
+      <div class="card" id="ntf"></div>
       <a class="card link-card" href="#/m">${iconTile('home')}<span class="t"><b>Membri <i class="tab-badge inline" data-badge hidden></i></b><span id="mb-sub">Chi c'è nel gruppo, inviti e richieste</span></span><span class="chev">›</span></a>
       <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
       <div class="card"><h3>Invita</h3>
@@ -130,6 +131,8 @@ Views.settings = {
       : (approval ? 'Condividi il codice del gruppo: chi lo usa chiede di entrare e un amministratore lo accetta.' : 'Condividi il codice del gruppo: chi lo usa entra subito.');
     $('#adm').hidden = !admin || !tokenFor(st.code);
     $('#prof').hidden = !st.me;
+    const ntf = $('#ntf');
+    if (ntf && !ntf.contains(document.activeElement)) { ntf.innerHTML = notifyCardHtml(); bindNotifyCard(ntf, () => this.update()); }
     if (st.me && document.activeElement !== $('#hide')) $('#hide').checked = !!st.me.hide_presence;
     $('#appr').checked = approval;
     $('#groups').innerHTML = st.groups.map((g) => `<div class="group-row">
@@ -153,9 +156,6 @@ Views.settings = {
 (function start() {
   if (st.code) {
     loadGroupFromCache();
-    // Apertura rapida: si riparte dall'ultima lista usata.
-    const last = ls.get('lastList.' + st.code);
-    if (location.pathname === '/' && !location.hash && last && st.lists.has(last)) history.replaceState(null, '', '/#/l/' + last);
     connect();
     flush();
   }
@@ -176,6 +176,8 @@ Views.settings = {
     }
   }
   setupServiceWorker();
+  // Panoramica di tutti i gruppi e iscrizione alle notifiche (se attive su questo dispositivo).
+  setTimeout(() => { refreshOverview(true); syncPush(); }, 800);
 })();
 
 // =============================================================== aggiornamenti dell'app

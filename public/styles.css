@@ -630,3 +630,58 @@ small.as { display: block; color: var(--muted); font-size: 13px; }
 .rate button { border: 0; background: none; font-size: 28px; line-height: 1; color: var(--line); padding: 0 2px; }
 .rate button.on { color: #e0a20c; }
 .decline { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin: 4px 0 8px; border-radius: 12px; background: color-mix(in srgb, var(--warn) 12%, var(--surface)); font-size: 14px; }
+
+/* --- panoramica di tutti i gruppi e avvisi (v3.4) --- */
+.overview .ov-sec + .ov-sec { margin-top: 6px; }
+.section-h.sub { margin-top: 12px; font-size: 13px; }
+.ov-items { list-style: none; margin: 0; padding: 4px 0; }
+.ov-items.card { padding: 4px 0; }
+.ov-item { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; min-height: 52px; transition: opacity .18s, transform .18s; }
+.ov-item + .ov-item { border-top: 1px solid var(--line); }
+.ov-item.leaving { opacity: 0; transform: translateX(16px); }
+.ov-item.prio-high .name::before { content: '!'; color: var(--danger); font-weight: 800; margin-right: 4px; }
+.check-btn { border: 0; background: none; padding: 8px; margin: -2px 0; cursor: pointer; flex: none; color: inherit; }
+.check-btn:hover .check, .check-btn:focus-visible .check { border-color: var(--accent); }
+.ov-item.leaving .check { background: var(--accent); border-color: var(--accent); }
+.ov-item.leaving .check svg { opacity: 1; }
+.ov-item .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; text-decoration: none; color: inherit; padding: 4px 0; }
+.ov-item .name { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-item .qty { color: var(--muted); font-size: 14px; margin-left: 6px; }
+.ov-item .meta { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-empty { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 14.5px; }
+.ov-empty .ico { width: 28px; height: 28px; flex: none; color: var(--accent); }
+.ov-shop { padding: 0; overflow: hidden; margin-bottom: 10px; }
+.ov-shop-h { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; text-decoration: none; color: inherit; }
+.ov-shop-h .t { flex: 1; min-width: 0; }
+.ov-shop-h b { display: block; font-size: 16px; }
+.ov-shop-h small { color: var(--muted); font-size: 13px; }
+.ov-shop .ov-items { padding-top: 0; }
+.ov-shop .btn.block { margin: 0 0 6px; }
+.chev { color: var(--muted); font-size: 20px; }
+.ov-group + .ov-group { margin-top: 14px; }
+.ov-group-h { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 4px 8px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ov-group-h b { flex: 1; font-size: 16px; }
+.ov-group-h small { color: var(--muted); font-size: 12.5px; }
+.ov-group-h .avatar { width: 28px; height: 28px; font-size: 13px; }
+.ov-group .list-cards.compact { gap: 8px; }
+.ov-group .list-card { gap: 12px; padding: 10px 12px; text-decoration: none; color: inherit; }
+.ov-group .list-card .t b { font-size: 16px; }
+.ov-group .list-card .t span.late { color: var(--danger); }
+.overview > #ov > .ov-col:last-child .btn.block { margin-top: 12px; }
+.icon-btn.bell { position: relative; }
+.icon-btn.bell .tab-badge { top: -2px; left: auto; right: -4px; }
+.notifs { list-style: none; margin: 8px 0 0; padding: 4px 0; }
+.notifs li + li { border-top: 1px solid var(--line); }
+.notifs a { display: flex; align-items: center; gap: 12px; padding: 12px 14px; text-decoration: none; color: inherit; }
+.notifs .t { flex: 1; min-width: 0; }
+.notifs .t b { display: block; font-weight: 500; font-size: 15.5px; }
+.notifs .t span { color: var(--muted); font-size: 13px; }
+.notifs li.unread .t b { font-weight: 700; }
+.notifs li.unread a { background: color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+.notifs li.unread a::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: none; }
+#push-hint .link-card { margin-top: 14px; }
+#ntf .btn.sm { margin-top: 6px; }
+@media (min-width: 1000px) {
+  main.overview { max-width: 1120px; }
+  .overview #ov { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 0 22px; align-items: start; }
+}

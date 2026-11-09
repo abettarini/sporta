@@ -46,6 +46,8 @@ const I = {
   chart: svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
   users: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>'),
   down: svg('<path d="M6 9l6 6 6-6"/>'),
+  bell: svg('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>'),
+  home: svg('<path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/>'),
 };
 
 // =============================================================== gruppi (multi-famiglia)
@@ -186,9 +188,11 @@ function addGroup(j, auth = {}) {
   for (const op of myOps()) applyLocal(op);
   writeCache();
   connect();
+  // Nuovo gruppo: notifiche push anche qui e panoramica aggiornata.
+  if (typeof syncPush === 'function') { syncPush([g.code]); refreshOverview(true); }
 }
 
-function switchGroup(code, hash = '#/') {
+function switchGroup(code, hash = '#/l') {
   if (code === st.code) { location.hash = hash; return; }
   if (cacheTimer) writeCache();
   st.code = code;
@@ -437,6 +441,7 @@ function applyEvents(evs) {
     }
     if (e.t === 'kick') { if (st.me && e.id === st.me.id) { unauthorized(st.code, 'removed'); return; } continue; }
     if (e.t === 'joined') { if (!st.me || e.id !== st.me.id) toast(`${e.alias} è entrato nel gruppo`); continue; }
+    if (e.t === 'notify') { if (st.me && e.to === st.me.id) onNotifySignal(); continue; }
     const map = { list: st.lists, item: st.items, recipe: st.recipes, product: st.products, trip: st.trips }[e.t];
     if (!map) continue;
     if (e.op === 'put') {
@@ -585,6 +590,8 @@ function updateStatus() {
   if (gn) gn.textContent = groupName();
   const pr = pendingRequests();
   document.querySelectorAll('[data-badge]').forEach((b) => { b.hidden = !pr; b.textContent = pr || ''; });
+  const nu = typeof unreadTotal === 'function' ? unreadTotal() : 0;
+  document.querySelectorAll('[data-nbadge]').forEach((b) => { b.hidden = !nu; b.textContent = nu > 99 ? '99+' : nu || ''; });
   const n = myOps().length;
   if (pend) pend.textContent = n ? `${n} in attesa` : '';
 }
@@ -642,11 +649,11 @@ function topBar(title, { back, right = '' } = {}) {
 // Barra di navigazione: in basso sul telefono, laterale su tablet e desktop (vedi CSS).
 function tabBar(active) {
   // data-badge: numero di richieste di accesso in attesa (solo per gli amministratori).
-  const t = (id, href, icon, label, cls = '', badge = false) => `<a href="${href}" class="${active === id ? 'on' : ''} ${cls}" title="${label}">${icon}<span>${label}</span>${badge ? '<i class="tab-badge" data-badge hidden></i>' : ''}</a>`;
+  const t = (id, href, icon, label, cls = '', badge = false) => `<a href="${href}" class="${active === id ? 'on' : ''} ${cls}" title="${label}">${icon}<span>${label}</span>${badge === 'n' ? '<i class="tab-badge" data-nbadge hidden></i>' : badge ? '<i class="tab-badge" data-badge hidden></i>' : ''}</a>`;
   const g = groupName();
   return `<nav class="tabs">
     <button type="button" class="nav-group wide-only" id="nav-grp" title="Cambia gruppo"><span class="avatar">${h((g || '?').slice(0, 1).toUpperCase())}</span><span class="g-name">${h(g)}</span>${I.down}</button>
-    ${t('lists', '#/', I.cart, 'Liste')}${t('recipes', '#/r', I.book, 'Ricette')}${t('trips', '#/t', I.receipt, 'Spese')}
+    ${t('home', '#/', I.home, 'Panoramica', '', 'n')}${t('lists', '#/l', I.cart, 'Liste')}${t('recipes', '#/r', I.book, 'Ricette')}${t('trips', '#/t', I.receipt, 'Spese')}
     ${t('products', '#/p', icon('tag'), 'Prodotti', 'wide-only')}${t('members', '#/m', I.users, 'Membri', 'wide-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'narrow-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'wide-only')}</nav>`;
 }
 
@@ -870,6 +877,9 @@ function parseRoute() {
   if (shared) return { name: 'shared', token: shared[1] };
   const p = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   if (p[0] === 'l' && p[1]) return { name: 'list', id: p[1] };
+  if (p[0] === 'l') return { name: 'lists' };
+  if (p[0] === 'n') return { name: 'notifs' };
+  if (p[0] === 'go' && p[1]) return { name: 'go', hid: p[1], list: p[2] || '', item: p[3] || '' };
   if (p[0] === 'r' && p[1] && p[2] === 'edit') return { name: 'recipeEdit', id: p[1] };
   if (p[0] === 'r' && p[1]) return { name: 'recipe', id: p[1] };
   if (p[0] === 'r') return { name: 'recipes' };
@@ -889,8 +899,8 @@ function mount() {
   else if (!st.code) view = Views.welcome;
   else if (isPendingGroup()) view = Views.pending;
   else view = Views[r.name] || Views.home;
-  // Con la colonna laterale la home delle liste coincide con l'ultima lista aperta.
-  if (view === Views.home && hasPane() && st.lists.size) {
+  // Con la colonna laterale l'elenco delle liste coincide con l'ultima lista aperta.
+  if (view === Views.lists && hasPane() && st.lists.size) {
     history.replaceState(null, '', '#/l/' + lastListId());
     return mount();
   }

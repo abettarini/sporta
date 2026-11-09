@@ -6,6 +6,11 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 
 ## Funzioni
 
+### Panoramica e avvisi
+- La pagina iniziale è una **panoramica di tutti i gruppi**, senza doverli cambiare: **Da fare per me** (le cose assegnate a te, con le scadenze; sotto, quelle in scadenza che non ha preso nessuno), **Da comprare** (ogni lista della spesa con quello che manca) e **tutte le liste**, gruppo per gruppo. Si può spuntare direttamente da qui, anche negli altri gruppi, e toccando una voce si apre la sua lista.
+- **Avvisi** (campanella): quando qualcuno ti assegna una cosa, quando chi l'ha ricevuta tocca **Non posso**, quando una cosa che hai assegnato è fatta, e il **promemoria** delle cose assegnate a te che scadono oggi o domani (o già scadute).
+- **Notifiche push** sul telefono e sul computer, anche ad app chiusa (si attivano da Altro → Avvisi, valgono per tutti i gruppi; su iPhone serve l'app installata). Gli avvisi di assegnazione e scadenza possono arrivare anche **per email**, se lo scegli per quel gruppo.
+
 ### Gruppi e persone
 - Un telefono può partecipare a **più gruppi** (la famiglia, la squadra di calcetto, una festa…) e passare dall'uno all'altro toccando il nome del gruppo. Ogni gruppo ha liste, ricette, prodotti e spese separati.
 - **Ruoli**: ogni persona ha un *permesso* — **Amministratore** o **Partecipante** — e una *relazione* descrittiva (Familiare, Amico, Collega, Ospite o personalizzata). Chi crea il gruppo ne è l'amministratore; deve sempre restarcene almeno uno.
@@ -111,6 +116,17 @@ Ogni 4 minuti circa la funzione chiude la connessione per rispettare i limiti di
 
 `LISTEN` non funziona attraverso un pooler in modalità *transaction* (PgBouncer, il pooler di Neon): per questo serve l'URL diretto (`DATABASE_URL_UNPOOLED`), che le integrazioni Vercel forniscono già. Ogni telefono con l'app aperta occupa una connessione diretta per istanza di funzione, molto al di sotto dei limiti anche dei piani gratuiti.
 
+### Notifiche push e promemoria
+
+| Variabile | Uso |
+|---|---|
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | chiavi per le notifiche push: si generano una volta con `npm run vapid` (la privata è **riservata**). Senza, l'app funziona e non offre le notifiche. |
+| `VAPID_SUBJECT` | contatto per i servizi push, `mailto:…` o `https://…` (default: `APP_URL`) |
+| `CRON_SECRET` | segreto del cron dei promemoria: Vercel lo manda da solo a `/api/cron/reminders` (vedi `crons` in `vercel.json`, una volta al giorno) |
+| `APP_TIMEZONE` | facoltativa, default `Europe/Rome`: fuso usato per "oggi" e "domani" nelle scadenze |
+
+Sul server locale le chiavi VAPID, se mancano, vengono create e salvate in `data/vapid.json`, e i promemoria partono ogni ora.
+
 ### Email
 
 Le email (inviti, avvisi agli amministratori, esito delle richieste, recupero dell'accesso) passano da **inboundemail / Procmail**, con modelli **Liquid** salvati sul servizio. Sono facoltative: senza configurazione l'app funziona e nasconde le opzioni che le usano.
@@ -134,7 +150,7 @@ controlla la sintassi e genera le anteprime in `emails/preview/` con dati di ese
 EMAIL_API_KEY=... npm run emails:sync
 ```
 
-crea o aggiorna i modelli sul servizio (si riconoscono per nome: `sporta-invite`, `sporta-join-request`, `sporta-request-approved`, `sporta-request-rejected`, `sporta-recovery`). Va rilanciato ogni volta che si modifica un modello.
+crea o aggiorna i modelli sul servizio (si riconoscono per nome: `sporta-invite`, `sporta-join-request`, `sporta-request-approved`, `sporta-request-rejected`, `sporta-recovery`, `sporta-assigned`, `sporta-reminder`). Va rilanciato ogni volta che si modifica un modello.
 
 ## Avvio locale / self-hosted
 
@@ -196,6 +212,7 @@ Sporta espone i suoi strumenti agli agenti AI del browser tramite [WebMCP](https
 | Strumento | Cosa fa |
 |---|---|
 | `sporta_get_overview` | gruppo attivo, gruppi, liste con il numero di articoli |
+| `sporta_get_my_overview` | tutti i gruppi insieme: cose da fare assegnate a me, cose da comprare, avvisi non letti |
 | `sporta_get_members` | persone del gruppo, ruoli, chi è online (sola lettura) |
 | `sporta_switch_group` | passa a un altro gruppo |
 | `sporta_get_list` | articoli di una lista (da prendere e nel carrello) |
@@ -232,6 +249,7 @@ api/index.js           funzione serverless per Vercel (tutte le /api/*)
 server.js              server locale/self-hosted: statici + API + SSE
 lib/core.js            logica delle API, schema del database e migrazioni
 lib/members.js         membri: chiavi personali, ruoli, richieste, inviti, presenza
+lib/notify.js          avvisi, notifiche push (Web Push), promemoria delle scadenze
 lib/util.js            funzioni di supporto del server
 lib/backends.js        adattatori: SQLite o Postgres, tempo reale in memoria o LISTEN/NOTIFY
 lib/http.js            adattamento richiesta/risposta HTTP
@@ -244,6 +262,7 @@ public/js/lists.js     liste, articoli, abituali, conclusione spesa, catalogo pr
 public/js/members.js   ingresso nei gruppi, membri, richieste, inviti, attesa
 public/js/recipes.js   ricette, foto, condivisione
 public/js/trips.js     storico delle spese
+public/js/overview.js  panoramica di tutti i gruppi, avvisi, notifiche push
 public/js/webmcp.js    strumenti WebMCP per gli agenti AI
 public/js/settings.js  impostazioni, avvio e aggiornamenti
 public/sw.js           service worker versionato (offline e aggiornamenti)

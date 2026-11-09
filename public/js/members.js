@@ -326,7 +326,7 @@ function newGroupSheet() {
       e.preventDefault();
       try {
         const j = await createGroup(f.elements.gname.value.trim(), f.elements.alias.value.trim());
-        closeSheetAndGo('#/');
+        closeSheetAndGo('#/l');
         toast(`Gruppo "${j.household.name}" creato: invita gli altri da Membri`);
       } catch (err) { $('#ng-err', sh).textContent = err.message; }
     };
@@ -377,7 +377,7 @@ function joinGroupSheet(prefill) {
             ? await publicApi('POST', `/api/invites/${encodeURIComponent(invite)}/accept`, { alias: v.alias })
             : await publicApi('POST', '/api/join', { code, ...v });
           await enterGroup(res);
-          closeSheetAndGo('#/');
+          closeSheetAndGo('#/l');
           toast(res.me.status === 'active' ? `Benvenuto nel gruppo "${name}"` : 'Richiesta inviata: ti avviseremo quando verrai accettato');
         } catch (err) { $('#jg-err', sh).textContent = err.message; }
       };

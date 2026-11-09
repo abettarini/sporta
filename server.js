@@ -13,6 +13,23 @@ const { handleApi } = require('./lib/http');
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
+// Notifiche push: sul server locale, senza chiavi VAPID nell'ambiente, ne creiamo un paio
+// e le conserviamo nella cartella dei dati (su Vercel vanno impostate: npm run vapid).
+if (!process.env.VAPID_PUBLIC_KEY) {
+  try {
+    const dir = process.env.DATA_DIR || path.join(__dirname, 'data');
+    const file = path.join(dir, 'vapid.json');
+    let keys;
+    try { keys = JSON.parse(fs.readFileSync(file, 'utf8')); } catch {
+      keys = require('web-push').generateVAPIDKeys();
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(file, JSON.stringify(keys), { mode: 0o600 });
+    }
+    process.env.VAPID_PUBLIC_KEY = keys.publicKey;
+    process.env.VAPID_PRIVATE_KEY = keys.privateKey;
+  } catch (e) { console.error('Chiavi per le notifiche push non disponibili:', e.message); }
+}
+
 const db = createDb();
 const realtime = createRealtime(db);
 const core = createCore({ db, realtime });
@@ -57,6 +74,11 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`Sporta in ascolto su http://localhost:${PORT} (database: ${db.kind})`);
 });
+
+// Promemoria delle scadenze: ogni ora (su Vercel ci pensa il cron, vedi vercel.json).
+const reminders = () => core.runReminders().catch((e) => console.error('promemoria non inviati', e));
+setTimeout(reminders, 15e3).unref();
+setInterval(reminders, 60 * 60e3).unref();
 
 function shutdown() {
   server.close(async () => { await db.close(); process.exit(0); });

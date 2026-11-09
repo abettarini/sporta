@@ -12,7 +12,7 @@ const VERSION = self.SPORTA_VERSION || 'dev';
 const CACHE = 'sporta-' + VERSION;
 const PHOTOS = 'sporta-photos';
 const SHELL = ['/index.html', '/version.js', '/styles.css', '/shared.js', '/js/icons.js', '/js/core.js', '/js/lists.js', '/js/listtypes.js', '/js/members.js',
-  '/js/recipes.js', '/js/trips.js', '/js/webmcp.js', '/js/settings.js', '/manifest.webmanifest',
+  '/js/recipes.js', '/js/trips.js', '/js/overview.js', '/js/webmcp.js', '/js/settings.js', '/manifest.webmanifest',
   '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 // Cache delle prime versioni, che non sapevano mostrare l'avviso di aggiornamento.
@@ -37,6 +37,32 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
   if (e.data && e.data.type === 'GET_VERSION' && e.ports[0]) e.ports[0].postMessage(VERSION);
+});
+
+// Notifiche push: mostriamo l'avviso e lo diciamo alle pagine aperte (rileggono gli avvisi).
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { title: e.data ? e.data.text() : '' }; }
+  e.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of wins) c.postMessage({ type: 'PUSH', data: d });
+    await self.registration.showNotification(d.title || 'Sporta', {
+      body: d.body || '', tag: d.tag || undefined, renotify: !!d.tag, data: { url: d.url || '/' },
+      icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', lang: 'it',
+    });
+  })());
+});
+
+// Tocco sulla notifica: apriamo (o portiamo in primo piano) l'app sulla lista giusta.
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || '/', self.location.origin).href;
+  e.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const w = wins.find((c) => new URL(c.url).origin === self.location.origin);
+    if (w) { await w.focus(); w.postMessage({ type: 'OPEN', url }); return; }
+    await self.clients.openWindow(url);
+  })());
 });
 
 self.addEventListener('fetch', (e) => {

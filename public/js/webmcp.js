@@ -57,6 +57,26 @@
       }),
     },
     {
+      name: 'sporta_get_my_overview',
+      description: 'Vista d\'insieme di TUTTI i gruppi del dispositivo, senza cambiare gruppo: cose da fare assegnate a me (con scadenza), cose da comprare in ogni lista della spesa e avvisi non letti.',
+      inputSchema: { type: 'object', properties: {} },
+      annotations: { readOnlyHint: true },
+      execute: async () => {
+        await refreshOverview(true);
+        const groups = ovGroups();
+        const lname = (grp, id) => (grp.lists.find((l) => l.id === id) || {}).name;
+        const ltype = (grp, id) => typeOf(grp.lists.find((l) => l.id === id));
+        return ok({
+          todo_for_me: groups.flatMap((grp) => grp.items.filter((i) => grp.me && i.assigned_to === grp.me && ltype(grp, i.list_id) === 'todo')
+            .map((i) => ({ group: grp.name, list: lname(grp, i.list_id), name: i.name, due: i.due_date || undefined, priority: i.priority > 0 ? 'alta' : undefined }))),
+          to_buy: groups.flatMap((grp) => grp.lists.filter((l) => typeOf(l) === 'spesa').map((l) => ({
+            group: grp.name, list: l.name, items: grp.items.filter((i) => i.list_id === l.id).map((i) => [i.name, S.fmtQty(i.qty, i.unit)].filter(Boolean).join(' ')),
+          })).filter((x) => x.items.length)),
+          unread_notifications: groups.flatMap((grp) => grp.inbox.items.filter((n) => !n.read).map((n) => ({ group: grp.name, text: n.title, detail: n.body || undefined }))),
+        });
+      },
+    },
+    {
       name: 'sporta_get_members',
       description: 'Elenca le persone del gruppo attivo: nome, ruolo (amministratore o partecipante), relazione, se sono online e quale lista stanno guardando. Sola lettura: accettare o rimuovere persone si fa solo dall\'app.',
       inputSchema: { type: 'object', properties: {} },

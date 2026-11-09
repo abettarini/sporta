@@ -91,10 +91,11 @@ function typedRow(i, list, { grip = false } = {}) {
     const m = memberById(i.assigned_to);
     const meta = [i.note && h(i.note), i.checked && i.checked_by ? 'fatto da ' + h(i.checked_by === st.member ? 'te' : i.checked_by) : '',
       !i.checked && i.created_by && i.created_by !== st.member ? 'da ' + h(i.created_by) : ''].filter(Boolean).join(' · ');
+    // La scadenza va nella riga dei dettagli, sotto il nome: sul telefono il nome ha tutto lo spazio.
+    const due = i.checked ? '' : dueChip(i.due_date);
     return `<li class="item todo-item ${i.checked ? 'done' : ''} ${i.priority > 0 && !i.checked ? 'prio-high' : ''} ${flash}" data-id="${i.id}">
       <button class="tap" data-act="toggle" aria-pressed="${i.checked}"><span class="check">${I.check}</span>
-        <span class="txt"><span class="name">${h(i.name)}</span>${meta || tags ? `<span class="meta">${meta}${tags ? ` <span class="tags">${tags}</span>` : ''}</span>` : ''}</span></button>
-      ${i.checked ? '' : dueChip(i.due_date)}
+        <span class="txt"><span class="name">${h(i.name)}</span>${meta || tags || due ? `<span class="meta">${due}${meta}${tags ? ` <span class="tags">${tags}</span>` : ''}</span>` : ''}</span></button>
       ${isPersonal() ? '' : m ? `<span class="assignee" title="${h(m.alias)}">${avatar(m, 'sm')}</span>` : !i.checked ? '<button class="mini" data-act="take">Prendo io</button>' : ''}
       ${more}</li>`;
   }

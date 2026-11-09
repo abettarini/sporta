@@ -1,21 +1,177 @@
 {
-  "name": "Sporta – la spesa condivisa",
+  "id": "/",
+  "name": "Sporta – liste, cose da fare ed eventi condivisi",
   "short_name": "Sporta",
-  "description": "Lista della spesa condivisa in tempo reale, con ricette.",
+  "description": "Liste della spesa, cose da fare, eventi e ricette, condivisi in tempo reale con la famiglia, gli amici o la squadra. Funziona anche offline.",
   "lang": "it",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#f4f6f4",
   "theme_color": "#1f8a5b",
+  "categories": [
+    "lifestyle",
+    "productivity",
+    "food"
+  ],
+  "launch_handler": {
+    "client_mode": [
+      "focus-existing",
+      "auto"
+    ]
+  },
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-monochrome-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "monochrome"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ],
   "shortcuts": [
-    { "name": "Ricette", "url": "/#/r" }
+    {
+      "name": "Liste",
+      "short_name": "Liste",
+      "description": "Le liste del gruppo",
+      "url": "/#/l",
+      "icons": [
+        {
+          "src": "/icons/shortcut-lists.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Eventi",
+      "short_name": "Eventi",
+      "description": "Eventi in programma",
+      "url": "/#/e",
+      "icons": [
+        {
+          "src": "/icons/shortcut-events.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Avvisi",
+      "short_name": "Avvisi",
+      "description": "Assegnazioni, scadenze e risposte",
+      "url": "/#/n",
+      "icons": [
+        {
+          "src": "/icons/shortcut-notifs.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Ricette",
+      "short_name": "Ricette",
+      "description": "Le ricette del gruppo",
+      "url": "/#/r",
+      "icons": [
+        {
+          "src": "/icons/shortcut-recipes.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "screenshots": [
+    {
+      "src": "/screenshots/phone-overview.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Panoramica: cose da fare, da comprare ed eventi di tutti i gruppi"
+    },
+    {
+      "src": "/screenshots/phone-list.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Lista della spesa condivisa, ordinata per reparto"
+    },
+    {
+      "src": "/screenshots/phone-todo.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Cose da fare con scadenze e assegnazioni"
+    },
+    {
+      "src": "/screenshots/phone-event.jpg",
+      "sizes": "780x1688",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Eventi con risposte, ospiti e invito con un link"
+    },
+    {
+      "src": "/screenshots/desktop-overview.jpg",
+      "sizes": "1920x1200",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Panoramica sul computer"
+    },
+    {
+      "src": "/screenshots/desktop-list.jpg",
+      "sizes": "1920x1200",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Liste sul computer"
+    },
+    {
+      "src": "/screenshots/desktop-event.jpg",
+      "sizes": "1920x1200",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Evento sul computer"
+    }
   ]
 }

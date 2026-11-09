@@ -14,6 +14,10 @@
     {
       "source": "/e/:token",
       "destination": "/index.html"
+    },
+    {
+      "source": "/share",
+      "destination": "/index.html"
     }
   ],
   "headers": [

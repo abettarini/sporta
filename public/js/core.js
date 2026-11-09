@@ -909,6 +909,13 @@ const app = $('#app');
 function parseRoute() {
   const shared = location.pathname.match(/^\/r\/([A-Za-z0-9_-]{16,64})\/?$/);
   if (shared) return { name: 'shared', token: shared[1] };
+  // "Condividi con Sporta": il contenuto aspetta sul dispositivo e si apre la pagina per aggiungerlo.
+  if (location.pathname === '/share') {
+    const q = new URLSearchParams(location.search);
+    ls.setJson('share', { title: q.get('title') || '', text: q.get('text') || '', url: q.get('url') || '', at: Date.now() });
+    history.replaceState(null, '', '/#/share');
+    return { name: 'shareIn' };
+  }
   const invite = location.pathname.match(/^\/e\/([A-Za-z0-9_-]{16,64})\/?$/);
   if (invite) return { name: 'publicEvent', token: invite[1] };
   const p = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
@@ -929,6 +936,7 @@ function parseRoute() {
   if (p[0] === 's') return { name: 'settings' };
   if (p[0] === 'm') return { name: 'members' };
   if (p[0] === 'a') return { name: 'account' };
+  if (p[0] === 'share') return { name: 'shareIn' };
   return { name: 'home' };
 }
 
@@ -944,6 +952,11 @@ function mount() {
   else if ((confirmState() || {}).overdue) view = Views.confirmEmail;
   else if (isPendingGroup()) view = Views.pending;
   else view = Views[r.name] || Views.home;
+  // Contenuto condiviso in attesa (per esempio prima di entrare in Sporta): si riprende da lì.
+  if (view !== Views.shareIn && st.code && !isPendingGroup() && [Views.home, Views.lists].includes(view) && ls.get('share')) {
+    history.replaceState(null, '', '#/share');
+    view = Views.shareIn; r.name = 'shareIn';
+  }
   if (view === Views.members && isPersonal()) { history.replaceState(null, '', '#/s'); view = Views.settings; }
   // Con la colonna laterale l'elenco delle liste coincide con l'ultima lista aperta.
   if (view === Views.lists && hasPane() && st.lists.size) {

@@ -837,3 +837,11 @@ small.as { display: block; color: var(--muted); font-size: 13px; }
 .gx svg { width: 14px; height: 14px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pub-cta a { color: var(--accent); font-weight: 600; }
+.todo-item .meta .due { margin-right: 6px; vertical-align: 1px; }
+.share-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.share-lines { margin-bottom: 90px; }
+.share-in .sticky-cta .card { display: flex; gap: 10px; }
+.share-in .sticky-cta .btn.primary { flex: 1; }
+/* Le schede nelle griglie non devono allargare la pagina (titoli lunghi): si accorciano con i puntini. */
+.list-cards > * { min-width: 0; }
+.event-card { min-width: 0; }

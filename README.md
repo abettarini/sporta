@@ -79,6 +79,10 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - **Condivisione con link privato** (non indicizzato e revocabile): chi lo apre vede la ricetta anche senza Sporta e, se usa Sporta, può salvarla nelle sue ricette. Le ricette si possono anche copiare in un altro dei propri gruppi.
 
 ### App
+- **Installazione curata**: nella finestra "Installa app" compaiono descrizione e screenshot (telefono e computer); icone adattive e monocrome (icone a tema di Android, sagoma bianca nelle notifiche); schermata di avvio con il logo su iPhone e iPad, chiara o scura; l'app gira anche in orizzontale sui tablet.
+- **Scorciatoie** tenendo premuta l'icona (o con il tasto destro sul computer): Liste, Eventi, Avvisi, Ricette.
+- **Condividi con Sporta**: dall'app installata (Android e computer) Sporta compare nel menu "Condividi" delle altre app; un testo condiviso (una lista ricevuta in chat, gli ingredienti di una ricetta…) diventa voci da aggiungere alla lista scelta, una per riga, con quantità e unità riconosciute. Se prima bisogna entrare in Sporta, il contenuto aspetta.
+- Aprendo un link o una notifica sul computer si usa la finestra di Sporta già aperta.
 - **Telefono, tablet e desktop**: sul telefono navigazione in basso e una colonna; da 760 px barra laterale con le icone e pannelli come finestre; da 1000 px colonna con l'elenco (liste, ricette, spese) accanto al contenuto aperto e ricetta con ingredienti e procedimento affiancati; da 1240 px barra laterale completa, con il gruppo, e dettagli in un pannello a destra. Scorciatoie: `/` per scrivere, `Esc` per chiudere.
 - **Offline**: l'app si apre anche senza rete, le modifiche vanno in coda e partono appena torna la connessione.
 - **Aggiornamenti**: quando esce una nuova versione compare l'avviso *Aggiorna* (vedi [Versioni e aggiornamenti](#versioni-e-aggiornamenti)).
@@ -314,5 +318,7 @@ public/sw.js           service worker versionato (offline e aggiornamenti)
 vercel.json            configurazione Vercel
 emails/templates.js    modelli Liquid delle email
 lib/mailer.js          invio delle email (inboundemail / Procmail)
-scripts/               db-init, sync-version, make-icons, email-templates
+scripts/               db-init, sync-version, make-icons (icone, scorciatoie, schermate di avvio: npm run icons), email-templates
+public/screenshots/    screenshot per la finestra di installazione (e per gli store)
+public/js/share.js     "Condividi con Sporta": testo condiviso da altre app → voci di una lista
 ```

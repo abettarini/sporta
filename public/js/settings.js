@@ -39,6 +39,8 @@ Views.settings = {
         <div class="actions"><button class="btn" id="g-join">Unisciti con codice</button><button class="btn primary" id="g-new">Nuovo gruppo</button></div>
       </div>
       <div class="card" id="inst"></div>
+      <div class="card logout-card"><button class="btn block danger-text" id="logout">${I.logout} Esci da Sporta su questo dispositivo</button>
+        <p class="hint center" id="logout-hint"></p></div>
       <p class="muted small center">Sporta v${h(window.SPORTA_VERSION || 'dev')}</p>
     </main>` + tabBar('settings');
     // --- il mio nome in questo gruppo
@@ -71,6 +73,7 @@ Views.settings = {
       try { await api('POST', '/api/household/code', {}); toast('Nuovo codice creato'); this.update(); } catch (x) { toast(x.message); }
     };
     $('#g-new').onclick = () => newGroupSheet();
+    $('#logout').onclick = () => logoutDevice();
     $('#g-join').onclick = () => joinGroupSheet();
     $('#groups').onclick = async (e) => {
       const leave = e.target.closest('[data-leave]');
@@ -120,6 +123,7 @@ Views.settings = {
       : (approval ? 'Condividi il codice del gruppo: chi lo usa chiede di entrare e un amministratore lo accetta.' : 'Condividi il codice del gruppo: chi lo usa entra subito.');
     $('#adm').hidden = !admin || !tokenFor(st.code);
     $('#prof').hidden = !st.me;
+    $('#logout-hint').textContent = acct ? `Entrato come ${acct.email}. I tuoi gruppi restano: per ritrovarli basta entrare di nuovo con la tua email.` : 'Le liste restano nei gruppi; su questo dispositivo verranno cancellate.';
     $('#acc-sub').textContent = acct ? `${acct.email} · dispositivi, i tuoi dati` : 'Conferma la tua email';
     $('#acc-card').onclick = (e) => { if (!acct) { e.preventDefault(); confirmEmailSheet(); } };
     const ntf = $('#ntf');

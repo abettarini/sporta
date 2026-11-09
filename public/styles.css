@@ -784,3 +784,5 @@ small.as { display: block; color: var(--muted); font-size: 13px; }
 .avatar.inv { background: var(--surface-2); color: var(--muted); }
 .avatar.inv svg { width: 18px; height: 18px; }
 .inv-row .mt small { white-space: normal; }
+.logout-card .btn { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.logout-card .btn svg { width: 18px; height: 18px; }

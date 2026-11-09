@@ -22,6 +22,7 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - L'email identifica la persona in **tutti i gruppi** (in ognuno con il nome che preferisce): su un nuovo dispositivo, dopo il codice, si ritrovano tutti i propri gruppi; un gruppo in cui si entra da un dispositivo compare da solo anche sugli altri.
 - Chi riceve un **invito via email** non deve inserire nessun codice: il link dimostra già che l'email è sua.
 - Alla creazione dell'account si accettano le **condizioni d'uso** (anche di avere almeno 14 anni) e si prende visione dell'**informativa sulla privacy** (`/termini.html`, `/privacy.html`). Quando cambiano, l'app le richiede prima di continuare.
+- **Esci da Sporta su questo dispositivo** (in fondo ad *Altro*): il server revoca le chiavi del dispositivo e i dati locali vengono cancellati; i gruppi restano e si ritrovano entrando di nuovo con la propria email.
 - **Il tuo account** (in *Altro*): email (il cambio si conferma con un codice al nuovo indirizzo), **dispositivi** con l'uscita da uno, da tutti gli altri o da questo, **scarica i miei dati** ed **elimina l'account**.
 - Chi usava Sporta prima degli account conferma l'email al primo avvio (si può rimandare per 14 giorni): i gruppi del dispositivo si collegano al suo account.
 

@@ -320,11 +320,7 @@ Views.account = {
       if (!confirm('Uscire da tutti gli altri dispositivi? Resterà collegato solo questo.')) return;
       try { await accountApi('POST', '/api/account/devices/revoke-others', {}); toast('Sei uscito dagli altri dispositivi'); this.update(); } catch (x) { toast(x.message); }
     };
-    $('#a-out').onclick = async () => {
-      if (!confirm('Uscire da questo dispositivo? Le liste restano nei gruppi: per ritrovarle basta entrare di nuovo con la tua email.')) return;
-      try { await accountApi('POST', '/api/account/logout', {}); } catch { /* già uscito */ }
-      forgetDevice();
-    };
+    $('#a-out').onclick = () => logoutDevice();
     $('#a-exp').onclick = async () => {
       try {
         const j = await accountApi('GET', '/api/account/export');
@@ -386,6 +382,17 @@ function changeEmailSheet() {
     };
     ask();
   });
+}
+
+// Uscita da questo dispositivo (logout): il server revoca le chiavi, il dispositivo dimentica tutto.
+async function logoutDevice() {
+  const pending = st.outbox.length;
+  const msg = (pending ? `Ci sono ${pending} modifiche non ancora inviate: uscendo andranno perse.\n\n` : '')
+    + (acct ? 'Uscire da Sporta su questo dispositivo? I tuoi gruppi restano: per ritrovarli basta entrare di nuovo con la tua email.'
+      : 'Uscire da Sporta su questo dispositivo? Non hai ancora confermato la tua email: per ritrovare i gruppi servirà un nuovo invito.');
+  if (!confirm(msg)) return;
+  if (acct) { try { await accountApi('POST', '/api/account/logout', {}); } catch { /* già uscito o offline */ } }
+  forgetDevice();
 }
 
 async function deleteAccount() {

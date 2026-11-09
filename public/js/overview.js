@@ -12,13 +12,13 @@ const OV_POLL_MS = 45000;
 
 // Gruppi da mostrare nella panoramica, con i dati nel formato comune.
 function ovGroups() {
-  return st.groups.filter((g) => g.status !== 'pending').map((g) => {
+  return orderedGroups().filter((g) => g.status !== 'pending').map((g) => {
     const cur = g.code === st.code && st.household;
     const o = ov.data[g.code] || {};
     if (cur) {
       const lists = sortedLists().map((l) => ({ ...l, counts: { todo: todoOf(l.id).length, done: doneOf(l.id).length } }));
       return {
-        code: g.code, hid: st.household.id || g.hid, name: groupName(), current: true, me: st.me ? st.me.id : g.memberId,
+        code: g.code, hid: st.household.id || g.hid, name: groupName(), current: true, personal: isPersonal(g.code), me: st.me ? st.me.id : g.memberId,
         lists, items: [...st.items.values()].filter((i) => !i.checked), members: activeMembers(), inbox: o.inbox || { unread: 0, items: [] },
         events: [...st.events.values()],
       };
@@ -33,7 +33,7 @@ function ovGroups() {
       } else if (op.k === 'item.del') items.delete(op.id);
     }
     return {
-      code: g.code, hid: g.hid, name: g.name, current: false, me: (o.me && o.me.id) || g.memberId,
+      code: g.code, hid: g.hid, name: g.name, current: false, personal: !!g.personal, me: (o.me && o.me.id) || g.memberId,
       lists: (o.lists || []).slice().sort((a, b) => a.position - b.position || a.created_at - b.created_at),
       items: [...items.values()], members: o.members || [], inbox: o.inbox || { unread: 0, items: [] }, stale: !o.lists,
       events: (o.events || []).map((e) => {
@@ -240,7 +240,8 @@ Views.home = {
       for (const i of grp.items) {
         const l = listOf(grp, i.list_id);
         if (!l || typeOf(l) !== 'todo') continue;
-        if (grp.me && i.assigned_to === grp.me) mine.push({ grp, l, i });
+        // Nel gruppo personale tutto ciò che c'è da fare è tuo.
+        if (grp.me && (i.assigned_to === grp.me || (grp.personal && !i.assigned_to))) mine.push({ grp, l, i });
         else if (!i.assigned_to && i.due_date && i.due_date <= soon) free.push({ grp, l, i });
       }
     }
@@ -275,7 +276,7 @@ Views.home = {
     // Tutte le liste, gruppo per gruppo.
     const listsHtml = `<section class="ov-sec"><div class="section-h"><span>${many ? 'Le liste dei tuoi gruppi' : 'Le tue liste'}</span></div>
       ${groups.map((grp) => `<div class="ov-group">
-        ${many ? `<button class="ov-group-h" data-gswitch="${h(grp.code)}"><span class="avatar">${h((grp.name || '?').slice(0, 1).toUpperCase())}</span><b>${h(grp.name)}</b>${grp.current ? '<small>attuale</small>' : ''}<span class="chev">›</span></button>` : ''}
+        ${many ? `<button class="ov-group-h" data-gswitch="${h(grp.code)}">${groupBadge(grp)}<b>${h(grp.name)}</b>${grp.current ? '<small>attuale</small>' : ''}<span class="chev">›</span></button>` : ''}
         <div class="list-cards compact">${grp.lists.length ? grp.lists.map((l) => {
           const sm = ovListSub(grp, l);
           return `<a class="card list-card lc" href="${goHref(grp, l.id)}">${listTile(l, 'sm')}<span class="t"><b>${h(l.name)}</b><span class="${sm.late ? 'late' : ''}">${h(sm.sub)}</span></span>${sm.badge ? `<span class="badge">${sm.badge}</span>` : ''}</a>`;

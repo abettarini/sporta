@@ -108,6 +108,11 @@ const myOps = () => st.outbox.filter((o) => o.g === st.code);
 // "code" è il codice con cui il gruppo è stato aggiunto e resta la chiave locale anche se viene rigenerato;
 // il codice da condividere è sempre quello attuale del gruppo (inviteCode).
 const groupOf = (code) => st.groups.find((g) => g.code === code);
+// Gruppo personale: solo tuo, niente membri, inviti, presenza o assegnazioni.
+const isPersonal = (code = st.code) => !!((groupOf(code) || {}).personal || (code === st.code && st.household && st.household.personal));
+// I gruppi in ordine: prima quello personale, poi gli altri come sono stati aggiunti.
+const orderedGroups = () => [...st.groups].sort((a, b) => (b.personal ? 1 : 0) - (a.personal ? 1 : 0));
+const groupBadge = (g, cls = '') => `<span class="avatar ${g && g.personal ? 'personal' : ''} ${cls}">${g && g.personal ? icon('me') : h(((g && g.name) || '?').slice(0, 1).toUpperCase())}</span>`;
 const tokenFor = (code) => (groupOf(code) || {}).token;
 const saveGroups = () => ls.setJson('groups', st.groups);
 const inviteCode = () => (st.household && st.household.code) || st.code;
@@ -129,7 +134,7 @@ function setState(j) {
   // Aggiorna i dati del gruppo salvati sul telefono.
   const g = groupOf(st.code);
   if (g) {
-    if (j.household) { g.name = j.household.name; g.hid = j.household.id; }
+    if (j.household) { g.name = j.household.name; g.hid = j.household.id; g.personal = !!j.household.personal; }
     if (j.me) Object.assign(g, { alias: j.me.alias, role: j.me.role, status: j.me.status, memberId: j.me.id });
     saveGroups();
     if (j.me) st.member = j.me.alias;
@@ -181,7 +186,7 @@ function addGroup(j, auth = {}) {
   if (!g) { g = { code: hh.code }; st.groups.push(g); }
   const me = auth.me || j.me;
   Object.assign(g, {
-    hid: hh.id || g.hid, name: hh.name, token: auth.token || g.token,
+    hid: hh.id || g.hid, name: hh.name, token: auth.token || g.token, personal: !!hh.personal,
     alias: (me && me.alias) || g.alias || st.member || ls.get('member') || '',
     memberId: me ? me.id : g.memberId, role: me ? me.role : g.role, status: me ? me.status : g.status || 'active',
   });
@@ -672,9 +677,9 @@ function tabBar(active) {
   const t = (id, href, icon, label, cls = '', badge = false) => `<a href="${href}" class="${active === id ? 'on' : ''} ${cls}" title="${label}">${icon}<span>${label}</span>${badge === 'n' ? '<i class="tab-badge" data-nbadge hidden></i>' : badge ? '<i class="tab-badge" data-badge hidden></i>' : ''}</a>`;
   const g = groupName();
   return `<nav class="tabs">
-    <button type="button" class="nav-group wide-only" id="nav-grp" title="Cambia gruppo"><span class="avatar">${h((g || '?').slice(0, 1).toUpperCase())}</span><span class="g-name">${h(g)}</span>${I.down}</button>
+    <button type="button" class="nav-group wide-only" id="nav-grp" title="Cambia gruppo">${groupBadge(groupOf(st.code) || { name: g })}<span class="g-name">${h(g)}</span>${I.down}</button>
     ${t('home', '#/', I.home, 'Panoramica', '', 'n')}${t('lists', '#/l', I.cart, 'Liste')}${t('events', '#/e', I.cal, 'Eventi')}${t('recipes', '#/r', I.book, 'Ricette')}${t('trips', '#/t', I.receipt, 'Spese', 'wide-only')}
-    ${t('products', '#/p', icon('tag'), 'Prodotti', 'wide-only')}${t('members', '#/m', I.users, 'Membri', 'wide-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'narrow-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'wide-only')}</nav>`;
+    ${t('products', '#/p', icon('tag'), 'Prodotti', 'wide-only')}${isPersonal() ? '' : t('members', '#/m', I.users, 'Membri', 'wide-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'narrow-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'wide-only')}</nav>`;
 }
 
 // --------------------------------------------------------------- schermi larghi
@@ -926,6 +931,7 @@ function mount() {
   else if ((confirmState() || {}).overdue) view = Views.confirmEmail;
   else if (isPendingGroup()) view = Views.pending;
   else view = Views[r.name] || Views.home;
+  if (view === Views.members && isPersonal()) { history.replaceState(null, '', '#/s'); view = Views.settings; }
   // Con la colonna laterale l'elenco delle liste coincide con l'ultima lista aperta.
   if (view === Views.lists && hasPane() && st.lists.size) {
     history.replaceState(null, '', '#/l/' + lastListId());

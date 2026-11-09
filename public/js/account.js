@@ -82,13 +82,13 @@ function adoptGroups(groups) {
   let added = 0;
   for (const x of groups || []) {
     let g = st.groups.find((y) => y.hid === x.household.id);
-    if (g && g.token) { Object.assign(g, { memberId: x.me.id, role: x.me.role, status: x.me.status, alias: x.me.alias, name: x.household.name }); continue; }
-    if (!g) { g = { code: x.household.code }; st.groups.push(g); added++; }
-    Object.assign(g, { hid: x.household.id, name: x.household.name, token: x.token, alias: x.me.alias, memberId: x.me.id, role: x.me.role, status: x.me.status });
+    if (g && g.token) { Object.assign(g, { memberId: x.me.id, role: x.me.role, status: x.me.status, alias: x.me.alias, name: x.household.name, personal: !!x.household.personal }); continue; }
+    if (!g) { g = { code: x.household.code }; if (x.household.personal) st.groups.unshift(g); else st.groups.push(g); added++; }
+    Object.assign(g, { hid: x.household.id, name: x.household.name, token: x.token, alias: x.me.alias, memberId: x.me.id, role: x.me.role, status: x.me.status, personal: !!x.household.personal });
   }
   saveGroups();
   if (!st.code && st.groups.length) {
-    st.code = st.groups[0].code;
+    st.code = orderedGroups()[0].code;
     ls.set('active', st.code);
     st.member = memberFor(st.code);
     loadGroupFromCache();

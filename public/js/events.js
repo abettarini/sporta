@@ -197,7 +197,7 @@ Views.event = {
           ${e.location ? `<a class="ev-loc" href="${maps}" target="_blank" rel="noopener">${I.pin}<span>${h(e.location)}</span></a>` : ''}</div>
       </div>
       ${e.notes ? `<div class="card pad ev-notes">${h(e.notes).replace(/\n/g, '<br>')}</div>` : ''}
-      ${past ? '' : `<div class="card pad ev-rsvp">
+      ${past || isPersonal() ? '' : `<div class="card pad ev-rsvp">
         <h3>${mine ? 'La tua risposta' : 'Ci sei?'}</h3>
         <div class="seg rsvp-seg">${Object.entries(RSVP).map(([k, r]) => `<button type="button" data-rsvp="${k}" class="${r.cls} ${mine && mine.rsvp === k ? 'on' : ''}">${h(r.label)}</button>`).join('')}</div>
         ${mine && mine.rsvp !== 'no' ? `<div class="guests"><span>Porto anche</span>
@@ -206,13 +206,13 @@ Views.event = {
           <button type="button" class="icon-btn round" data-guests="1" aria-label="Un ospite in più">+</button>
           <small>${mine.guests ? (mine.guests === 1 ? 'ospite' : 'ospiti') : 'ospiti'}</small></div>` : ''}
       </div>`}
-      <div class="card pad ev-people">
+      ${isPersonal() ? '' : `<div class="card pad ev-people">
         <h3>${t.total} ${t.total === 1 ? 'persona' : 'persone'}${t.guests ? ` <small>(${t.yes.length} + ${t.guests} ${t.guests === 1 ? 'ospite' : 'ospiti'})</small>` : ''}</h3>
         ${t.yes.length ? `<div class="who-h yes">Ci sono</div><div class="whos">${who(t.yes)}</div>` : ''}
         ${t.maybe.length ? `<div class="who-h maybe">Forse${t.maybeGuests ? ` (+${t.maybeGuests})` : ''}</div><div class="whos">${who(t.maybe)}</div>` : ''}
         ${t.no.length ? `<div class="who-h no">Non ci sono</div><div class="whos">${who(t.no)}</div>` : ''}
         ${t.none.length ? `<div class="who-h">Non hanno risposto</div><div class="whos dim">${who(t.none)}</div>` : ''}
-      </div></div>
+      </div>`}</div>
       <div class="ev-col">
       <div class="section-h"><span>Liste dell'evento</span></div>
       ${lists.length ? `<div class="list-cards">${lists.map((l) => {

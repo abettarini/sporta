@@ -19,10 +19,10 @@ Views.settings = {
         <label class="switch"><input type="checkbox" id="hide"><span>Non mostrare quando sono online</span></label>
       </div>
       <div class="card" id="ntf"></div>
-      <a class="card link-card" href="#/m">${iconTile('home')}<span class="t"><b>Membri <i class="tab-badge inline" data-badge hidden></i></b><span id="mb-sub">Chi c'è nel gruppo, inviti e richieste</span></span><span class="chev">›</span></a>
+      <a class="card link-card" href="#/m" id="mb-card">${iconTile('home')}<span class="t"><b>Membri <i class="tab-badge inline" data-badge hidden></i></b><span id="mb-sub">Chi c'è nel gruppo, inviti e richieste</span></span><span class="chev">›</span></a>
       <a class="card link-card narrow-only" href="#/t">${iconTile('receipt')}<span class="t"><b>Spese</b><span>Storico delle spese concluse</span></span><span class="chev">›</span></a>
       <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
-      <div class="card"><h3>Invita</h3>
+      <div class="card" id="inv-card"><h3>Invita</h3>
         <p id="inv-p"></p>
         <div class="code" id="hc"></div>
         <div class="actions"><button class="btn primary block" id="inv">Invita qualcuno</button></div>
@@ -123,8 +123,12 @@ Views.settings = {
     $('#inv-p').textContent = admin
       ? 'Crea un link personale (entra subito) oppure condividi il codice del gruppo.'
       : (approval ? 'Condividi il codice del gruppo: chi lo usa chiede di entrare e un amministratore lo accetta.' : 'Condividi il codice del gruppo: chi lo usa entra subito.');
-    $('#adm').hidden = !admin || !tokenFor(st.code);
-    $('#prof').hidden = !st.me;
+    // Gruppo personale: niente membri, inviti, ingresso, presenza.
+    const personal = isPersonal();
+    $('#adm').hidden = !admin || !tokenFor(st.code) || personal;
+    $('#prof').hidden = !st.me || personal;
+    $('#mb-card').hidden = personal;
+    $('#inv-card').hidden = personal;
     $('#logout-hint').textContent = acct ? `Entrato come ${acct.email}. I tuoi gruppi restano: per ritrovarli basta entrare di nuovo con la tua email.` : 'Le liste restano nei gruppi; su questo dispositivo verranno cancellate.';
     $('#acc-sub').textContent = acct ? `${acct.email} · dispositivi, i tuoi dati` : 'Conferma la tua email';
     $('#acc-card').onclick = (e) => { if (!acct) { e.preventDefault(); confirmEmailSheet(); } };
@@ -132,10 +136,10 @@ Views.settings = {
     if (ntf && !ntf.contains(document.activeElement)) { ntf.innerHTML = notifyCardHtml(); bindNotifyCard(ntf, () => this.update()); }
     if (st.me && document.activeElement !== $('#hide')) $('#hide').checked = !!st.me.hide_presence;
     $('#appr').checked = approval;
-    $('#groups').innerHTML = st.groups.map((g) => `<div class="group-row">
-      <button class="row-btn" data-switch="${h(g.code)}"><span class="avatar">${h((g.name || '?').slice(0, 1).toUpperCase())}</span>
-        <span class="t">${h(g.name)}${g.code === st.code ? ' <small>(attuale)</small>' : ''}<small class="as">${g.status === 'pending' ? 'richiesta in attesa' : memberFor(g.code) ? 'sei ' + h(memberFor(g.code)) + (g.role === 'admin' ? ' · amministratore' : '') : ''}</small></span></button>
-      <button class="btn ghost danger-text" data-leave="${h(g.code)}">Esci</button></div>`).join('');
+    $('#groups').innerHTML = orderedGroups().map((g) => `<div class="group-row">
+      <button class="row-btn" data-switch="${h(g.code)}">${groupBadge(g)}
+        <span class="t">${h(g.name)}${g.code === st.code ? ' <small>(attuale)</small>' : ''}<small class="as">${g.personal ? 'solo tuo: liste, ricette, eventi personali' : g.status === 'pending' ? 'richiesta in attesa' : memberFor(g.code) ? 'sei ' + h(memberFor(g.code)) + (g.role === 'admin' ? ' · amministratore' : '') : ''}</small></span></button>
+      ${g.personal ? '' : `<button class="btn ghost danger-text" data-leave="${h(g.code)}">Esci</button>`}</div>`).join('');
     const inst = $('#inst'); if (!inst) return;
     const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);

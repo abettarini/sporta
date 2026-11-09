@@ -103,6 +103,7 @@ function listSheet(list) {
       <div class="field kind-field" ${type === 'collezione' ? '' : 'hidden'}><span>Cosa raccogli</span><div class="chips kind-pick">${kinds}</div></div>`}
       <div class="field"><span>Icona</span><div class="emoji-pick">${LIST_ICONS.map((e) => `<button type="button" data-e="${e}" class="${e === emoji ? 'on' : ''}" aria-label="${e}">${iconTile(e)}</button>`).join('')}</div></div>
       <div class="actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn primary">Salva</button></div>
+      ${list && moveTargets().length ? `<div class="actions"><button type="button" class="btn" id="move-list">${isPersonal() ? 'Condividi in un gruppo' : 'Sposta in un altro gruppo'}</button></div>` : ''}
       ${list ? `<div class="actions"><button type="button" class="btn danger" id="del-list">Elimina lista</button></div>` : ''}
     </form>`, (sh) => {
     const f = $('#lf', sh);
@@ -138,12 +139,44 @@ function listSheet(list) {
       if (list) return closeSheet();
       closeSheetAndGo('#/l/' + id);
     };
+    const mv = $('#move-list', sh);
+    if (mv) mv.onclick = () => moveListSheet(list);
     const del = $('#del-list', sh);
     if (del) del.onclick = () => {
       if (!confirm(`Eliminare la lista "${list.name}" e tutti i suoi articoli?`)) return;
       enqueue({ k: 'list.del', id: list.id });
       closeSheetAndGo('#/l');
     };
+  });
+}
+
+// --------------------------------------------------------------- spostare una lista in un altro gruppo
+// Per esempio dal gruppo personale alla famiglia (o viceversa). Serve la connessione.
+const moveTargets = () => orderedGroups().filter((g) => g.code !== st.code && g.token && g.status !== 'pending');
+
+function moveListSheet(list) {
+  openSheet(`<h2>Sposta «${h(list.name)}»</h2>
+    <p class="muted">La lista passa, con tutti i suoi articoli, nel gruppo che scegli${isPersonal() ? ' e la vedranno tutti i suoi membri' : ''}. Le assegnazioni a persone vengono tolte${list.event_id ? ' e la lista non sarà più collegata all\'evento' : ''}.</p>
+    <div class="card items pick-list">${moveTargets().map((g) => `<button type="button" class="row-btn" data-to="${h(g.code)}">${groupBadge(g)}<span class="t">${h(g.name)}<small class="as">${g.personal ? 'solo tuo' : 'sei ' + h(memberFor(g.code))}</small></span></button>`).join('')}</div>
+    <p class="err" id="mv-err"></p>
+    <div class="actions"><button type="button" class="btn" data-close>Annulla</button></div>`, (sh) => {
+    sh.addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-to]'); if (!b) return;
+      const g = groupOf(b.dataset.to);
+      sh.querySelectorAll('[data-to]').forEach((x) => { x.disabled = true; });
+      try {
+        // Prima si inviano le modifiche ancora in coda per questo gruppo.
+        if (myOps().length) await flush();
+        if (myOps().some((o) => o.id === list.id || (st.items.get(o.id) || {}).list_id === list.id)) throw new Error('Ci sono modifiche non ancora inviate: riprova con la connessione');
+        await api('POST', `/api/lists/${list.id}/move`, { target_token: g.token });
+        closeSheetAndGo('#/l');
+        toast(`«${list.name}» spostata in ${g.name}`, { label: 'Apri', run: () => { location.hash = `#/go/${g.hid}/${list.id}`; } });
+        if (typeof refreshOverview === 'function') refreshOverview(true);
+      } catch (x) {
+        $('#mv-err', sh).textContent = x.message;
+        sh.querySelectorAll('[data-to]').forEach((y) => { y.disabled = false; });
+      }
+    });
   });
 }
 
@@ -198,7 +231,7 @@ const SORT_LABEL = { manual: 'Manuale', department: 'Per reparto', alpha: 'A-Z',
 const SORT_BY_TYPE = { spesa: ['manual', 'department', 'alpha'], todo: ['manual', 'due', 'alpha'], collezione: ['manual', 'alpha'], generica: ['manual', 'alpha'] };
 const PLACEHOLDER = {
   spesa: () => 'Aggiungi… (es. 2 kg patate @Selex)',
-  todo: () => 'Aggiungi… (es. prenotare il campo @Luca venerdì !)',
+  todo: () => (isPersonal() ? 'Aggiungi… (es. rinnovare il passaporto venerdì !)' : 'Aggiungi… (es. prenotare il campo @Luca venerdì !)'),
   collezione: (l) => `Aggiungi… (es. ${S.kindOf(l.variant).example})`,
   generica: () => 'Aggiungi…',
 };
@@ -303,7 +336,7 @@ Views.list = {
     // Filtri propri del tipo: "mie" / "senza nessuno" (da fare), stato (libri, film…).
     const fchip = (f, label) => `<button class="chip tool ${this.filter === f ? 'on' : ''}" data-act="filter" data-f="${f}">${label}</button>`;
     let filters = '';
-    if (type === 'todo') {
+    if (type === 'todo' && !isPersonal()) {
       const mine = todo.filter((i) => i.assigned_to && i.assigned_to === meId).length;
       const nobody = todo.filter((i) => !i.assigned_to).length;
       filters = fchip('all', 'Tutte') + fchip('mine', `Mie · ${mine}`) + fchip('nobody', `Senza nessuno · ${nobody}`);

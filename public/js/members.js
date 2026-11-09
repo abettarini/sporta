@@ -170,11 +170,13 @@ Views.welcome = {
   async afterLogin(res) {
     this.res = res;
     if (this.pending) {
+      adoptGroups(res.groups); // compreso il gruppo personale
       const p = this.pending; this.pending = null;
       return this.submitJoin(p.values, p.terms);
     }
-    if (res.groups.length) return this.show('back');
-    this.show('new');
+    // Chi è nuovo ha solo il gruppo personale: nome e condizioni, poi dentro.
+    if (res.is_new || !res.groups.some((x) => !x.household.personal)) return this.show('new');
+    this.show('back');
   },
   async submitJoin(v, terms) {
     const inv = this.invite && this.inviteInfo;
@@ -212,18 +214,19 @@ Views.welcome = {
       const gs = this.res.groups;
       body = `<h2>Bentornato${gs[0] ? ', ' + h(gs[0].me.alias) : ''}</h2>
         <p class="muted">Questi sono i tuoi gruppi: li ritrovi tutti anche qui.</p>
-        <div class="card items">${gs.map((x) => `<div class="row-btn"><span class="avatar">${h((x.household.name || '?').slice(0, 1).toUpperCase())}</span>
-          <span class="t">${h(x.household.name)}<small class="as">come ${h(x.me.alias)}${x.me.role === 'admin' ? ' · amministratore' : ''}${x.me.status === 'pending' ? ' · richiesta in attesa' : ''}</small></span><span class="ok">${I.check}</span></div>`).join('')}</div>
+        <div class="card items">${[...gs].sort((x, y) => !!y.household.personal - !!x.household.personal).map((x) => `<div class="row-btn">${groupBadge({ name: x.household.name, personal: x.household.personal })}
+          <span class="t">${h(x.household.name)}<small class="as">${x.household.personal ? 'solo tuo' : `come ${h(x.me.alias)}${x.me.role === 'admin' ? ' · amministratore' : ''}${x.me.status === 'pending' ? ' · richiesta in attesa' : ''}`}</small></span><span class="ok">${I.check}</span></div>`).join('')}</div>
         <form id="w-back-f">${needTerms() ? termsCheckHtml() : ''}${err}<button class="btn primary block lg">Entra</button></form>`;
     } else if (step === 'new') {
+      const personal = this.res && this.res.groups.find((x) => x.household.personal);
       body = `<h2>Benvenuto su Sporta</h2>
-        <p class="muted">${h(acct ? acct.email : '')} ✓ · Non fai ancora parte di nessun gruppo.</p>
+        <p class="muted">${h(acct ? acct.email : '')} ✓ · Hai già il tuo spazio <b>Personale</b> per le tue liste. Per condividerle crea un gruppo, adesso o quando vuoi.</p>
         <form id="w-create-f">
-          <label class="field"><span>Come ti chiami?</span><input class="input" name="alias" id="w-name" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member || ls.get('member') || '')}">
+          <label class="field"><span>Come ti chiami?</span><input class="input" name="alias" id="w-name" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h((personal && personal.me.alias) || st.member || ls.get('member') || '')}">
             <span class="hint">È il nome che vedranno gli altri. In ogni gruppo puoi usarne uno diverso.</span></label>
-          <label class="field"><span>Crea un gruppo</span><input class="input" id="w-fam" required maxlength="80" placeholder="es. Casa Rossi, Calcetto, Festa di Anna"></label>
+          <label class="field"><span>Crea anche un gruppo da condividere (facoltativo)</span><input class="input" id="w-fam" maxlength="80" placeholder="es. Casa Rossi, Calcetto, Festa di Anna"></label>
           ${needTerms() ? termsCheckHtml() : ''}
-          ${err}<button class="btn primary block lg">Crea il gruppo</button></form>
+          ${err}<button class="btn primary block lg">Inizia</button></form>
         <button class="btn ghost block" data-to="code" style="margin-top:10px">Ho un codice di gruppo o un invito</button>`;
     } else if (step === 'checking') {
       body = `<div class="empty">${emptyArt('link')}Verifico l'invito…</div>`;
@@ -338,10 +341,20 @@ Views.welcome = {
         e.preventDefault();
         const alias = $('#w-name').value.trim(), fam = $('#w-fam').value.trim();
         if (!alias) return fail('Scrivi il tuo nome.');
-        if (!fam) return fail('Dai un nome al gruppo.');
         try {
-          await createGroup(fam, alias, termsAccepted(f));
-          done(); toast('Gruppo creato! Invita gli altri da Membri');
+          if (needTerms()) { const j = await accountApi('POST', '/api/account/accept', { accept_terms: termsAccepted(f) }); acct.terms_ok = j.account.terms_ok; saveAcct(); }
+          // Il gruppo personale (e gli eventuali altri gruppi dell'account) sul dispositivo, con il nome scelto.
+          const groups = (this.res && this.res.groups) || (await accountApi('POST', '/api/account/groups', {})).groups;
+          adoptGroups(groups);
+          const personal = groups.find((x) => x.household.personal);
+          if (personal && personal.me.alias !== alias) {
+            await api('PATCH', '/api/me', { alias }, personal.household.code);
+            Object.assign(groupOf(personal.household.code) || {}, { alias });
+            saveGroups();
+          }
+          ls.set('member', alias);
+          if (fam) { await createGroup(fam, alias, true); done(); toast('Gruppo creato! Invita gli altri da Membri'); }
+          else { if (personal) switchGroup(personal.household.code, '#/'); done(); }
         } catch (x) { fail(x.message); }
       };
     }
@@ -351,9 +364,9 @@ Views.welcome = {
 // --------------------------------------------------------------- selettore dei gruppi
 function groupSheet() {
   openSheet(`<h2>I tuoi gruppi</h2>
-    <div class="items">${st.groups.map((g) => `<button class="row-btn" data-code="${h(g.code)}">
-      <span class="avatar">${h((g.name || '?').slice(0, 1).toUpperCase())}</span>
-      <span class="t">${h(g.name)}<small class="as">${g.status === 'pending' ? 'richiesta in attesa' : memberFor(g.code) ? 'sei ' + h(memberFor(g.code)) + (g.role === 'admin' ? ' · amministratore' : '') : ''}</small></span>${g.code === st.code ? `<span class="ok">${I.check}</span>` : ''}</button>`).join('')}</div>
+    <div class="items">${orderedGroups().map((g) => `<button class="row-btn" data-code="${h(g.code)}">
+      ${groupBadge(g)}
+      <span class="t">${h(g.name)}<small class="as">${g.personal ? 'solo tuo' : g.status === 'pending' ? 'richiesta in attesa' : memberFor(g.code) ? 'sei ' + h(memberFor(g.code)) + (g.role === 'admin' ? ' · amministratore' : '') : ''}</small></span>${g.code === st.code ? `<span class="ok">${I.check}</span>` : ''}</button>`).join('')}</div>
     <div class="actions"><button class="btn" id="g-join">Unisciti con codice</button><button class="btn primary" id="g-new">Nuovo gruppo</button></div>`, (sh) => {
     sh.querySelectorAll('[data-code]').forEach((b) => { b.onclick = () => { closeSheet(true); switchGroup(b.dataset.code); }; });
     $('#g-new', sh).onclick = () => newGroupSheet();

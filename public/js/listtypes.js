@@ -61,7 +61,7 @@ function addTyped(list, text) {
     const p = S.parseTodo(text);
     if (!p.name) return null;
     data = { name: p.name, due_date: p.due, priority: p.priority };
-    if (p.assignee) {
+    if (p.assignee && !isPersonal()) {
       const m = findMember(p.assignee);
       if (m) data.assigned_to = m.id;
       else toast(`Nel gruppo non c'è nessuno di nome "${p.assignee}"`);
@@ -95,7 +95,7 @@ function typedRow(i, list, { grip = false } = {}) {
       <button class="tap" data-act="toggle" aria-pressed="${i.checked}"><span class="check">${I.check}</span>
         <span class="txt"><span class="name">${h(i.name)}</span>${meta || tags ? `<span class="meta">${meta}${tags ? ` <span class="tags">${tags}</span>` : ''}</span>` : ''}</span></button>
       ${i.checked ? '' : dueChip(i.due_date)}
-      ${m ? `<span class="assignee" title="${h(m.alias)}">${avatar(m, 'sm')}</span>` : !i.checked ? '<button class="mini" data-act="take">Prendo io</button>' : ''}
+      ${isPersonal() ? '' : m ? `<span class="assignee" title="${h(m.alias)}">${avatar(m, 'sm')}</span>` : !i.checked ? '<button class="mini" data-act="take">Prendo io</button>' : ''}
       ${more}</li>`;
   }
   if (type === 'collezione') {
@@ -132,10 +132,10 @@ function typedSheet(it, list) {
   const declinable = type === 'todo' && meId && it.assigned_to === meId && it.assigned_by && it.assigned_by !== meId;
   const today = new Date();
   const quickDates = [['', 'Nessuna'], [S.ymd(today), 'Oggi'], [S.ymd(S.addDays(today, 1)), 'Domani'], [S.ymd(S.addDays(today, 7)), 'Tra una settimana']];
-  const fields = type === 'todo' ? `
+  const fields = type === 'todo' ? `${isPersonal() ? '' : `
       <div class="field"><span>Chi se ne occupa</span><input type="hidden" name="assigned_to" value="${h(it.assigned_to || '')}">
         <div class="chips who-pick"><button type="button" class="chip ${!it.assigned_to ? 'on' : ''}" data-who="">Nessuno</button>
-        ${activeMembers().sort((a, b) => (b.id === meId) - (a.id === meId) || a.alias.localeCompare(b.alias, 'it')).map((m) => `<button type="button" class="chip ${it.assigned_to === m.id ? 'on' : ''}" data-who="${m.id}">${h(m.id === meId ? m.alias + ' (io)' : m.alias)}</button>`).join('')}</div></div>
+        ${activeMembers().sort((a, b) => (b.id === meId) - (a.id === meId) || a.alias.localeCompare(b.alias, 'it')).map((m) => `<button type="button" class="chip ${it.assigned_to === m.id ? 'on' : ''}" data-who="${m.id}">${h(m.id === meId ? m.alias + ' (io)' : m.alias)}</button>`).join('')}</div></div>`}
       <div class="field"><span>Scadenza</span>
         <div class="chips due-pick">${quickDates.map(([v, l]) => `<button type="button" class="chip ${it.due_date === v ? 'on' : ''}" data-due="${v}">${l}</button>`).join('')}</div>
         <input class="input" type="date" name="due_date" value="${h(it.due_date || '')}" style="margin-top:8px"></div>

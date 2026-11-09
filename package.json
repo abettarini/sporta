@@ -1,6 +1,6 @@
 {
   "name": "sporta",
-  "version": "3.9.2",
+  "version": "3.10.0",
   "description": "Sporta: PWA lista della spesa condivisa in tempo reale, con ricette",
   "main": "server.js",
   "private": true,

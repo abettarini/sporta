@@ -27,6 +27,8 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - Chi usava Sporta prima degli account conferma l'email al primo avvio (si può rimandare per 14 giorni): i gruppi del dispositivo si collegano al suo account.
 
 ### Gruppi e persone
+- **Gruppo personale**: ogni persona ha uno spazio solo suo, creato da solo al primo accesso e chiamato **Personale** (il nome si può cambiare). Ha tutto quello che hanno i gruppi (liste di ogni tipo, ricette, prodotti, spese, eventi) ma niente membri, inviti, codice o presenza; non si elimina e non se ne esce. Le cose da fare lì sono tutte tue: compaiono in *Da fare per me* e i promemoria delle scadenze arrivano anche senza assegnarle.
+- **Spostare una lista** in un altro gruppo (dal menu della lista): per esempio la prepari nel gruppo personale e poi la condividi con la famiglia, o viceversa. Passano anche gli articoli; le assegnazioni a persone vengono tolte.
 - Un telefono può partecipare a **più gruppi** (la famiglia, la squadra di calcetto, una festa…) e passare dall'uno all'altro toccando il nome del gruppo. Ogni gruppo ha liste, ricette, prodotti e spese separati.
 - **Ruoli**: ogni persona ha un *permesso* — **Amministratore** o **Partecipante** — e una *relazione* descrittiva (Familiare, Amico, Collega, Ospite o personalizzata). Chi crea il gruppo ne è l'amministratore; deve sempre restarcene almeno uno.
 - **Membri**: elenco delle persone con chi è **online ora**, l'ultimo accesso e quale lista sta guardando; nelle liste compaiono gli avatar di chi la sta guardando.

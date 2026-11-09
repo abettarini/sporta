@@ -606,6 +606,14 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('online', () => { connect(); flush(); });
 window.addEventListener('offline', () => { clearTimeout(downTimer); st.live = false; updateStatus(); });
 
+// Numero sull'icona dell'app installata: avvisi non letti di tutti i gruppi (dove il browser lo supporta).
+let iconBadge = -1;
+function setIconBadge(n) {
+  if (n === iconBadge || !('setAppBadge' in navigator)) return;
+  iconBadge = n;
+  try { (n > 0 ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {}); } catch { /* non supportato */ }
+}
+
 function updateStatus() {
   const dot = $('#status'), pend = $('#pending');
   if (!dot) return;
@@ -617,6 +625,7 @@ function updateStatus() {
   document.querySelectorAll('[data-badge]').forEach((b) => { b.hidden = !pr; b.textContent = pr || ''; });
   const nu = typeof unreadTotal === 'function' ? unreadTotal() : 0;
   document.querySelectorAll('[data-nbadge]').forEach((b) => { b.hidden = !nu; b.textContent = nu > 99 ? '99+' : nu || ''; });
+  setIconBadge(nu);
   const n = myOps().length;
   if (pend) pend.textContent = n ? `${n} in attesa` : '';
 }

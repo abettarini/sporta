@@ -46,6 +46,10 @@ self.addEventListener('push', (e) => {
   e.waitUntil((async () => {
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const c of wins) c.postMessage({ type: 'PUSH', data: d });
+    // Numero sull'icona dell'app installata (iPhone/iPad, computer; non su Android).
+    if (typeof d.badge === 'number' && self.navigator.setAppBadge) {
+      try { await (d.badge > 0 ? self.navigator.setAppBadge(d.badge) : self.navigator.clearAppBadge()); } catch { /* non supportato */ }
+    }
     await self.registration.showNotification(d.title || 'Sporta', {
       body: d.body || '', tag: d.tag || undefined, renotify: !!d.tag, data: { url: d.url || '/' },
       icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', lang: 'it',

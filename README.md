@@ -9,6 +9,7 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 ### Panoramica e avvisi
 - La pagina iniziale è una **panoramica di tutti i gruppi**, senza doverli cambiare: **Da fare per me** (le cose assegnate a te, con le scadenze; sotto, quelle in scadenza che non ha preso nessuno), **Da comprare** (ogni lista della spesa con quello che manca) e **tutte le liste**, gruppo per gruppo. Si può spuntare direttamente da qui, anche negli altri gruppi, e toccando una voce si apre la sua lista.
 - **Avvisi** (campanella): quando qualcuno ti assegna una cosa, quando chi l'ha ricevuta tocca **Non posso**, quando una cosa che hai assegnato è fatta, e il **promemoria** delle cose assegnate a te che scadono oggi o domani (o già scadute).
+- **Numero sull'icona** dell'app installata con gli avvisi non letti di tutti i gruppi, aggiornato anche ad app chiusa dalle notifiche push (iPhone/iPad con iOS 16.4 o successivo e computer; su Android molti launcher mostrano invece un pallino).
 - **Notifiche push** sul telefono e sul computer, anche ad app chiusa (si attivano da Altro → Avvisi, valgono per tutti i gruppi; su iPhone serve l'app installata). Gli avvisi di assegnazione e scadenza possono arrivare anche **per email**, se lo scegli per quel gruppo.
 
 ### Eventi

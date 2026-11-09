@@ -17,18 +17,26 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - **Calendario** del mese sugli schermi larghi, prossimi eventi nella panoramica di tutti i gruppi, esportazione in **.ics** (un evento o tutti quelli in programma) e condivisione dei dettagli.
 - Avvisi quando un evento viene creato, cambia data, ora o luogo, o viene annullato, e un **promemoria il giorno prima** (a chi ha detto sì o forse e a chi non ha ancora risposto). Può modificarlo o annullarlo chi l'ha creato o un amministratore.
 
+### Accesso con email
+- Ci si riconosce con la propria **email**, senza password: si scrive l'email e arriva un **codice di 6 cifre** (o un link "Entra in Sporta" nella stessa email). La stessa schermata vale per chi è nuovo e per chi torna.
+- L'email identifica la persona in **tutti i gruppi** (in ognuno con il nome che preferisce): su un nuovo dispositivo, dopo il codice, si ritrovano tutti i propri gruppi; un gruppo in cui si entra da un dispositivo compare da solo anche sugli altri.
+- Chi riceve un **invito via email** non deve inserire nessun codice: il link dimostra già che l'email è sua.
+- Alla creazione dell'account si accettano le **condizioni d'uso** (anche di avere almeno 14 anni) e si prende visione dell'**informativa sulla privacy** (`/termini.html`, `/privacy.html`). Quando cambiano, l'app le richiede prima di continuare.
+- **Il tuo account** (in *Altro*): email (il cambio si conferma con un codice al nuovo indirizzo), **dispositivi** con l'uscita da uno, da tutti gli altri o da questo, **scarica i miei dati** ed **elimina l'account**.
+- Chi usava Sporta prima degli account conferma l'email al primo avvio (si può rimandare per 14 giorni): i gruppi del dispositivo si collegano al suo account.
+
 ### Gruppi e persone
 - Un telefono può partecipare a **più gruppi** (la famiglia, la squadra di calcetto, una festa…) e passare dall'uno all'altro toccando il nome del gruppo. Ogni gruppo ha liste, ricette, prodotti e spese separati.
 - **Ruoli**: ogni persona ha un *permesso* — **Amministratore** o **Partecipante** — e una *relazione* descrittiva (Familiare, Amico, Collega, Ospite o personalizzata). Chi crea il gruppo ne è l'amministratore; deve sempre restarcene almeno uno.
 - **Membri**: elenco delle persone con chi è **online ora**, l'ultimo accesso e quale lista sta guardando; nelle liste compaiono gli avatar di chi la sta guardando.
 - **Come si entra**:
-  - **link personale** creato da un amministratore (relazione e permesso già impostati, vale per una persona, scade in 7 giorni): si scrive solo il proprio nome e si entra subito;
-  - **codice del gruppo** (chiunque nel gruppo può condividerlo): ci si presenta con nome, relazione, email facoltativa e un messaggio; per impostazione predefinita un amministratore deve **accettare** la richiesta, e intanto si vede una schermata di attesa che si sblocca da sola. L'amministratore può spegnere l'approvazione (utile per un evento) e **rigenerare il codice**;
+  - **link personale** creato da un amministratore (relazione e permesso già impostati, vale per una persona, scade in 7 giorni), anche inviato per email: si scrive solo il proprio nome e si entra subito;
+  - **codice del gruppo** (chiunque nel gruppo può condividerlo): ci si presenta con nome, relazione e un messaggio, e l'email viene confermata con il codice prima che la richiesta arrivi agli amministratori; per impostazione predefinita un amministratore deve **accettare** la richiesta, e intanto si vede una schermata di attesa che si sblocca da sola. L'amministratore può spegnere l'approvazione (utile per un evento) e **rigenerare il codice**;
   - **nuovo gruppo**: nome della persona e nome del gruppo.
 - **Richieste**: gli amministratori le vedono in cima a *Membri* (con un contatore nella navigazione) e possono correggere il nome, scegliere relazione e permesso, poi accettare, rifiutare o rifiutare e bloccare.
 - **Rimozione**: un amministratore può rimuovere una persona; il suo accesso viene revocato subito e il suo telefono mostra "Non fai più parte del gruppo". Quello che aveva aggiunto resta nello storico.
-- **Profilo**: email facoltativa (vista solo dagli amministratori), opzione **"non mostrare quando sono online"**, e **dispositivi**: si collega un altro telefono, tablet o computer con un link valido 10 minuti, e si può uscire da tutti gli altri dispositivi.
-- **Email** (se configurate, vedi sotto): invito via email, avviso agli amministratori per ogni nuova richiesta, esito della richiesta e **recupero dell'accesso** ("Usavi già Sporta su un altro telefono?") con un link per ogni gruppo in cui l'email è registrata.
+- **Profilo nel gruppo**: opzione **"non mostrare quando sono online"**. Gli amministratori vedono l'email (verificata ✓) di ogni persona.
+- **Email** (vedi sotto): codice per entrare, invito via email, avviso agli amministratori per ogni nuova richiesta, esito della richiesta.
 - **Nomi**: unici nel gruppo (controllo mentre si scrive); in ogni gruppo ci si può presentare con un nome diverso e cambiarlo in *Altro*: lo storico si aggiorna da solo.
 
 ### Liste
@@ -135,7 +143,7 @@ Sul server locale le chiavi VAPID, se mancano, vengono create e salvate in `data
 
 ### Email
 
-Le email (inviti, avvisi agli amministratori, esito delle richieste, recupero dell'accesso) passano da **inboundemail / Procmail**, con modelli **Liquid** salvati sul servizio. Sono facoltative: senza configurazione l'app funziona e nasconde le opzioni che le usano.
+Le email (codice per entrare, inviti, avvisi agli amministratori, esito delle richieste, avvisi facoltativi) passano da **inboundemail / Procmail**, con modelli **Liquid** salvati sul servizio. Servono per entrare: senza configurazione (solo in sviluppo, in locale) il codice compare nel registro del server.
 
 | Variabile | Uso |
 |---|---|
@@ -156,7 +164,7 @@ controlla la sintassi e genera le anteprime in `emails/preview/` con dati di ese
 EMAIL_API_KEY=... npm run emails:sync
 ```
 
-crea o aggiorna i modelli sul servizio (si riconoscono per nome: `sporta-invite`, `sporta-join-request`, `sporta-request-approved`, `sporta-request-rejected`, `sporta-recovery`, `sporta-assigned`, `sporta-reminder`, `sporta-event`). Va rilanciato ogni volta che si modifica un modello.
+crea o aggiorna i modelli sul servizio (si riconoscono per nome: `sporta-invite`, `sporta-join-request`, `sporta-request-approved`, `sporta-request-rejected`, `sporta-code`, `sporta-assigned`, `sporta-reminder`, `sporta-event`). Va rilanciato ogni volta che si modifica un modello.
 
 ## Avvio locale / self-hosted
 
@@ -239,17 +247,15 @@ Gli strumenti usano le stesse funzioni dell'interfaccia: le modifiche passano da
 
 ## Condivisione e sicurezza
 
-- Ogni persona, su ogni dispositivo, ha una **chiave personale** (conservata sul server solo come impronta). Il **codice del gruppo** serve solo a chiedere di entrare: da solo non apre nulla. I permessi da amministratore sono controllati dal server.
+- Si entra con un **codice usa e getta via email** (6 cifre, valido 10 minuti, al massimo 5 tentativi, un nuovo codice ogni minuto e non più di 5 l'ora per email, con limiti anche per indirizzo IP); i codici sono conservati solo come impronta e la risposta non rivela se un'email è registrata.
+- Ogni dispositivo ha una **chiave dell'account** e una chiave per ogni gruppo (conservate sul server solo come impronta): uscendo da un dispositivo si revocano tutte insieme. Il **codice del gruppo** serve solo a chiedere di entrare: da solo non apre nulla. I permessi da amministratore sono controllati dal server.
+- Una persona ha al massimo un posto per gruppo.
 - Una persona rimossa perde subito l'accesso, anche alla connessione in tempo reale e alle modifiche rimaste in coda offline.
-- Le email (facoltative) e i messaggi delle richieste sono visibili solo agli amministratori.
+- Le email e i messaggi delle richieste sono visibili solo agli amministratori; gli avvisi per email partono solo verso indirizzi confermati.
 - Tentativi con codici o chiavi sbagliati e richieste di accesso sono limitati; il numero di richieste in attesa per gruppo è limitato.
 - Le **ricette condivise** sono raggiungibili solo da chi ha il link (identificativo casuale non indovinabile). La pagina non mostra dati del gruppo e il link si può disattivare in qualsiasi momento.
 - Le **foto** sono servite tramite identificativi casuali non indovinabili, come i link condivisi.
 - L'app chiede ai motori di ricerca di non indicizzare le pagine (`noindex`).
-
-### Passaggio dalla versione 2
-
-Fino alla versione 2 il codice del gruppo bastava per entrare. Per i gruppi creati prima della versione 3 c'è un **periodo di transizione di 30 giorni** in cui il vecchio codice funziona ancora: ogni telefono aggiornato si presenta da solo con il nome che usava e riceve la sua chiave personale. Tutti diventano amministratori (come prima, tutti potevano tutto) e i ruoli si possono poi sistemare da *Membri*. Due dispositivi con lo stesso nome sono considerati la stessa persona, e gli articoli scritti con quel nome vengono collegati a lei. Finito il periodo, chi non si è aggiornato dovrà chiedere di entrare.
 
 ## Struttura
 
@@ -257,7 +263,9 @@ Fino alla versione 2 il codice del gruppo bastava per entrare. Per i gruppi crea
 api/index.js           funzione serverless per Vercel (tutte le /api/*)
 server.js              server locale/self-hosted: statici + API + SSE
 lib/core.js            logica delle API, schema del database e migrazioni
-lib/members.js         membri: chiavi personali, ruoli, richieste, inviti, presenza
+lib/accounts.js        account: codici via email, dispositivi, condizioni, i miei dati, eliminazione
+lib/legal.js           versione delle condizioni d'uso e dell'informativa
+lib/members.js         membri: chiavi di gruppo, ruoli, richieste, inviti, presenza
 lib/notify.js          avvisi, notifiche push (Web Push), promemoria delle scadenze
 lib/events.js          eventi, risposte con ospiti, liste collegate, promemoria del giorno prima
 lib/util.js            funzioni di supporto del server
@@ -269,7 +277,10 @@ public/shared.js       inserimento rapido, unità, scalatura, reparti (usato da 
 public/js/icons.js     set di icone (reparti, liste, interfaccia) e relativi colori
 public/js/core.js      stato multi-gruppo, coda offline, sincronizzazione, componenti comuni
 public/js/lists.js     liste, articoli, abituali, conclusione spesa, catalogo prodotti
-public/js/members.js   ingresso nei gruppi, membri, richieste, inviti, attesa
+public/js/members.js   ingresso (email e codice, inviti, codice del gruppo), membri, richieste, attesa
+public/js/account.js   account: codice, gruppi ritrovati, Il tuo account, condizioni, conferma dell'email
+public/termini.html    condizioni d'uso
+public/privacy.html    informativa sulla privacy
 public/js/recipes.js   ricette, foto, condivisione
 public/js/trips.js     storico delle spese
 public/js/overview.js  panoramica di tutti i gruppi, avvisi, notifiche push

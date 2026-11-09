@@ -49,6 +49,7 @@ const I = {
   cal: svg('<rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>'),
   pin: svg('<path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>'),
   download: svg('<path d="M12 3v12M7 10l5 5 5-5M4 20h16"/>'),
+  mail: svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>'),
   bell: svg('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>'),
   home: svg('<path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/>'),
 };
@@ -548,22 +549,6 @@ function reportViewing(listId = '') {
   api('POST', '/api/me/presence', { viewing: listId }).catch(() => {});
 }
 
-// Passaggio dalla versione 2: i gruppi salvati solo con il codice si "presentano" con il loro nome
-// e ricevono la chiave personale (durante il periodo di transizione).
-async function upgradeLegacyGroups() {
-  for (const g of st.groups.filter((x) => !x.token)) {
-    try {
-      const r = await fetch('/api/join/legacy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: g.code, alias: g.alias || ls.get('member') || 'Membro' }) });
-      const j = await r.json().catch(() => ({}));
-      if (r.status === 201) {
-        Object.assign(g, { token: j.token, memberId: j.me.id, role: j.me.role, status: j.me.status, alias: j.me.alias, hid: j.household.id });
-        saveGroups();
-        if (g.code === st.code) { connect(); loadState(); }
-      } else if (r.status === 410 || r.status === 404) unauthorized(g.code, 'legacy_expired');
-    } catch { /* offline: riproveremo */ }
-  }
-}
-
 // =============================================================== tempo reale
 // Stream SSE dal server (su Vercel la funzione lo chiude dopo qualche minuto e il browser
 // si riconnette da solo). Finché lo stream non è attivo ci aggiorniamo a intervalli.
@@ -922,6 +907,7 @@ function parseRoute() {
   if (p[0] === 'p') return { name: 'products' };
   if (p[0] === 's') return { name: 'settings' };
   if (p[0] === 'm') return { name: 'members' };
+  if (p[0] === 'a') return { name: 'account' };
   return { name: 'home' };
 }
 
@@ -931,6 +917,9 @@ function mount() {
   if (r.name === 'shared') view = Views.shared;
   else if (st.notice) view = Views.notice;
   else if (!st.code) view = Views.welcome;
+  // Account: condizioni da accettare, oppure conferma dell'email non più rimandabile.
+  else if (acct && !acct.terms_ok) view = Views.terms;
+  else if ((confirmState() || {}).overdue) view = Views.confirmEmail;
   else if (isPendingGroup()) view = Views.pending;
   else view = Views[r.name] || Views.home;
   // Con la colonna laterale l'elenco delle liste coincide con l'ultima lista aperta.

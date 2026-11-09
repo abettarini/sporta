@@ -11,9 +11,9 @@ importScripts('/version.js');
 const VERSION = self.SPORTA_VERSION || 'dev';
 const CACHE = 'sporta-' + VERSION;
 const PHOTOS = 'sporta-photos';
-const SHELL = ['/index.html', '/version.js', '/styles.css', '/shared.js', '/js/icons.js', '/js/core.js', '/js/lists.js', '/js/listtypes.js', '/js/members.js',
+const SHELL = ['/index.html', '/version.js', '/styles.css', '/shared.js', '/js/icons.js', '/js/core.js', '/js/lists.js', '/js/listtypes.js', '/js/members.js', '/js/account.js',
   '/js/recipes.js', '/js/trips.js', '/js/events.js', '/js/overview.js', '/js/webmcp.js', '/js/settings.js', '/manifest.webmanifest',
-  '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
+  '/termini.html', '/privacy.html', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 // Cache delle prime versioni, che non sapevano mostrare l'avviso di aggiornamento.
 const LEGACY = /^(spesa|sporta)-v\d+$/;
@@ -81,7 +81,8 @@ self.addEventListener('fetch', (e) => {
   }
   if (url.pathname.startsWith('/api/')) return;
   // App: dalla cache della versione installata; navigazioni (anche /r/<token>) -> index.html.
-  const key = e.request.mode === 'navigate' ? '/index.html' : url.pathname;
+  // (le pagine delle condizioni e della privacy restano pagine a sé)
+  const key = e.request.mode === 'navigate' && !/^\/(termini|privacy)\.html$/.test(url.pathname) ? '/index.html' : url.pathname;
   e.respondWith(caches.open(CACHE).then(async (cache) => {
     const hit = await cache.match(key);
     if (hit) return hit;

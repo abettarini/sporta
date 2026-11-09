@@ -1,5 +1,5 @@
 'use strict';
-/* Sporta — persone nei gruppi: ingresso (codice, link personale, nuovo gruppo), selettore dei
+/* Sporta — persone nei gruppi: ingresso (email e codice, invito, codice del gruppo, nuovo gruppo), selettore dei
    gruppi, pagina Membri con presenza, revisione delle richieste, scheda membro, inviti,
    schermate di attesa e di uscita dal gruppo. */
 
@@ -37,9 +37,12 @@ fetch('/api/config').then((r) => (r.ok ? r.json() : null)).then((j) => {
 async function publicApi(method, url, body) {
   let r;
   try {
-    r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    // Con la chiave dell'account del dispositivo, se c'è (serve per entrare nei gruppi e crearli).
+    const headers = { 'Content-Type': 'application/json', ...(acct && acct.token ? { Authorization: 'Bearer ' + acct.token } : {}) };
+    r = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
   } catch { throw new Error('Nessuna connessione.'); }
   const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && j.code === 'logged_out' && acct) { forgetDevice(); }
   if (!r.ok) { const e = new Error(j.error || 'Errore, riprova.'); e.code = j.code; e.status = r.status; throw e; }
   return j;
 }
@@ -63,8 +66,9 @@ async function enterGroup(res) {
   addGroup(await r.json(), { token: res.token, me: res.me });
 }
 
-async function createGroup(name, alias) {
-  const j = await publicApi('POST', '/api/households', { name: name || 'Gruppo', alias });
+async function createGroup(name, alias, acceptTerms) {
+  const j = await publicApi('POST', '/api/households', { name: name || 'Gruppo', alias, accept_terms: !!acceptTerms });
+  if (j.account && acct) { acct.terms_ok = j.account.terms_ok; saveAcct(); }
   ls.set('member', alias);
   st.member = alias;
   addGroup(j, { token: j.token, me: j.me });
@@ -78,9 +82,7 @@ function presentFieldsHtml({ approval, relation, fixedRelation }) {
       <input class="input" name="alias" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member || ls.get('member') || '')}">
       <span class="hint alias-hint"></span></label>
     ${fixedRelation ? '' : `<div class="field"><span>Chi sei per il gruppo?</span>${relationPicker('relation', relation || '')}</div>`}
-    ${approval ? `<label class="field"><span>Email (facoltativa)</span><input class="input" name="email" type="email" inputmode="email" autocomplete="email" placeholder="nome@esempio.it">
-        <span class="hint">Per recuperare l'accesso se cambi telefono.</span></label>
-      <label class="field"><span>Messaggio per gli amministratori (facoltativo)</span><textarea class="input" name="message" rows="2" maxlength="300" placeholder="es. Ciao, sono Luca, il cugino di Giulia"></textarea></label>` : ''}`;
+    ${approval ? `<label class="field"><span>Messaggio per gli amministratori (facoltativo)</span><textarea class="input" name="message" rows="2" maxlength="300" placeholder="es. Ciao, sono Luca, il cugino di Giulia"></textarea></label>` : ''}`;
 }
 
 function relationPicker(name, value) {
@@ -131,7 +133,7 @@ function bindAliasCheck(root, check) {
 }
 function presentValues(root) {
   const v = (n) => { const el = root.querySelector(`[name="${n}"]`); return el ? el.value.trim() : ''; };
-  return { alias: v('alias'), relation: v('relation'), email: v('email'), message: v('message') };
+  return { alias: v('alias'), relation: v('relation'), message: v('message') };
 }
 
 // --------------------------------------------------------------- benvenuto (primo accesso)
@@ -139,28 +141,21 @@ function presentValues(root) {
 // presentazione; "Ho un codice" -> codice, poi presentazione; "Crea un gruppo" -> nome + gruppo.
 Views.welcome = {
   mount() {
-    Object.assign(this, { code: null, group: null, approval: true, invite: null, inviteInfo: null, err: '', fromLink: false, prefill: '' });
+    Object.assign(this, { code: null, group: null, approval: true, invite: null, inviteInfo: null, err: '', fromLink: false, prefill: '', email: '', pending: null, res: null });
     const q = new URLSearchParams(location.search);
     if (q.get('invite')) return this.openInvite(q.get('invite'));
-    if (q.get('link')) return this.openLink(q.get('link'));
     const join = q.get('join');
-    if (join == null) return this.show('start');
-    this.fromLink = true;
-    const code = normCode(join);
-    if (cleanCode(code).length !== CODE_LEN) { this.fromLink = false; this.err = 'Il link non contiene un codice valido: inseriscilo qui.'; this.prefill = code; return this.show('code'); }
-    this.show('checking');
-    previewCode(code)
-      .then((j) => { this.code = code; this.group = j.household.name; this.approval = j.household.require_approval; this.show('alias'); })
-      .catch((e) => { this.fromLink = false; this.err = e.code === 'bad_code' ? 'Il link non contiene un codice valido: inseriscilo qui.' : e.message; this.prefill = code; this.show('code'); });
-  },
-  openLink(token) {
-    this.link = token;
-    this.show('checking');
-    publicApi('GET', '/api/link/' + encodeURIComponent(token)).then((j) => {
-      this.linkInfo = j; this.group = j.household.name;
-      if (!j.valid) { this.err = 'Questo link non è più valido: creane uno nuovo dal dispositivo già collegato.'; return this.show('start'); }
-      this.show('link');
-    }).catch(() => { this.err = 'Link non trovato.'; this.show('start'); });
+    if (join != null) {
+      this.fromLink = true;
+      const code = normCode(join);
+      if (cleanCode(code).length !== CODE_LEN) { this.fromLink = false; this.err = 'Il link non contiene un codice valido: inseriscilo qui.'; this.prefill = code; return this.show('code'); }
+      this.show('checking');
+      return previewCode(code)
+        .then((j) => { this.code = code; this.group = j.household.name; this.approval = j.household.require_approval; this.show('alias'); })
+        .catch((e) => { this.fromLink = false; this.err = e.code === 'bad_code' ? 'Il link non contiene un codice valido: inseriscilo qui.' : e.message; this.prefill = code; this.show('code'); });
+    }
+    // Account già sul dispositivo ma nessun gruppo: si sceglie il primo gruppo.
+    this.show(acct ? 'new' : 'start');
   },
   openInvite(token) {
     this.invite = token;
@@ -171,6 +166,32 @@ Views.welcome = {
       this.show('alias');
     }).catch(() => { this.err = 'Invito non trovato: chiedi un nuovo link, oppure inserisci il codice del gruppo.'; this.invite = null; this.show('code'); });
   },
+  // Dopo il codice: si completa l'azione in sospeso (entrare in un gruppo) oppure si mostrano i gruppi.
+  async afterLogin(res) {
+    this.res = res;
+    if (this.pending) {
+      const p = this.pending; this.pending = null;
+      return this.submitJoin(p.values, p.terms);
+    }
+    if (res.groups.length) return this.show('back');
+    this.show('new');
+  },
+  async submitJoin(v, terms) {
+    const inv = this.invite && this.inviteInfo;
+    const body = { alias: v.alias, accept_terms: !!terms };
+    let res;
+    if (this.invite) {
+      // Invito per un'altra email, su un dispositivo che ha già un account: si entra con questo account.
+      if (inv.email && acct && acct.email !== inv.email) body.use_device_account = true;
+      res = await publicApi('POST', `/api/invites/${encodeURIComponent(this.invite)}/accept`, body);
+    } else res = await publicApi('POST', '/api/join', { code: this.code, ...v, ...body });
+    if (res.account_token) setAccount(res);
+    else if (res.account && acct) { acct.terms_ok = res.account.terms_ok; saveAcct(); }
+    if (res.groups) adoptGroups(res.groups.filter((x) => x.household.id !== res.household.id));
+    await enterGroup(res);
+    history.replaceState(null, '', '/#/'); mount();
+    if (res.me.status === 'active') toast(`Benvenuto nel gruppo "${this.group}"`);
+  },
   show(step) {
     this.step = step;
     const back = (to) => `<button type="button" class="icon-btn wback" data-to="${to}" aria-label="Indietro">${I.back}</button>`;
@@ -180,31 +201,34 @@ Views.welcome = {
     if (step === 'start') {
       body = `<img class="logo" src="/icons/icon-192.png" alt="">
         <h1>Sporta</h1>
-        <p>La lista della spesa condivisa con la famiglia, gli amici o la squadra: aggiornata in tempo reale, con le tue ricette.</p>
-        <button class="btn primary block lg" data-to="code">Ho un codice d'invito</button>
-        <button class="btn block lg" data-to="create" style="margin-top:10px">Crea un nuovo gruppo</button>
-        <p class="muted small center" style="margin-top:18px">Se qualcuno ti ha invitato, apri il link che ti ha mandato: basterà scrivere il tuo nome.</p>
-        ${serverConfig.email ? '<button class="btn ghost block" data-to="recover">Usavi già Sporta su un altro telefono? Recupera l\'accesso</button>' : ''}
-        ${this.err ? `<p class="err center">${h(this.err)}</p>` : ''}`;
-    } else if (step === 'link') {
-      body = `<div class="invite-card">${groupAvatar(this.group)}<small>Collega questo dispositivo al gruppo</small><b>${h(this.group)}</b>
-          <span class="tagline">come ${h(this.linkInfo.alias)}</span></div>
-        <p class="muted center">Userai il gruppo con lo stesso nome e gli stessi permessi dell'altro dispositivo.</p>
-        ${err}<button class="btn primary block lg" id="w-link">Collega questo dispositivo</button>`;
-    } else if (step === 'recover') {
-      body = `${back('start')}
-        <h2>Recupera l'accesso</h2>
-        <p class="muted">Scrivi l'email che avevi indicato nei tuoi gruppi: ti invieremo un link per ogni gruppo, valido 24 ore.</p>
-        <form id="w-rec-f"><input class="input" id="w-email" type="email" inputmode="email" autocomplete="email" required placeholder="nome@esempio.it">
-        ${err}<button class="btn primary block lg">Invia il link</button></form>`;
-    } else if (step === 'recover-sent') {
-      body = `<div class="big-ico">${icon('done')}</div><h2 class="center">Controlla la posta</h2>
-        <p class="muted center">Se l'email è registrata in qualche gruppo, riceverai a breve un messaggio con i link per collegare questo dispositivo.</p>
-        <button class="btn block lg" data-to="start">Torna all'inizio</button>`;
+        <p>Liste della spesa, cose da fare ed eventi, condivisi in tempo reale con la famiglia, gli amici o la squadra.</p>
+        <form id="w-mail-f"><label class="field"><span>La tua email</span><input class="input" id="w-email" type="email" inputmode="email" autocomplete="email" required placeholder="nome@esempio.it" value="${h(this.email)}"></label>
+        ${err}<button class="btn primary block lg">Continua</button></form>
+        <p class="muted small center">Ti mandiamo un codice per entrare: niente password da ricordare. Vale sia la prima volta sia per ritrovare i tuoi gruppi su un altro dispositivo.</p>
+        <button class="btn ghost block" data-to="code" style="margin-top:14px">Ho un invito o un codice di gruppo</button>`;
+    } else if (step === 'otp') {
+      body = `${back(this.pending ? 'alias' : 'start')}<div id="w-otp">${codeStepHtml(this.email)}</div>`;
+    } else if (step === 'back') {
+      const gs = this.res.groups;
+      body = `<h2>Bentornato${gs[0] ? ', ' + h(gs[0].me.alias) : ''}</h2>
+        <p class="muted">Questi sono i tuoi gruppi: li ritrovi tutti anche qui.</p>
+        <div class="card items">${gs.map((x) => `<div class="row-btn"><span class="avatar">${h((x.household.name || '?').slice(0, 1).toUpperCase())}</span>
+          <span class="t">${h(x.household.name)}<small class="as">come ${h(x.me.alias)}${x.me.role === 'admin' ? ' · amministratore' : ''}${x.me.status === 'pending' ? ' · richiesta in attesa' : ''}</small></span><span class="ok">${I.check}</span></div>`).join('')}</div>
+        <form id="w-back-f">${needTerms() ? termsCheckHtml() : ''}${err}<button class="btn primary block lg">Entra</button></form>`;
+    } else if (step === 'new') {
+      body = `<h2>Benvenuto su Sporta</h2>
+        <p class="muted">${h(acct ? acct.email : '')} ✓ · Non fai ancora parte di nessun gruppo.</p>
+        <form id="w-create-f">
+          <label class="field"><span>Come ti chiami?</span><input class="input" name="alias" id="w-name" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member || ls.get('member') || '')}">
+            <span class="hint">È il nome che vedranno gli altri. In ogni gruppo puoi usarne uno diverso.</span></label>
+          <label class="field"><span>Crea un gruppo</span><input class="input" id="w-fam" required maxlength="80" placeholder="es. Casa Rossi, Calcetto, Festa di Anna"></label>
+          ${needTerms() ? termsCheckHtml() : ''}
+          ${err}<button class="btn primary block lg">Crea il gruppo</button></form>
+        <button class="btn ghost block" data-to="code" style="margin-top:10px">Ho un codice di gruppo o un invito</button>`;
     } else if (step === 'checking') {
       body = `<div class="empty">${emptyArt('link')}Verifico l'invito…</div>`;
     } else if (step === 'code') {
-      body = `${back('start')}${dots(1)}
+      body = `${back(acct ? 'new' : 'start')}${dots(1)}
         <h2>Inserisci il codice d'invito</h2>
         <p class="muted">Lo trovi nel messaggio di chi ti ha invitato. Basta scrivere lettere e numeri: maiuscole e trattini si mettono da soli.</p>
         <form id="w-code-f"><input class="input" id="w-code" placeholder="XXXX-XXXX-XXXX" value="${h(this.prefill || '')}">
@@ -215,27 +239,57 @@ Views.welcome = {
         : `<small>${this.fromLink ? 'Sei stato invitato nel gruppo' : 'Stai per entrare nel gruppo'}</small>`;
       const extra = inv ? `<span class="tagline">${h([relLabel(inv.relation), inv.role === 'admin' ? 'Amministratore' : ''].filter(Boolean).join(' · '))}</span>`
         : this.approval ? '<span class="tagline">Un amministratore dovrà accettarti</span>' : '';
+      // Email: dall'invito (bloccata), dall'account del dispositivo, oppure da scrivere (con il codice).
+      let mail;
+      if (inv && inv.email && !acct) mail = `<div class="field"><span>La tua email</span><div class="ro mail-ro">${h(inv.email)} <span class="ok-mark">✓ dall'invito</span></div></div>`;
+      else if (acct) mail = `<div class="field"><span>La tua email</span><div class="ro mail-ro">${h(acct.email)} <span class="ok-mark">✓</span></div>
+          ${inv && inv.email && inv.email !== acct.email ? `<span class="hint">L'invito era per ${h(inv.email)}: entrerai con l'account di questo dispositivo.</span>` : ''}</div>`;
+      else mail = `<label class="field"><span>La tua email</span><input class="input" name="email" type="email" inputmode="email" autocomplete="email" required placeholder="nome@esempio.it" value="${h(this.email)}">
+          <span class="hint">Ti mandiamo un codice per confermarla. La vedono solo gli amministratori.</span></label>`;
+      const needCode = !acct && !(inv && inv.email);
+      const label = needCode ? 'Invia il codice' : !inv && this.approval ? 'Invia richiesta' : 'Entra nel gruppo';
       body = `${this.fromLink || inv ? '' : back('code')}${this.fromLink || inv ? '' : dots(2)}
         <div class="invite-card">${groupAvatar(this.group)}${sub}<b>${h(this.group)}</b>${extra}</div>
-        <form id="w-alias-f">${presentFieldsHtml({ approval: !inv && this.approval, fixedRelation: !!inv })}
-          ${err}<button class="btn primary block lg">${!inv && this.approval ? 'Invia richiesta' : 'Entra nel gruppo'}</button></form>
+        <form id="w-alias-f">${presentFieldsHtml({ approval: !inv && this.approval, fixedRelation: !!inv })}${mail}
+          ${needTerms() ? termsCheckHtml() : ''}
+          ${err}<button class="btn primary block lg">${label}</button></form>
         ${this.fromLink || inv ? `<button class="btn ghost block" data-to="code" style="margin-top:8px">Non è il tuo invito? Inserisci un codice</button>` : ''}`;
-    } else if (step === 'create') {
-      body = `${back('start')}
-        <h2>Crea un gruppo</h2>
-        <p class="muted">Una famiglia, la squadra di calcetto, una festa… Sarai l'amministratore e potrai invitare gli altri.</p>
-        <form id="w-create-f">
-          <label class="field"><span>Il tuo nome</span><input class="input" name="alias" id="w-name" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member || ls.get('member') || '')}"></label>
-          <label class="field"><span>Nome del gruppo o famiglia</span><input class="input" id="w-fam" required maxlength="80" placeholder="es. Casa Rossi, Calcetto, Festa di Anna"></label>
-          ${err}<button class="btn primary block lg">Crea il gruppo</button></form>`;
     }
     app.innerHTML = `<div class="welcome">${body}</div>`;
     this.err = '';
     app.querySelectorAll('[data-to]').forEach((b) => {
-      b.onclick = () => { if (b.dataset.to === 'code') { this.prefill = ''; this.invite = null; this.fromLink = false; } this.show(b.dataset.to); };
+      b.onclick = () => { if (b.dataset.to === 'code') { this.prefill = ''; this.invite = null; this.fromLink = false; this.pending = null; } this.show(b.dataset.to); };
     });
-    const fail = (m) => { $('#w-err').textContent = m; };
+    const fail = (m) => { const e = $('#w-err'); if (e) e.textContent = m; };
     const done = () => { history.replaceState(null, '', '/#/'); mount(); };
+    if (step === 'start') {
+      focusLater('#w-email');
+      $('#w-mail-f').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button'); btn.disabled = true;
+        this.email = $('#w-email').value.trim();
+        try { await requestCode(this.email); this.show('otp'); } catch (x) { fail(x.message); btn.disabled = false; }
+      };
+    }
+    if (step === 'otp') {
+      bindCodeStep($('#w-otp'), this.email, {
+        onBack: () => this.show(this.pending ? 'alias' : 'start'),
+        onDone: async (code) => this.afterLogin(await verifyLogin({ email: this.email, code })),
+      });
+    }
+    if (step === 'back') {
+      const f = $('#w-back-f');
+      bindTermsCheck(f);
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          if (needTerms()) { const j = await accountApi('POST', '/api/account/accept', { accept_terms: termsAccepted(f) }); acct.terms_ok = j.account.terms_ok; saveAcct(); }
+          adoptGroups(this.res.groups);
+          done();
+          toast('Bentornato: i tuoi gruppi sono su questo dispositivo');
+        } catch (x) { fail(x.message); }
+      };
+    }
     if (step === 'code') {
       const next = $('#w-next');
       bindCodeInput($('#w-code'), (complete) => { next.disabled = !complete; });
@@ -254,6 +308,7 @@ Views.welcome = {
     if (step === 'alias') {
       const f = $('#w-alias-f');
       bindRelationPicker(f, 'relation');
+      bindTermsCheck(f);
       bindAliasCheck(f, async (alias) => (this.invite ? (await previewInvite(this.invite, alias)).alias_available : (await previewCode(this.code, alias)).alias_available));
       if (!f.elements.alias.value) focusLater('#w-alias-f [name=alias]');
       f.onsubmit = async (e) => {
@@ -261,40 +316,32 @@ Views.welcome = {
         const v = presentValues(f);
         if (!v.alias) return fail('Scrivi il tuo nome.');
         const btn = f.querySelector('button.primary'); btn.disabled = true;
+        const terms = termsAccepted(f);
         try {
-          const res = this.invite
-            ? await publicApi('POST', `/api/invites/${encodeURIComponent(this.invite)}/accept`, { alias: v.alias })
-            : await publicApi('POST', '/api/join', { code: this.code, ...v });
-          await enterGroup(res);
-          done();
-          if (res.me.status === 'active') toast(`Benvenuto nel gruppo "${this.group}"`);
+          if (f.elements.email) {
+            // Prima la conferma dell'email: poi la richiesta parte da sola.
+            this.email = f.elements.email.value.trim();
+            await requestCode(this.email);
+            this.pending = { values: v, terms };
+            return this.show('otp');
+          }
+          await this.submitJoin(v, terms);
         } catch (x) { fail(x.message); btn.disabled = false; }
       };
     }
-    if (step === 'link') {
-      $('#w-link').onclick = async (e) => {
-        e.target.disabled = true;
-        try {
-          const res = await publicApi('POST', `/api/link/${encodeURIComponent(this.link)}/accept`);
-          await enterGroup(res); done(); toast(`Dispositivo collegato a "${this.group}"`);
-        } catch (x) { fail(x.message); e.target.disabled = false; }
-      };
-    }
-    if (step === 'recover') {
-      focusLater('#w-email');
-      $('#w-rec-f').onsubmit = async (e) => {
-        e.preventDefault();
-        try { await publicApi('POST', '/api/recover', { email: $('#w-email').value.trim() }); this.show('recover-sent'); } catch (x) { fail(x.message); }
-      };
-    }
-    if (step === 'create') {
-      focusLater(st.member ? '#w-fam' : '#w-name');
-      $('#w-create-f').onsubmit = async (e) => {
+    if (step === 'new') {
+      const f = $('#w-create-f');
+      bindTermsCheck(f);
+      focusLater(f.elements.alias.value ? '#w-fam' : '#w-name');
+      f.onsubmit = async (e) => {
         e.preventDefault();
         const alias = $('#w-name').value.trim(), fam = $('#w-fam').value.trim();
         if (!alias) return fail('Scrivi il tuo nome.');
         if (!fam) return fail('Dai un nome al gruppo.');
-        try { await createGroup(fam, alias); done(); toast('Gruppo creato! Invita gli altri da Membri'); } catch (x) { fail(x.message); }
+        try {
+          await createGroup(fam, alias, termsAccepted(f));
+          done(); toast('Gruppo creato! Invita gli altri da Membri');
+        } catch (x) { fail(x.message); }
       };
     }
   },
@@ -314,6 +361,7 @@ function groupSheet() {
 }
 
 function newGroupSheet() {
+  if (!acct) { toast('Prima conferma la tua email'); return confirmEmailSheet(); }
   openSheet(`<h2>Nuovo gruppo</h2>
     <p class="muted">Una famiglia, la squadra di calcetto, una festa… Ne sarai l'amministratore.</p>
     <form id="ng"><label class="field"><span>Nome del gruppo</span><input class="input" name="gname" required maxlength="80" placeholder="es. Calcetto del giovedì"></label>
@@ -336,6 +384,7 @@ function newGroupSheet() {
 // Unirsi a un altro gruppo (per chi usa già Sporta): codice, poi presentazione.
 // `prefill`: codice da un link ?join=, oppure { invite: token } da un link personale.
 function joinGroupSheet(prefill) {
+  if (!acct) { toast('Prima conferma la tua email'); return confirmEmailSheet(); }
   openSheet(`<div id="jg-body"></div>`, (sh) => {
     const body = $('#jg-body', sh);
     const stepCode = (msg = '', code = '') => {
@@ -374,7 +423,7 @@ function joinGroupSheet(prefill) {
         if (!v.alias) return;
         try {
           const res = invite
-            ? await publicApi('POST', `/api/invites/${encodeURIComponent(invite)}/accept`, { alias: v.alias })
+            ? await publicApi('POST', `/api/invites/${encodeURIComponent(invite)}/accept`, { alias: v.alias, use_device_account: true })
             : await publicApi('POST', '/api/join', { code, ...v });
           await enterGroup(res);
           closeSheetAndGo('#/l');
@@ -394,50 +443,6 @@ function joinGroupSheet(prefill) {
       previewCode(code).then((j) => stepPresent({ code, name: j.household.name, approval: j.household.require_approval }))
         .catch((err) => stepCode(err.code === 'bad_code' ? 'Il link non contiene un codice valido: inseriscilo qui.' : err.message, code));
     } else stepCode(prefill ? 'Il link non contiene un codice valido: inseriscilo qui.' : '', prefill ? normCode(prefill) : '');
-  });
-}
-
-// Link per collegare questo dispositivo, aperto da chi usa già Sporta per altri gruppi.
-function linkDeviceConfirm(token) {
-  openSheet('<div id="ld"><div class="empty">Verifico il link…</div></div>', async (sh) => {
-    const box = $('#ld', sh);
-    let info;
-    try { info = await publicApi('GET', '/api/link/' + encodeURIComponent(token)); } catch { box.innerHTML = '<p class="err">Link non trovato.</p>'; return; }
-    if (!info.valid) { box.innerHTML = '<h2>Link scaduto</h2><p class="muted">Creane uno nuovo dal dispositivo già collegato.</p>'; return; }
-    box.innerHTML = `<div class="invite-head">${groupAvatar(info.household.name)}<div><small>Collega questo dispositivo come ${h(info.alias)}</small><b>${h(info.household.name)}</b></div></div>
-      <p class="err" id="ld-err"></p><div class="actions"><button class="btn" data-close>Annulla</button><button class="btn primary" id="ld-ok">Collega</button></div>`;
-    $('#ld-ok', sh).onclick = async () => {
-      try { const res = await publicApi('POST', `/api/link/${encodeURIComponent(token)}/accept`); await enterGroup(res); closeSheetAndGo('#/'); toast('Dispositivo collegato'); }
-      catch (x) { $('#ld-err', sh).textContent = x.message; }
-    };
-  });
-}
-
-// Il mio profilo nel gruppo attivo: dispositivi collegati.
-function devicesSheet() {
-  openSheet(`<h2>I tuoi dispositivi</h2>
-    <p class="muted" id="dv-n">Dispositivi collegati come <b>${h(st.member)}</b> in ${h(groupName())}…</p>
-    <div class="opt"><b>Collega un altro dispositivo</b><small>Crea un link valido 10 minuti e aprilo sull'altro telefono, tablet o computer (per esempio mandandolo a te stesso).</small>
-      <div id="dv-out"></div><button class="btn primary block" id="dv-make">Crea il link</button></div>
-    <div class="actions"><button class="btn danger" id="dv-rev">Esci dagli altri dispositivi</button></div>`, async (sh) => {
-    const count = async () => {
-      try { const j = await api('GET', '/api/me/devices'); $('#dv-n', sh).innerHTML = `Sei collegato come <b>${h(st.member)}</b> in ${h(groupName())} su <b>${j.count}</b> ${j.count === 1 ? 'dispositivo' : 'dispositivi'}.`; } catch { /* offline */ }
-    };
-    count();
-    $('#dv-make', sh).onclick = async () => {
-      try {
-        const j = await api('POST', '/api/me/devices/link', {});
-        const url = `${location.origin}/?link=${encodeURIComponent(j.token)}`;
-        $('#dv-out', sh).innerHTML = `<div class="code small-code">${h(url)}</div><div class="actions" style="margin-bottom:8px"><button type="button" class="btn" id="dv-c">Copia</button><button type="button" class="btn primary" id="dv-s">Condividi</button></div>`;
-        $('#dv-make', sh).hidden = true;
-        $('#dv-c', sh).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('Link copiato'); } catch { prompt('Copia il link:', url); } };
-        $('#dv-s', sh).onclick = async () => { if (navigator.share) { try { await navigator.share({ title: 'Sporta', url }); } catch { /* */ } } else $('#dv-c', sh).click(); };
-      } catch (x) { toast(x.message); }
-    };
-    $('#dv-rev', sh).onclick = async () => {
-      if (!confirm('Scollegare tutti gli altri dispositivi? Resterà collegato solo questo.')) return;
-      try { await api('POST', '/api/me/devices/revoke-others', {}); toast('Altri dispositivi scollegati'); count(); } catch (x) { toast(x.message); }
-    };
   });
 }
 
@@ -492,7 +497,7 @@ Views.notice = {
     const text = {
       removed: [`Non fai più parte di «${n.name}»`, `Un amministratore ti ha rimosso dal gruppo, oppure sei uscito da un altro dispositivo. Le liste e le ricette di ${n.name} sono state tolte da questo telefono.`],
       rejected: [`Richiesta non accettata`, `La tua richiesta di entrare in «${n.name}» non è stata accettata.`],
-      legacy_expired: [`Accesso da rinnovare`, `Per continuare a usare «${n.name}» chiedi di nuovo di entrare, con il codice del gruppo o un link d'invito.`],
+      legacy_expired: [`Accesso da rinnovare`, `Per ritrovare «${n.name}» entra con la tua email: se fai parte del gruppo, lo ritrovi subito.`],
     }[n.reason] || [`Non fai più parte di «${n.name}»`, ''];
     app.innerHTML = `<div class="welcome center">
       <div class="big-ico" style="background:var(--surface-2);color:var(--muted)">${I.users}</div>
@@ -517,10 +522,10 @@ const sortedMembers = () => [...st.members.values()].sort((a, b) =>
 function memberRow(m, { requests } = {}) {
   const meId = st.me && st.me.id;
   const sub = requests
-    ? [relLabel(m.relation), m.email ? 'email indicata' : '', fmtAgo(m.created_at)].filter(Boolean).join(' · ')
+    ? [relLabel(m.relation), m.email ? m.email + (m.email_verified ? ' ✓' : '') : '', fmtAgo(m.created_at)].filter(Boolean).join(' · ')
     : [relLabel(m.relation), m.online ? (m.viewing && st.lists.get(m.viewing) ? `nella lista "${st.lists.get(m.viewing).name}"` : 'online') : m.last_seen ? 'visto ' + fmtAgo(m.last_seen) : ''].filter(Boolean).join(' · ');
   return `<div class="mrow" data-mid="${m.id}">${avatar(m)}
-    <span class="mt"><b>${h(m.alias)}${m.id === meId ? ' (tu)' : ''}${m.role === 'admin' && !requests ? ' <span class="rbadge">Admin</span>' : ''}${requests ? ' <span class="rbadge w">nuova</span>' : ''}</b><small>${h(sub)}</small></span>
+    <span class="mt"><b>${h(m.alias)}${m.id === meId ? ' (tu)' : ''}${m.role === 'admin' && !requests ? ' <span class="rbadge">Admin</span>' : ''}${requests ? ' <span class="rbadge w">nuova</span>' : ''}${!requests && m.email_verified === false ? ' <span class="rbadge w">email da confermare</span>' : ''}</b><small>${h(sub)}</small></span>
     ${requests ? `<button class="round no" data-reject="${m.id}" aria-label="Rifiuta">${I.x}</button><button class="round yes" data-review="${m.id}" aria-label="Accetta">${I.check}</button>` : '<span class="chev">›</span>'}</div>`;
 }
 
@@ -581,7 +586,7 @@ function bindSeg(root, name) {
 }
 
 function reviewSheet(m) {
-  openSheet(`<div class="req-head">${avatar(m, 'xl')}<div><b>${h(m.alias)} chiede di entrare</b><small class="muted">in ${h(groupName())} · ${h(fmtAgo(m.created_at))}${m.email ? '<br>' + h(m.email) : ''}</small></div></div>
+  openSheet(`<div class="req-head">${avatar(m, 'xl')}<div><b>${h(m.alias)} chiede di entrare</b><small class="muted">in ${h(groupName())} · ${h(fmtAgo(m.created_at))}${m.email ? '<br>' + h(m.email) + (m.email_verified ? ' ✓ verificata' : '') : ''}</small></div></div>
     ${m.message ? `<div class="bubble">“${h(m.message)}”</div>` : ''}
     <form id="rv">
       <label class="field"><span>Nome nel gruppo</span><input class="input" name="alias" required maxlength="40" value="${h(m.alias)}"><span class="hint">Deve essere unico nel gruppo: puoi correggerlo.</span></label>

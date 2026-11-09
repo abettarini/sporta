@@ -105,24 +105,27 @@ Apri Sporta: {{ link }}`,
 Se pensi che sia un errore, chiedi a chi ti ha invitato di mandarti un link personale.`,
   },
   {
-    // Recupero dell'accesso: un link per ogni gruppo in cui l'email è registrata.
-    name: 'sporta-recovery',
-    variables: ['groups', 'expires_hours'],
-    subject: 'Il tuo accesso a Sporta',
-    html: layout('Recupera l\'accesso',
-      h1('Collega questo dispositivo') +
-      p('Hai chiesto di recuperare l\'accesso a Sporta. Apri il link del gruppo che vuoi collegare, dal telefono o dal computer che stai usando:') +
-      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 10px;">{% for g in groups %}' +
-      '<tr><td style="padding:10px 0;border-top:1px solid #dde4df;"><b>{{ g.group }}</b><br><span style="font-size:14px;color:#66736c;">come {{ g.alias }}</span></td>' +
-      `<td align="right" style="padding:10px 0;border-top:1px solid #dde4df;"><a href="{{ g.link }}" style="display:inline-block;padding:9px 14px;background:${BRAND};border-radius:10px;color:#ffffff;font-weight:700;text-decoration:none;font-size:14px;">Collega</a></td></tr>` +
-      '{% endfor %}</table>' +
-      muted('I link valgono {{ expires_hours }} ore e si possono usare una volta sola. Se non hai chiesto tu il recupero, ignora questa email: senza i link nessuno può entrare.')),
-    text: `Hai chiesto di recuperare l'accesso a Sporta. Apri il link del gruppo che vuoi collegare:
-{% for g in groups %}
-- {{ g.group }} (come {{ g.alias }}): {{ g.link }}
-{% endfor %}
-I link valgono {{ expires_hours }} ore e si possono usare una volta sola.
-Se non hai chiesto tu il recupero, ignora questa email.`,
+    // Codice per entrare (login), per confermare una nuova email (change) e avviso di email cambiata (changed).
+    name: 'sporta-code',
+    variables: ['code', 'purpose', 'minutes', 'link', 'email'],
+    subject: '{% if purpose == "changed" %}La tua email su Sporta è cambiata{% elsif purpose == "change" %}Conferma la nuova email: {{ code }}{% else %}Il tuo codice Sporta: {{ code }}{% endif %}',
+    html: layout('Il tuo codice Sporta',
+      '{% if purpose == "changed" %}' +
+        h1('La tua email è cambiata') +
+        p('L\'account Sporta che usava questo indirizzo ora usa <b>{{ email }}</b>.') +
+        muted('Se non sei stato tu, rispondi a questa email o scrivi a chi gestisce Sporta.') +
+      '{% else %}' +
+        h1('{% if purpose == "change" %}Conferma la nuova email{% else %}Ecco il tuo codice{% endif %}') +
+        p('{% if purpose == "change" %}Per usare questo indirizzo su Sporta inserisci il codice:{% else %}Inserisci questo codice in Sporta per entrare:{% endif %}') +
+        '<p style="margin:6px 0 16px;padding:14px;background:#eef2ef;border-radius:12px;text-align:center;font:700 32px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:4px;color:#16201b;">{{ code }}</p>' +
+        '{% if purpose != "change" %}' + p('Oppure, da questo dispositivo:') + button('{{ link }}', 'Entra in Sporta') + '{% endif %}' +
+        muted('Il codice scade tra {{ minutes }} minuti e si può usare una volta sola. Se non hai chiesto tu di entrare, ignora questa email: senza il codice nessuno può accedere.') +
+      '{% endif %}'),
+    text: `{% if purpose == "changed" %}L'account Sporta che usava questo indirizzo ora usa {{ email }}. Se non sei stato tu, rispondi a questa email.{% else %}{% if purpose == "change" %}Codice per confermare la nuova email su Sporta{% else %}Il tuo codice per entrare in Sporta{% endif %}: {{ code }}
+{% if purpose != "change" %}
+Oppure apri: {{ link }}
+{% endif %}
+Scade tra {{ minutes }} minuti e vale una volta sola. Se non hai chiesto tu di entrare, ignora questa email.{% endif %}`,
   },
   {
     // Qualcuno ti ha assegnato una cosa da fare (solo se hai scelto gli avvisi per email).
@@ -183,13 +186,8 @@ const SAMPLES = {
   'sporta-join-request': { group: 'Casa Rossi', alias: 'Luca', relation: 'amico', message: 'Ciao, sono il cugino di Giulia', link: 'https://sporta.example.it/#/m' },
   'sporta-request-approved': { group: 'Casa Rossi', link: 'https://sporta.example.it/' },
   'sporta-request-rejected': { group: 'Casa Rossi' },
-  'sporta-recovery': {
-    groups: [
-      { group: 'Casa Rossi', alias: 'Luca', link: 'https://sporta.example.it/?link=aaa' },
-      { group: 'Calcetto del giovedì', alias: 'Luca B.', link: 'https://sporta.example.it/?link=bbb' },
-    ],
-    expires_hours: 24,
-  },
+  'sporta-code': { code: '482 913', purpose: 'login', minutes: 10, link: 'https://sporta.example.it/?auth=abc', email: 'anna@esempio.it' },
+
   'sporta-assigned': { group: 'Calcetto del giovedì', alias: 'Luca', actor: 'Marco', item: 'Prenotare il campo', list: 'Torneo', due: 'giovedì 12 novembre', link: 'https://sporta.example.it/#/go/abc/def' },
   'sporta-event': { group: 'Calcetto del giovedì', alias: 'Luca', actor: 'Marco', event: 'Cena di fine torneo', when_label: 'sabato 14 novembre, 20:30', location: 'Da Mario, via Roma 3', kind: 'event', title: 'Marco ha creato l\'evento "Cena di fine torneo"', link: 'https://sporta.example.it/#/go/abc/e/def' },
   'sporta-reminder': { group: 'Calcetto del giovedì', alias: 'Luca', item: 'Prenotare il campo', list: 'Torneo', due: 'giovedì 12 novembre', when: 'tomorrow', title: '', link: 'https://sporta.example.it/#/go/abc/def' },

@@ -554,11 +554,14 @@ function closeTripSheet(listId) {
 // --------------------------------------------------------------- catalogo prodotti
 Views.products = {
   q: '',
+  pantry: false,
   mount() {
     app.innerHTML = topBar('Prodotti', { back: '#/s', right: `<button class="icon-btn" id="np" aria-label="Nuovo prodotto">${I.plus}</button>` }) +
       `<main class="wide"><input class="input search" id="pq" type="search" placeholder="Cerca prodotto, marca o #tag…" value="${h(this.q)}">
       <p class="muted small">Il catalogo si riempie da solo con quello che aggiungi alle liste e alle ricette. Qui puoi impostare reparto, tag, quantità e marca abituali, e segnare con ${icon('star')} i prodotti abituali.</p>
+      <div class="chips"><button type="button" class="chip ${this.pantry ? 'on' : ''}" id="ppantry">${icon('home')} Sempre in casa</button></div>
       <div id="pl"></div></main>` + tabBar('settings');
+    $('#ppantry').onclick = (e) => { this.pantry = !this.pantry; e.currentTarget.classList.toggle('on', this.pantry); this.update(); };
     $('#pq').oninput = (e) => { this.q = e.target.value; this.update(); };
     $('#np').onclick = () => productSheet(null);
     $('#pl').onclick = (e) => {
@@ -574,7 +577,7 @@ Views.products = {
   },
   update() {
     const q = S.normName(this.q).replace(/^#/, '');
-    const all = [...st.products.values()].filter((p) => !q || p.key.includes(q) || S.normName(p.brand).includes(q) || (p.tags || []).some((t) => t.includes(q)));
+    const all = [...st.products.values()].filter((p) => !this.pantry || p.pantry).filter((p) => !q || p.key.includes(q) || S.normName(p.brand).includes(q) || (p.tags || []).some((t) => t.includes(q)));
     const groups = new Map();
     for (const p of all) {
       const d = S.deptOf(p.department).id;
@@ -584,7 +587,7 @@ Views.products = {
     $('#pl').innerHTML = all.length ? '<div class="dept-cols">' + S.DEPARTMENTS.filter((d) => groups.has(d.id)).map((d) => `<section class="dept-block"><div class="dept-h">${deptTile(d.id, 'sm')} ${h(d.label)} <small>${groups.get(d.id).length}</small></div>
       <ul class="items">${groups.get(d.id).sort((a, b) => a.name.localeCompare(b.name, 'it')).map((p) => {
         const q2 = S.fmtQty(p.qty, p.unit);
-        const meta = [p.brand && h(p.brand), q2 && h(q2)].filter(Boolean).join(' · ');
+        const meta = [p.pantry && 'sempre in casa', p.brand && h(p.brand), q2 && h(q2)].filter(Boolean).join(' · ');
         return `<li class="item"><button class="tap" data-key="${h(p.key)}" type="button"><span class="txt"><span class="name">${h(p.name)}</span>
           ${meta || (p.tags || []).length ? `<span class="meta">${meta} <span class="tags">${tagPills(p.tags)}</span></span>` : ''}</span></button>
           <button class="icon-btn star ${p.favorite ? 'on' : ''}" data-star="${h(p.key)}" aria-label="Abituale">${p.favorite ? I.starFill : I.star}</button></li>`;
@@ -606,6 +609,7 @@ function productSheet(p) {
       ${deptPicker('department', p.department)}
       ${tagField('tags', p.tags)}
       <label class="switch"><input type="checkbox" name="favorite" ${p.favorite ? 'checked' : ''}><span>${I.star} Prodotto abituale</span></label>
+      <label class="switch"><input type="checkbox" name="pantry" ${p.pantry ? 'checked' : ''}><span>${icon('home')} Sempre in casa <small class="muted">— nelle ricette parte come “Ce l’ho”</small></span></label>
       <div class="actions">${isNew ? '<button type="button" class="btn" data-close>Annulla</button>' : '<button type="button" class="btn danger" id="pdel">Elimina</button>'}<button class="btn primary">Salva</button></div>
       ${!isNew && shoppingLists().length ? `<div class="actions"><button type="button" class="btn" id="padd">Aggiungi alla lista</button></div>` : ''}
     </form>`, (sh) => {
@@ -619,7 +623,7 @@ function productSheet(p) {
     }
     const values = () => {
       const el = f.elements;
-      return { qty: S.parseNum(el.qty.value), unit: el.unit.value, brand: el.brand.value.trim(), department: el.department.value, tags: parseTags(el.tags.value), favorite: el.favorite.checked };
+      return { qty: S.parseNum(el.qty.value), unit: el.unit.value, brand: el.brand.value.trim(), department: el.department.value, tags: parseTags(el.tags.value), favorite: el.favorite.checked, pantry: el.pantry.checked };
     };
     f.onsubmit = (e) => {
       e.preventDefault();

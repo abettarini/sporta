@@ -76,6 +76,8 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - Foto, descrizione, **difficoltà**, **tempi di preparazione e cottura**, ingredienti e **procedimento a passaggi** (riordinabili con drag & drop).
 - **Autocompletamento** degli ingredienti dal catalogo e dalle altre ricette; gli ingredienti nuovi entrano subito nei suggerimenti.
 - Si sceglie per quante persone cucinare: le quantità vengono ricalcolate e arrotondate in modo sensato (uova e pezzi interi, grammi a 5/10). Si deselezionano gli ingredienti già in casa e il resto va nella lista.
+- **La faccio**: dalla ricetta si tocca *La faccio* e si apre *Preparo*, il menu del gruppo (visibile e modificabile da tutti, resta finché qualcuno non lo svuota). Si possono mettere più ricette, ognuna con le sue persone: gli ingredienti uguali si sommano quando le unità sono compatibili. Ogni ingrediente si segna **Ce l'ho** o **Da comprare** (scelta condivisa, in tempo reale), con gli indizi *già in lista*, *comprato N giorni fa* (ultimi 7 giorni) e *sempre in casa*. *Aggiungi* mette nella lista scelta quello che manca, con la nota "per <ricetta>" e sommando a quello che c'è già; il messaggio offre *Annulla*. Eliminare una ricetta la toglie dal menu.
+- **Sempre in casa**: nella scheda di un prodotto (*Altro → Prodotti*, con il filtro apposito) si segnano sale, olio e simili; nel menu partono come *Ce l'ho*.
 - **Condivisione con link privato** (non indicizzato e revocabile): chi lo apre vede la ricetta anche senza Sporta e, se usa Sporta, può salvarla nelle sue ricette. Le ricette si possono anche copiare in un altro dei propri gruppi.
 
 ### App
@@ -258,6 +260,7 @@ Sporta espone i suoi strumenti agli agenti AI del browser tramite [WebMCP](https
 | `sporta_search_recipes`, `sporta_get_recipe` | cerca e legge le ricette |
 | `sporta_add_recipe_to_list` | aggiunge gli ingredienti di una ricetta per N persone, escludendo quelli già in casa |
 | `sporta_create_recipe` | crea una ricetta |
+| `sporta_get_menu`, `sporta_cook_recipe`, `sporta_mark_menu_ingredients`, `sporta_add_menu_to_list` | menu "La faccio": legge, aggiunge ricette, segna Ce l'ho / Da comprare, mette in lista quello che manca |
 | `sporta_get_shopping_history` | storico delle spese |
 | `sporta_create_list` | crea una lista |
 
@@ -303,6 +306,7 @@ lib/protect.js         protezioni contro lo spam: ALTCHA, limiti nel database, b
 lib/members.js         membri: chiavi di gruppo, ruoli, richieste, inviti, presenza
 lib/notify.js          avvisi, notifiche push (Web Push), promemoria delle scadenze
 lib/events.js          eventi, risposte con ospiti, liste collegate, promemoria del giorno prima
+lib/menu.js            menu "La faccio": ricette da preparare e scelte Ce l'ho / Da comprare
 lib/util.js            funzioni di supporto del server
 lib/backends.js        adattatori: SQLite o Postgres, tempo reale in memoria o LISTEN/NOTIFY
 lib/http.js            adattamento richiesta/risposta HTTP
@@ -318,6 +322,7 @@ public/js/altcha-worker.js  prova di lavoro ALTCHA, calcolata in background
 public/termini.html    condizioni d'uso
 public/privacy.html    informativa sulla privacy
 public/js/recipes.js   ricette, foto, condivisione
+public/js/cook.js      "La faccio": menu condiviso e ingredienti da comprare
 public/js/trips.js     storico delle spese
 public/js/overview.js  panoramica di tutti i gruppi, avvisi, notifiche push
 public/js/events.js    eventi: elenco, calendario, risposte, liste dell'evento, .ics

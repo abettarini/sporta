@@ -66,7 +66,7 @@ Views.recipes = {
   mount() {
     app.innerHTML = topBar('Ricette', {
       right: `<a class="icon-btn" href="#/r/new/edit" aria-label="Nuova ricetta">${I.plus}</a>`,
-    }) + `<main class="wide"><input class="input search" id="rq" type="search" placeholder="Cerca ricetta o ingrediente…" value="${h(this.q)}"><div class="list-cards recipe-grid" id="rl"></div></main>` + tabBar('recipes');
+    }) + `<main class="wide"><input class="input search" id="rq" type="search" placeholder="Cerca ricetta o ingrediente…" value="${h(this.q)}"><div id="rbanner"></div><div class="list-cards recipe-grid" id="rl"></div></main>` + tabBar('recipes');
     $('#rq').oninput = (e) => { this.q = e.target.value; this.update(); };
     this.update();
   },
@@ -75,9 +75,11 @@ Views.recipes = {
     const rs = [...st.recipes.values()]
       .filter((r) => !q || S.normName(r.name).includes(q) || r.ingredients.some((i) => S.normName(i.name).includes(q)))
       .sort((a, b) => a.name.localeCompare(b.name, 'it'));
+    const sum = menuSummary();
+    $('#rbanner').innerHTML = sum.recipes ? `<a class="card menu-banner" href="#/cook">${icon('dish')}<span class="t"><b>Preparo: ${sum.recipes} ${sum.recipes === 1 ? 'ricetta' : 'ricette'}</b><span>${sum.buy ? `${sum.buy} da comprare` : 'Hai tutto'}</span></span><span class="btn small">Apri</span></a>` : '';
     $('#rl').innerHTML = rs.length ? rs.map((r) => `<a class="card recipe-card" href="#/r/${r.id}">
         ${r.photos && r.photos.length ? `<img class="thumb" src="${photoUrl(r.photos[0])}" alt="" loading="lazy">` : `<span class="thumb ph">${icon('dish')}</span>`}
-        <span class="t"><b>${h(r.name)}</b><span>${h(recipeMeta(r))}</span></span>
+        <span class="t"><b>${h(r.name)}</b><span>${h(recipeMeta(r))}</span>${inMenu(r.id) ? '<i class="in-menu">nel menu</i>' : ''}</span>
         ${r.share_token ? `<span class="shared-ico" title="Condivisa">${I.share}</span>` : ''}</a>`).join('')
       : `<div class="empty">${emptyArt('book')}${st.recipes.size ? 'Nessuna ricetta trovata.' : 'Nessuna ricetta.<br>Aggiungine una con il +'}</div>`;
   },
@@ -98,6 +100,7 @@ Views.recipe = {
       right: `<button class="icon-btn" id="rshare" aria-label="Condividi">${I.share}</button><a class="icon-btn" href="#/r/${r.id}/edit" aria-label="Modifica">${I.edit}</a>`,
     }) + (hasPane() ? `<aside class="pane" id="pane-recipes"></aside>` : '') + `<main class="wide"><div id="rbody"></div>
       <div class="sticky-cta"><div class="card">
+        <button class="btn cook-btn" id="rcook">${icon('dish')} La faccio</button>
         <select class="input" id="tl"></select>
         <button class="btn primary" id="addr">Aggiungi</button>
       </div></div></main>` + tabBar('recipes');
@@ -108,6 +111,7 @@ Views.recipe = {
       if (li) { const k = Number(li.dataset.k); this.off.has(k) ? this.off.delete(k) : this.off.add(k); this.update(); }
     });
     $('#addr').onclick = () => this.addToList();
+    $('#rcook').onclick = () => { addRecipeToMenu(r.id, this.people); location.hash = '#/cook'; };
     $('#rshare').onclick = () => shareSheet(r.id);
     this.update();
   },
@@ -131,6 +135,9 @@ Views.recipe = {
     const btn = $('#addr');
     btn.textContent = n ? `Aggiungi ${n}` : 'Aggiungi';
     btn.disabled = !n || !shoppingLists().length;
+    const en = inMenu(r.id);
+    $('#rcook').innerHTML = `${icon('dish')} ${en ? 'Nel menu' : 'La faccio'}`;
+    $('#rcook').classList.toggle('on', !!en);
   },
   addToList() {
     const r = st.recipes.get(this.rid);

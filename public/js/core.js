@@ -82,6 +82,8 @@ const st = {
   products: new Map(), // chiave: nome normalizzato
   trips: new Map(),
   events: new Map(),   // eventi del gruppo attivo (con le risposte)
+  menuEntries: new Map(), // menu "La faccio": ricette da preparare (con le persone)
+  menuMarks: new Map(),   // scelte condivise per ingrediente: 'have' (Ce l'ho) / 'buy' (Da comprare)
   me: null,            // io nel gruppo attivo (ruolo, relazione, stato)
   members: new Map(),  // membri del gruppo attivo (con presenza)
   notice: null,        // avviso da mostrare (es. rimozione dal gruppo)
@@ -129,6 +131,8 @@ function setState(j) {
   st.products = new Map((j.products || []).map((x) => [x.key, x]));
   st.trips = new Map((j.trips || []).map((x) => [x.id, x]));
   st.events = new Map((j.events || []).map((x) => [x.id, x]));
+  st.menuEntries = new Map(((j.menu && j.menu.entries) || []).map((x) => [x.id, x]));
+  st.menuMarks = new Map(((j.menu && j.menu.marks) || []).map((x) => [x.key, x]));
   st.me = j.me || null;
   st.members = new Map((j.members || []).map((x) => [x.id, x]));
   // Aggiorna i dati del gruppo salvati sul telefono.
@@ -143,7 +147,7 @@ function setState(j) {
 
 function clearState() {
   st.household = null;
-  for (const k of ['lists', 'items', 'recipes', 'products', 'trips', 'members', 'events']) st[k] = new Map();
+  for (const k of ['lists', 'items', 'recipes', 'products', 'trips', 'members', 'events', 'menuEntries', 'menuMarks']) st[k] = new Map();
   st.me = null;
 }
 
@@ -155,7 +159,7 @@ function writeCache() {
   ls.setJson('cache.' + st.code, {
     household: st.household, lists: [...st.lists.values()], items: [...st.items.values()],
     recipes: [...st.recipes.values()], products: [...st.products.values()], trips: [...st.trips.values()],
-    events: [...st.events.values()], me: st.me, members: [...st.members.values()],
+    events: [...st.events.values()], menu: { entries: [...st.menuEntries.values()], marks: [...st.menuMarks.values()] }, me: st.me, members: [...st.members.values()],
   });
 }
 function saveCache() {
@@ -345,6 +349,17 @@ function applyLocal(op) {
       });
       break;
     }
+    case 'menu.put': {
+      const ex = st.menuEntries.get(op.id);
+      st.menuEntries.set(op.id, { ...(ex || { id: op.id, added_by: st.member, created_at: t }), ...op.data, updated_at: t });
+      break;
+    }
+    case 'menu.del': st.menuEntries.delete(op.id); break;
+    case 'menu.clear': st.menuEntries.clear(); st.menuMarks.clear(); break;
+    case 'mark.put':
+      if (op.data.state) st.menuMarks.set(op.id, { key: op.id, state: op.data.state, updated_at: t });
+      else st.menuMarks.delete(op.id);
+      break;
     case 'event.del':
       st.events.delete(op.id);
       for (const l of st.lists.values()) if (l.event_id === op.id) l.event_id = null;
@@ -376,6 +391,10 @@ function opRequest(op) {
     case 'trip.del': return ['DELETE', `/api/trips/${op.id}`];
     case 'hh.put': return ['PATCH', '/api/household', op.data];
     case 'event.put': return ['PUT', `/api/events/${op.id}`, op.data];
+    case 'menu.put': return ['PUT', `/api/menu/${op.id}`, op.data];
+    case 'menu.del': return ['DELETE', `/api/menu/${op.id}`];
+    case 'menu.clear': return ['POST', '/api/menu/clear', {}];
+    case 'mark.put': return ['PUT', '/api/menu/marks', { key: op.id, state: op.data.state || null }];
     case 'event.del': return ['DELETE', `/api/events/${op.id}`];
     case 'event.rsvp': return ['POST', `/api/events/${op.id}/rsvp`, op.data];
   }
@@ -481,7 +500,7 @@ function applyEvents(evs) {
     if (e.t === 'joined') { if (!st.me || e.id !== st.me.id) toast(`${e.alias} è entrato nel gruppo`); continue; }
     if (e.t === 'invites') { if (view === Views.members && Views.members.loadInvites) Views.members.loadInvites(); continue; }
     if (e.t === 'notify') { if (st.me && e.to === st.me.id) onNotifySignal(); continue; }
-    const map = { list: st.lists, item: st.items, recipe: st.recipes, product: st.products, trip: st.trips, event: st.events }[e.t];
+    const map = { list: st.lists, item: st.items, recipe: st.recipes, product: st.products, trip: st.trips, event: st.events, menu: st.menuEntries, mark: st.menuMarks }[e.t];
     if (!map) continue;
     if (e.op === 'put') {
       const prev = map.get(id);
@@ -937,6 +956,7 @@ function parseRoute() {
   if (p[0] === 'm') return { name: 'members' };
   if (p[0] === 'a') return { name: 'account' };
   if (p[0] === 'share') return { name: 'shareIn' };
+  if (p[0] === 'cook') return { name: 'cook' };
   return { name: 'home' };
 }
 

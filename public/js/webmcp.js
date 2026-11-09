@@ -370,6 +370,63 @@
       },
     },
     {
+      name: 'sporta_get_menu',
+      description: 'Menu "La faccio" del gruppo: le ricette da preparare (con le persone) e gli ingredienti sommati, ognuno segnato "have" (ce l\'ho) o "buy" (da comprare).',
+      inputSchema: { type: 'object', properties: {} },
+      annotations: { readOnlyHint: true },
+      execute: () => {
+        const ng = needGroup(); if (ng) return ng;
+        return ok({
+          recipes: menuEntries().map((e) => ({ name: st.recipes.get(e.recipe_id).name, people: e.servings })),
+          ingredients: menuRows().map((r) => ({ name: r.name, qty: r.qb ? 'q.b.' : S.fmtQty(r.qty, r.unit), for: r.recipes, state: rowState(r) })),
+        });
+      },
+    },
+    {
+      name: 'sporta_cook_recipe',
+      description: 'Aggiunge una ricetta al menu "La faccio" del gruppo (o cambia le persone se c\'è già).',
+      inputSchema: { type: 'object', properties: { recipe: { type: 'string' }, people: { type: 'integer', minimum: 1 } }, required: ['recipe'] },
+      execute: ({ recipe, people } = {}) => {
+        const ng = needGroup(); if (ng) return ng;
+        try {
+          const r = findRecipe(recipe);
+          addRecipeToMenu(r.id, Math.max(1, parseInt(people, 10) || r.servings));
+          render();
+          return ok(`"${r.name}" è nel menu`);
+        } catch (e) { return fail(e.message); }
+      },
+    },
+    {
+      name: 'sporta_mark_menu_ingredients',
+      description: 'Segna ingredienti del menu come "have" (ce l\'ho) o "buy" (da comprare). Visibile a tutto il gruppo.',
+      inputSchema: { type: 'object', properties: { names: { type: 'array', items: { type: 'string' } }, state: { type: 'string', enum: ['have', 'buy'] } }, required: ['names', 'state'] },
+      execute: ({ names, state } = {}) => {
+        const ng = needGroup(); if (ng) return ng;
+        const want = new Set((names || []).map(S.normName));
+        const rows = menuRows().filter((r) => want.has(r.norm));
+        if (!rows.length) return fail('Nessun ingrediente del menu corrisponde');
+        for (const r of rows) enqueue({ k: 'mark.put', id: r.key, data: { state } }, { silent: true });
+        render();
+        return ok(`Segnati: ${rows.map((r) => r.name).join(', ')}`);
+      },
+    },
+    {
+      name: 'sporta_add_menu_to_list',
+      description: 'Mette nella lista della spesa gli ingredienti del menu segnati "da comprare", con la nota "per <ricetta>".',
+      inputSchema: { type: 'object', properties: { list: { type: 'string' } } },
+      execute: ({ list } = {}) => {
+        const ng = needGroup(); if (ng) return ng;
+        try {
+          const l = findList(list);
+          const rows = menuRows().filter((r) => rowState(r) === 'buy');
+          if (!rows.length) return ok('Niente da comprare');
+          addMenuToList(l.id, rows);
+          render();
+          return ok(`Aggiunti a "${l.name}": ${rows.map((r) => r.name).join(', ')}`);
+        } catch (e) { return fail(e.message); }
+      },
+    },
+    {
       name: 'sporta_get_shopping_history',
       description: 'Storico delle spese concluse: data, negozio, totale e articoli comprati.',
       inputSchema: { type: 'object', properties: { limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 } } },

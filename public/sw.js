@@ -65,6 +65,17 @@ self.addEventListener('notificationclick', (e) => {
   })());
 });
 
+// Chiave in cache per un indirizzo dell'app: le pagine (/, /r/<token>, qualunque percorso senza
+// estensione) sono sempre index.html, anche quando la richiesta non è una "navigazione" (per
+// esempio il controllo con cui Chrome verifica se l'app funziona offline).
+function appKey(req, url) {
+  if (/^\/(termini|privacy)\.html$/.test(url.pathname)) return url.pathname;
+  if (req.mode === 'navigate' || url.pathname === '/' || !/\.[a-z0-9]+$/i.test(url.pathname)) return '/index.html';
+  return url.pathname;
+}
+// Rete non raggiungibile e nulla in cache: rispondiamo senza far fallire la richiesta.
+const offline = () => new Response('', { status: 504, statusText: 'Offline' });
+
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
@@ -76,16 +87,20 @@ self.addEventListener('fetch', (e) => {
       const res = await fetch(e.request);
       if (res.ok) cache.put(e.request, res.clone());
       return res;
-    }));
+    }).catch(offline));
     return;
   }
   if (url.pathname.startsWith('/api/')) return;
-  // App: dalla cache della versione installata; navigazioni (anche /r/<token>) -> index.html.
-  // (le pagine delle condizioni e della privacy restano pagine a sé)
-  const key = e.request.mode === 'navigate' && !/^\/(termini|privacy)\.html$/.test(url.pathname) ? '/index.html' : url.pathname;
-  e.respondWith(caches.open(CACHE).then(async (cache) => {
+  // App: dalla cache della versione installata; se manca, dalla rete; se anche la rete manca,
+  // per le pagine si usa comunque index.html di qualunque versione in cache.
+  const key = appKey(e.request, url);
+  e.respondWith((async () => {
+    const cache = await caches.open(CACHE);
     const hit = await cache.match(key);
     if (hit) return hit;
-    return fetch(e.request);
-  }));
+    try { return await fetch(e.request); } catch {
+      const any = key === '/index.html' ? await caches.match('/index.html') : await caches.match(key);
+      return any || offline();
+    }
+  })());
 });

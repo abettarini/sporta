@@ -527,7 +527,7 @@ function memberRow(m, { requests } = {}) {
     ? [relLabel(m.relation), m.email ? m.email + (m.email_verified ? ' ✓' : '') : '', fmtAgo(m.created_at)].filter(Boolean).join(' · ')
     : [relLabel(m.relation), m.online ? (m.viewing && st.lists.get(m.viewing) ? `nella lista "${st.lists.get(m.viewing).name}"` : 'online') : m.last_seen ? 'visto ' + fmtAgo(m.last_seen) : ''].filter(Boolean).join(' · ');
   return `<div class="mrow" data-mid="${m.id}">${avatar(m)}
-    <span class="mt"><b>${h(m.alias)}${m.id === meId ? ' (tu)' : ''}${m.role === 'admin' && !requests ? ' <span class="rbadge">Admin</span>' : ''}${requests ? ' <span class="rbadge w">nuova</span>' : ''}${!requests && m.email_verified === false ? ' <span class="rbadge w">email da confermare</span>' : ''}</b><small>${h(sub)}</small></span>
+    <span class="mt"><b>${h(m.alias)}${m.id === meId ? ' (tu)' : ''}${m.role === 'admin' && !requests ? ' <span class="rbadge">Admin</span>' : ''}${requests ? ' <span class="rbadge w">nuova</span>' : ''}${!requests && m.email_verified === false ? ' <span class="rbadge w">email da confermare</span>' : ''}</b><small>${h(sub)}</small>${!requests && m.email ? `<small class="m-email">${h(m.email)}${m.email_verified ? ' ✓' : ''}</small>` : ''}</span>
     ${requests ? `<button class="round no" data-reject="${m.id}" aria-label="Rifiuta">${I.x}</button><button class="round yes" data-review="${m.id}" aria-label="Accetta">${I.check}</button>` : '<span class="chev">›</span>'}</div>`;
 }
 
@@ -680,7 +680,7 @@ function memberSheet(m) {
   const me = st.me && m.id === st.me.id;
   const admin = isAdmin() && !me;
   const status = m.online ? (m.viewing && st.lists.get(m.viewing) ? `online · nella lista "${st.lists.get(m.viewing).name}"` : 'online ora') : m.last_seen ? 'visto ' + fmtAgo(m.last_seen) : '';
-  openSheet(`<div class="req-head">${avatar(m, 'xl')}<div><b>${h(m.alias)}${me ? ' (tu)' : ''}</b><small class="muted">${h([relLabel(m.relation), roleLabel(m.role)].filter(Boolean).join(' · '))}<br>${h(status)}${m.joined_at ? ' · nel gruppo da ' + h(fmtDate(m.joined_at, { month: 'long', year: 'numeric' })) : ''}</small></div></div>
+  openSheet(`<div class="req-head">${avatar(m, 'xl')}<div><b>${h(m.alias)}${me ? ' (tu)' : ''}</b><small class="muted">${h([relLabel(m.relation), roleLabel(m.role)].filter(Boolean).join(' · '))}<br>${h(status)}${m.joined_at ? ' · nel gruppo da ' + h(fmtDate(m.joined_at, { month: 'long', year: 'numeric' })) : ''}${m.email ? '<br>' + h(m.email) + (m.email_verified ? ' ✓' : '') : ''}</small></div></div>
     ${admin ? `<form id="ms">
       <div class="field"><span>Permesso</span>${roleSeg('role', m.role)}</div>
       <div class="field"><span>Relazione</span>${relationPicker('relation', m.relation)}</div>

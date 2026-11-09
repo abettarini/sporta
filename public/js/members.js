@@ -262,13 +262,14 @@ Views.welcome = {
     });
     const fail = (m) => { const e = $('#w-err'); if (e) e.textContent = m; };
     const done = () => { history.replaceState(null, '', '/#/'); mount(); };
+    if (step === 'start' || (step === 'alias' && !acct)) prepareProof().catch(() => {});
     if (step === 'start') {
       focusLater('#w-email');
       $('#w-mail-f').onsubmit = async (e) => {
         e.preventDefault();
-        const btn = e.target.querySelector('button'); btn.disabled = true;
+        const btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Un attimo…';
         this.email = $('#w-email').value.trim();
-        try { await requestCode(this.email); this.show('otp'); } catch (x) { fail(x.message); btn.disabled = false; }
+        try { await requestCode(this.email); this.show('otp'); } catch (x) { fail(x.message); btn.disabled = false; btn.textContent = 'Continua'; }
       };
     }
     if (step === 'otp') {

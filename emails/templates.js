@@ -48,20 +48,23 @@ const TEMPLATES = [
   {
     // Invito personale inviato da un amministratore.
     name: 'sporta-invite',
-    variables: ['group', 'invited_by', 'link', 'expires_days'],
+    variables: ['group', 'invited_by', 'link', 'expires_days', 'stop_link'],
     subject: '{% if invited_by != blank %}{{ invited_by }} ti invita{% else %}Sei invitato{% endif %} in «{{ group }}» su Sporta',
     html: layout('Invito su Sporta',
       h1('Sei invitato in «{{ group }}»') +
       p('{% if invited_by != blank %}<b>{{ invited_by }}</b> ti ha invitato{% else %}Sei stato invitato{% endif %} nel gruppo <b>{{ group }}</b> su Sporta, la lista della spesa condivisa in tempo reale.') +
       p('Apri il link e scrivi il tuo nome: entrerai subito nel gruppo.') +
       button('{{ link }}', 'Entra nel gruppo') +
-      muted('L\'invito vale per una persona e scade tra {{ expires_days }} giorni. Se il pulsante non funziona, copia questo indirizzo nel browser:<br><span style="word-break:break-all;">{{ link }}</span>')),
+      muted('L\'invito vale per una persona e scade tra {{ expires_days }} giorni. Se il pulsante non funziona, copia questo indirizzo nel browser:<br><span style="word-break:break-all;">{{ link }}</span>') +
+      '{% if stop_link != blank %}' + muted('Non conosci chi ti invita o non vuoi ricevere inviti da Sporta? <a href="{{ stop_link }}" style="color:#66736c;">Non voglio più ricevere inviti</a>.') + '{% endif %}'),
     text: `{% if invited_by != blank %}{{ invited_by }} ti ha invitato{% else %}Sei stato invitato{% endif %} nel gruppo "{{ group }}" su Sporta, la lista della spesa condivisa.
 
 Apri il link e scrivi il tuo nome per entrare:
 {{ link }}
 
-L'invito vale per una persona e scade tra {{ expires_days }} giorni.`,
+L'invito vale per una persona e scade tra {{ expires_days }} giorni.
+{% if stop_link != blank %}
+Non vuoi ricevere inviti da Sporta? {{ stop_link }}{% endif %}`,
   },
   {
     // A ogni amministratore con email, quando qualcuno chiede di entrare.
@@ -182,7 +185,7 @@ Puoi disattivare gli avvisi per email da Altro → Avvisi.`,
 
 // Dati di esempio per l'anteprima (npm run emails:preview).
 const SAMPLES = {
-  'sporta-invite': { group: 'Casa Rossi', invited_by: 'Marco', link: 'https://sporta.example.it/?invite=abc123', expires_days: 7 },
+  'sporta-invite': { group: 'Casa Rossi', invited_by: 'Marco', link: 'https://sporta.example.it/?invite=abc123', expires_days: 7, stop_link: 'https://sporta.example.it/api/email/stop?e=x&t=y' },
   'sporta-join-request': { group: 'Casa Rossi', alias: 'Luca', relation: 'amico', message: 'Ciao, sono il cugino di Giulia', link: 'https://sporta.example.it/#/m' },
   'sporta-request-approved': { group: 'Casa Rossi', link: 'https://sporta.example.it/' },
   'sporta-request-rejected': { group: 'Casa Rossi' },

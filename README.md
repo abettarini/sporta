@@ -130,6 +130,13 @@ Ogni 4 minuti circa la funzione chiude la connessione per rispettare i limiti di
 
 `LISTEN` non funziona attraverso un pooler in modalità *transaction* (PgBouncer, il pooler di Neon): per questo serve l'URL diretto (`DATABASE_URL_UNPOOLED`), che le integrazioni Vercel forniscono già. Ogni telefono con l'app aperta occupa una connessione diretta per istanza di funzione, molto al di sotto dei limiti anche dei piani gratuiti.
 
+### Segreto dell'app
+
+| Variabile | Uso |
+|---|---|
+| `APP_SECRET` | stringa casuale lunga (**riservata**), per firmare le prove anti-spam e i link "non voglio più ricevere inviti". Si genera per esempio con `openssl rand -hex 32`. Se manca viene derivata da un altro segreto già impostato, ma è meglio impostarla. |
+| `CODES_PER_HOUR_TOTAL` | facoltativa, default `600`: tetto complessivo dei codici via email all'ora (freno di emergenza). |
+
 ### Notifiche push e promemoria
 
 | Variabile | Uso |
@@ -250,6 +257,13 @@ Gli strumenti usano le stesse funzioni dell'interfaccia: le modifiche passano da
 - Si entra con un **codice usa e getta via email** (6 cifre, valido 10 minuti, al massimo 5 tentativi, un nuovo codice ogni minuto e non più di 5 l'ora per email, con limiti anche per indirizzo IP); i codici sono conservati solo come impronta e la risposta non rivela se un'email è registrata.
 - Ogni dispositivo ha una **chiave dell'account** e una chiave per ogni gruppo (conservate sul server solo come impronta): uscendo da un dispositivo si revocano tutte insieme. Il **codice del gruppo** serve solo a chiedere di entrare: da solo non apre nulla. I permessi da amministratore sono controllati dal server.
 - Una persona ha al massimo un posto per gruppo.
+- **Contro lo spam**:
+  - prima di chiedere un codice il browser risolve una piccola prova di lavoro **ALTCHA** (in background, di solito meno di mezzo secondo, nessun servizio esterno): costa poco a una persona e molto a chi manda richieste in massa. La difficoltà cresce con le richieste dallo stesso indirizzo IP, e c'è un tetto complessivo di codici all'ora;
+  - **inviti via email**: al massimo 10 al giorno per gruppo e 20 per persona (3 nelle prime 24 ore di un account nuovo), non più di 30 in attesa per gruppo;
+  - in fondo a ogni invito c'è **"Non voglio più ricevere inviti"**: quell'indirizzo non ne riceve più, finché la persona non entra in Sporta con la sua email;
+  - nei nomi dei gruppi e delle persone non si possono scrivere indirizzi web, e dai testi scritti dalle persone che finiscono nelle email (messaggi, articoli, eventi) gli indirizzi web vengono tolti;
+  - al massimo 10 richieste di ingresso al giorno per persona e 20 avvisi per email al giorno per persona (oltre, restano nell'app e nelle notifiche);
+  - i limiti sono salvati nel database, quindi valgono anche con più istanze del server.
 - Una persona rimossa perde subito l'accesso, anche alla connessione in tempo reale e alle modifiche rimaste in coda offline.
 - Le email e i messaggi delle richieste sono visibili solo agli amministratori; gli avvisi per email partono solo verso indirizzi confermati.
 - Tentativi con codici o chiavi sbagliati e richieste di accesso sono limitati; il numero di richieste in attesa per gruppo è limitato.
@@ -265,6 +279,7 @@ server.js              server locale/self-hosted: statici + API + SSE
 lib/core.js            logica delle API, schema del database e migrazioni
 lib/accounts.js        account: codici via email, dispositivi, condizioni, i miei dati, eliminazione
 lib/legal.js           versione delle condizioni d'uso e dell'informativa
+lib/protect.js         protezioni contro lo spam: ALTCHA, limiti nel database, blocco degli inviti, niente link
 lib/members.js         membri: chiavi di gruppo, ruoli, richieste, inviti, presenza
 lib/notify.js          avvisi, notifiche push (Web Push), promemoria delle scadenze
 lib/events.js          eventi, risposte con ospiti, liste collegate, promemoria del giorno prima
@@ -279,6 +294,7 @@ public/js/core.js      stato multi-gruppo, coda offline, sincronizzazione, compo
 public/js/lists.js     liste, articoli, abituali, conclusione spesa, catalogo prodotti
 public/js/members.js   ingresso (email e codice, inviti, codice del gruppo), membri, richieste, attesa
 public/js/account.js   account: codice, gruppi ritrovati, Il tuo account, condizioni, conferma dell'email
+public/js/altcha-worker.js  prova di lavoro ALTCHA, calcolata in background
 public/termini.html    condizioni d'uso
 public/privacy.html    informativa sulla privacy
 public/js/recipes.js   ricette, foto, condivisione

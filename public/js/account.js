@@ -24,8 +24,46 @@ async function accountApi(method, url, body) {
 // Chiavi di gruppo già presenti sul dispositivo (si collegano all'account al primo accesso).
 const memberTokens = () => st.groups.map((g) => g.token).filter((t) => t && t.startsWith('m_'));
 
+// --------------------------------------------------------------- protezione anti-abuso (ALTCHA)
+// Prima di chiedere un codice il browser risolve una piccola prova di lavoro (in background,
+// di solito meno di un secondo). La prepariamo appena si apre un campo email, così è già pronta.
+let proof = null; // { promise, at }
+function solveProof(c) {
+  return new Promise((resolve, reject) => {
+    let w;
+    try { w = new Worker('/js/altcha-worker.js'); } catch (e) { reject(e); return; }
+    w.onmessage = (e) => { w.terminate(); e.data.number == null ? reject(new Error('Verifica non riuscita')) : resolve(e.data.number); };
+    w.onerror = (e) => { w.terminate(); reject(e); };
+    w.postMessage(c);
+  });
+}
+function prepareProof() {
+  if (proof && Date.now() - proof.at < 8 * 60e3) return proof.promise;
+  const p = (async () => {
+    const r = await fetch('/api/auth/challenge');
+    if (!r.ok) throw new Error('Serve la connessione a internet');
+    const c = await r.json();
+    const number = await solveProof(c);
+    return btoa(JSON.stringify({ algorithm: c.algorithm, challenge: c.challenge, number, salt: c.salt, signature: c.signature }));
+  })();
+  proof = { promise: p, at: Date.now() };
+  p.catch(() => { if (proof && proof.promise === p) proof = null; });
+  return p;
+}
+// Ogni prova vale una volta sola.
+async function takeProof() {
+  const p = prepareProof();
+  proof = null;
+  return p;
+}
+// Invia con la prova; se è scaduta o già usata ne prepara un'altra e riprova una volta.
+async function withProof(send) {
+  try { return await send(await takeProof()); }
+  catch (e) { if (e.code !== 'bad_proof') throw e; return send(await takeProof()); }
+}
+
 async function requestCode(email) {
-  return publicApi('POST', '/api/auth/code', { email });
+  return withProof((altcha) => publicApi('POST', '/api/auth/code', { email, altcha }));
 }
 // Verifica del codice (o del link dell'email): salva l'account e aggiunge i gruppi trovati.
 async function verifyLogin(payload) {
@@ -119,6 +157,7 @@ function knownEmail() {
 // Riquadro "email + codice" riusabile (pannello o pagina). onDone(res) dopo la verifica.
 function emailCodeFlow(box, { intro = '', email = '', later = null, onDone, onLater, submitLabel = 'Invia il codice', terms = false } = {}) {
   const askEmail = (msg = '') => {
+    prepareProof().catch(() => {});
     box.innerHTML = `${intro}
       <form class="ec-f"><label class="field"><span>La tua email</span><input class="input" name="email" type="email" inputmode="email" autocomplete="email" required placeholder="nome@esempio.it" value="${h(email)}"></label>
       ${terms ? termsCheckHtml() : ''}
@@ -319,6 +358,7 @@ function changeEmailSheet() {
     const box = $('#cm', sh);
     let email = '';
     const ask = (msg = '') => {
+      prepareProof().catch(() => {});
       box.innerHTML = `<h2>Cambia email</h2><p class="muted">Ti mandiamo un codice al nuovo indirizzo. All'indirizzo attuale arriverà un avviso.</p>
         <form id="cm-f"><label class="field"><span>Nuova email</span><input class="input" name="email" type="email" inputmode="email" required></label>
         <p class="err">${h(msg)}</p><div class="actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn primary">Invia il codice</button></div></form>`;
@@ -327,7 +367,7 @@ function changeEmailSheet() {
       f.onsubmit = async (e) => {
         e.preventDefault();
         email = f.elements.email.value.trim();
-        try { await accountApi('POST', '/api/account/email', { email }); code(); } catch (x) { f.querySelector('.err').textContent = x.message; }
+        try { await withProof((altcha) => accountApi('POST', '/api/account/email', { email, altcha })); code(); } catch (x) { f.querySelector('.err').textContent = x.message; }
       };
     };
     const code = () => {
@@ -342,7 +382,7 @@ function changeEmailSheet() {
       });
       // Il reinvio per il cambio passa dall'endpoint dell'account.
       const r = box.querySelector('[data-resend]');
-      r.onclick = async () => { try { await accountApi('POST', '/api/account/email', { email }); toast('Nuovo codice inviato'); } catch (x) { toast(x.message); } };
+      r.onclick = async () => { try { await withProof((altcha) => accountApi('POST', '/api/account/email', { email, altcha })); toast('Nuovo codice inviato'); } catch (x) { toast(x.message); } };
     };
     ask();
   });

@@ -907,6 +907,7 @@ function parseRoute() {
   if (p[0] === 'l') return { name: 'lists' };
   if (p[0] === 'n') return { name: 'notifs' };
   if (p[0] === 'go' && p[1] && p[2] === 'e') return { name: 'go', hid: p[1], event: p[3] || '' };
+  if (p[0] === 'go' && p[1] && p[2] === 'm') return { name: 'go', hid: p[1], page: 'm' };
   if (p[0] === 'go' && p[1]) return { name: 'go', hid: p[1], list: p[2] || '', item: p[3] || '' };
   if (p[0] === 'e' && p[1]) return { name: 'event', id: p[1] };
   if (p[0] === 'e') return { name: 'events' };

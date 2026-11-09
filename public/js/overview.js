@@ -120,7 +120,7 @@ function enqueueIn(code, op) {
 // Apre una lista (o un articolo) di qualunque gruppo: #/go/<id gruppo>/<lista>/<articolo>.
 Views.go = {
   mount() {
-    const { hid, list, item, event } = this.route;
+    const { hid, list, item, event, page } = this.route;
     const g = st.groups.find((x) => x.hid === hid);
     if (!g) { toast('Non fai più parte di questo gruppo'); history.replaceState(null, '', '#/'); return mount(); }
     if (item) {
@@ -132,6 +132,13 @@ Views.go = {
     }
     // Prima si passa al gruppo (la vista si ricarica con il gruppo attivo), poi alla lista.
     if (g.code !== st.code) return switchGroup(g.code, location.hash);
+    if (page) {
+      const o = ov.data[g.code];
+      const ids = o && o.inbox ? o.inbox.items.filter((n) => !n.read && n.data && n.data.path === page).map((n) => n.id) : [];
+      if (ids.length) markRead(g.code, ids);
+      history.replaceState(null, '', '#/' + page);
+      return mount();
+    }
     if (event) {
       const o = ov.data[g.code];
       const ids = o && o.inbox ? o.inbox.items.filter((n) => !n.read && n.data && n.data.event === event).map((n) => n.id) : [];
@@ -158,7 +165,7 @@ const goEvent = (grp, eventId) => `#/go/${grp.hid}/e/${eventId}`;
 function openNotification(code, n) {
   const g = groupOf(code); if (!g) return;
   if (!n.read) markRead(code, [n.id]);
-  location.hash = n.data && n.data.event ? goEvent(g, n.data.event) : goHref(g, n.list_id, n.item_id);
+  location.hash = n.data && n.data.path ? `#/go/${g.hid}/${n.data.path}` : n.data && n.data.event ? goEvent(g, n.data.event) : goHref(g, n.list_id, n.item_id);
 }
 async function markRead(code, ids) {
   const o = ov.data[code];
@@ -295,7 +302,7 @@ Views.home = {
 };
 
 // --------------------------------------------------------------- avvisi
-const NOTIF_ICON = { assigned: 'todo', declined: 'persona', done: 'todo', due: 'clock' };
+const NOTIF_ICON = { assigned: 'todo', declined: 'me', done: 'todo', due: 'clock', join_request: 'me', guest_rsvp: 'party', guest_withdrawn: 'party', event: 'party', event_changed: 'party', event_cancelled: 'party', event_due: 'clock', group_deleted: 'home' };
 const timeAgo = (t) => {
   const s = (Date.now() - t) / 1000;
   if (s < 60) return 'ora';

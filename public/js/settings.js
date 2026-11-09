@@ -17,11 +17,13 @@ Views.settings = {
       <a class="card link-card" href="#/a" id="acc-card">${iconTile('persona')}<span class="t"><b>Il tuo account</b><span id="acc-sub"></span></span><span class="chev">›</span></a>
       <div class="card" id="prof"><h3>Il tuo profilo in questo gruppo</h3>
         <label class="switch"><input type="checkbox" id="hide"><span>Non mostrare quando sono online</span></label>
+        <div class="sig-row"><span><b>Firma delle ricette pubbliche</b><small id="sig-v"></small></span><button type="button" class="btn" id="sig">Cambia</button></div>
       </div>
       <div class="card" id="ntf"></div>
       <a class="card link-card" href="#/m" id="mb-card">${iconTile('home')}<span class="t"><b>Membri <i class="tab-badge inline" data-badge hidden></i></b><span id="mb-sub">Chi c'è nel gruppo, inviti e richieste</span></span><span class="chev">›</span></a>
       <a class="card link-card narrow-only" href="#/t">${iconTile('receipt')}<span class="t"><b>Spese</b><span>Storico delle spese concluse</span></span><span class="chev">›</span></a>
       <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
+      ${st.platformAdmin ? `<a class="card link-card" href="#/admin">${iconTile('note')}<span class="t"><b>Segnalazioni</b><span>Ricette pubbliche segnalate (solo amministratori)</span></span><span class="chev">›</span></a>` : ''}
       <div class="card" id="inv-card"><h3>Invita</h3>
         <p id="inv-p"></p>
         <div class="code" id="hc"></div>
@@ -44,6 +46,10 @@ Views.settings = {
         <p class="hint center" id="logout-hint"></p></div>
       <p class="muted small center">Sporta v${h(window.SPORTA_VERSION || 'dev')}</p>
     </main>` + tabBar('settings');
+    // --- firma delle ricette pubbliche (per questo gruppo)
+    const sigShow = () => { $('#sig-v').textContent = `“${authorLabel(myAuthor())}”${st.me && st.me.author_name != null ? '' : ' (proposta)'} · vale per le prossime pubblicazioni`; };
+    sigShow();
+    $('#sig').onclick = () => authorSheet({ done: async (a) => { try { await api('PATCH', '/api/me', { author_name: a }); toast('Firma aggiornata'); } catch (e) { toast(e.message); } sigShow(); } });
     // --- il mio nome in questo gruppo
     const sn = $('#sn'), snSave = $('#sn-save');
     sn.value = st.member;

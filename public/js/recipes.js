@@ -66,7 +66,7 @@ Views.recipes = {
   mount() {
     app.innerHTML = topBar('Ricette', {
       right: `<a class="icon-btn" href="#/r/new/edit" aria-label="Nuova ricetta">${I.plus}</a>`,
-    }) + `<main class="wide"><input class="input search" id="rq" type="search" placeholder="Cerca ricetta o ingrediente…" value="${h(this.q)}"><div id="rbanner"></div><div class="list-cards recipe-grid" id="rl"></div></main>` + tabBar('recipes');
+    }) + `<main class="wide">${recipeTabs('mine')}<input class="input search" id="rq" type="search" placeholder="Cerca ricetta o ingrediente…" value="${h(this.q)}"><div id="rbanner"></div><div class="list-cards recipe-grid" id="rl"></div></main>` + tabBar('recipes');
     $('#rq').oninput = (e) => { this.q = e.target.value; this.update(); };
     this.update();
   },
@@ -79,7 +79,7 @@ Views.recipes = {
     $('#rbanner').innerHTML = sum.recipes ? `<a class="card menu-banner" href="#/cook">${icon('dish')}<span class="t"><b>Preparo: ${sum.recipes} ${sum.recipes === 1 ? 'ricetta' : 'ricette'}</b><span>${sum.buy ? `${sum.buy} da comprare` : 'Hai tutto'}</span></span><span class="btn small">Apri</span></a>` : '';
     $('#rl').innerHTML = rs.length ? rs.map((r) => `<a class="card recipe-card" href="#/r/${r.id}">
         ${r.photos && r.photos.length ? `<img class="thumb" src="${photoUrl(r.photos[0])}" alt="" loading="lazy">` : `<span class="thumb ph">${icon('dish')}</span>`}
-        <span class="t"><b>${h(r.name)}</b><span>${h(recipeMeta(r))}</span>${inMenu(r.id) ? '<i class="in-menu">nel menu</i>' : ''}</span>
+        <span class="t"><b>${h(r.name)}</b><span>${h(recipeMeta(r))}</span><span class="badges"><i class="vis ${r.visibility === 'public' ? 'pub' : 'prv'}">${r.visibility === 'public' ? (r.hidden ? 'Pubblica · nascosta' : 'Pubblica') : 'Privata'}</i>${inMenu(r.id) ? '<i class="in-menu">nel menu</i>' : ''}</span></span>
         ${r.share_token ? `<span class="shared-ico" title="Condivisa">${I.share}</span>` : ''}</a>`).join('')
       : `<div class="empty">${emptyArt('book')}${st.recipes.size ? 'Nessuna ricetta trovata.' : 'Nessuna ricetta.<br>Aggiungine una con il +'}</div>`;
   },
@@ -98,7 +98,7 @@ Views.recipe = {
     app.innerHTML = topBar(`<span id="rt"></span>`, {
       back: '#/r',
       right: `<button class="icon-btn" id="rshare" aria-label="Condividi">${I.share}</button><a class="icon-btn" href="#/r/${r.id}/edit" aria-label="Modifica">${I.edit}</a>`,
-    }) + (hasPane() ? `<aside class="pane" id="pane-recipes"></aside>` : '') + `<main class="wide"><div id="rbody"></div>
+    }) + (hasPane() ? `<aside class="pane" id="pane-recipes"></aside>` : '') + `<main class="wide"><div id="rmeta"></div><div id="rbody"></div>
       <div class="sticky-cta"><div class="card">
         <button class="btn cook-btn" id="rcook">${icon('dish')} La faccio</button>
         <select class="input" id="tl"></select>
@@ -128,6 +128,11 @@ Views.recipe = {
     }
     const y = window.scrollY;
     $('#rbody').innerHTML = recipeBodyHtml(r, this.people, this.off);
+    $('#rmeta').innerHTML = `<div class="pub-head">${tagsHtml(r)}
+      <span class="vis-line">${r.visibility === 'public'
+        ? `<i class="vis pub">Pubblica</i> firmata <b>${h(authorLabel(r.author_name))}</b>${r.hidden ? ' · <b class="warn">nascosta per segnalazioni</b>' : ''}`
+        : '<i class="vis prv">Privata</i> la vede solo il gruppo'}</span>
+      ${r.origin ? `<span class="origin">${h(r.origin)}</span>` : ''}</div>`;
     window.scrollTo(0, y);
     const tl = $('#tl'), cur = tl.value || lastShoppingListId();
     tl.innerHTML = shoppingLists().map((l) => listOption(l, cur)).join('');
@@ -307,6 +312,8 @@ Views.recipeEdit = {
     this.draft = r ? r.ingredients.map((i) => ({ ...i, _k: uid() })) : [];
     this.steps = r ? stepsOf(r).map((s) => ({ text: s.text, _k: uid() })) : [];
     this.photos = r ? [...(r.photos || [])] : [];
+    this.course = r ? r.course || '' : '';
+    this.traits = new Set(r ? r.traits || [] : []);
     this.uploading = 0;
     app.innerHTML = topBar(isNew ? 'Nuova ricetta' : 'Modifica ricetta', { back: r ? `#/r/${r.id}` : '#/r' }) + `<main>
       <form id="ref" autocomplete="off">
@@ -323,6 +330,9 @@ Views.recipeEdit = {
           <label class="field"><span>Preparazione (min)</span><input class="input" name="prep_min" type="number" min="0" inputmode="numeric" value="${r && r.prep_min != null ? r.prep_min : ''}"></label>
           <label class="field"><span>Cottura (min)</span><input class="input" name="cook_min" type="number" min="0" inputmode="numeric" value="${r && r.cook_min != null ? r.cook_min : ''}"></label>
         </div>
+        <div class="field"><span>Portata</span><div class="chip-row wrap" id="rcourse"></div></div>
+        <div class="field"><span>Caratteristiche</span><div class="chip-row wrap" id="rtraits"></div>
+          <div class="hint" id="rtraits-h"></div></div>
         <div class="field"><span>Ingredienti</span>
           <div id="ingl"></div>
           <textarea class="input" id="ingq" rows="1" style="min-height:0" placeholder="Aggiungi: es. 320 g spaghetti (Invio). Puoi incollarne più righe."></textarea>
@@ -333,6 +343,8 @@ Views.recipeEdit = {
           <ol class="steps-edit" id="stepl"></ol>
           <button type="button" class="btn block" id="addstep">${I.plus} Aggiungi passaggio</button>
         </div>
+        <div class="card pub-toggle"><label class="switch"><input type="checkbox" name="public" ${(r ? r.visibility === 'public' : true) ? 'checked' : ''}>
+          <span><b>Pubblica</b><small id="pub-h"></small></span></label></div>
         <div class="actions">${r ? '<button type="button" class="btn danger" id="rdel">Elimina</button>' : ''}<button class="btn primary" id="rsave">Salva ricetta</button></div>
       </form></main>` + tabBar('recipes');
 
@@ -345,6 +357,7 @@ Views.recipeEdit = {
         if (p.name) this.draft.push({ name: p.name, qty: p.qty, unit: p.unit, brand: p.brand, _k: uid() });
       }
       this.rows();
+      this.tagRows();
     };
     ingq.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); addLines(ingq.value); ingq.value = ''; this.suggest(); }
@@ -362,6 +375,7 @@ Views.recipeEdit = {
       this.draft.push({ name: b.dataset.name, qty: p.qty, unit, brand: p.brand, _k: uid() });
       ingq.value = '';
       this.rows();
+      this.tagRows();
       this.suggest();
       ingq.focus();
     };
@@ -376,12 +390,13 @@ Views.recipeEdit = {
       const row = e.target.closest('.ing-edit'); if (!row) return;
       const d = this.draft.find((x) => x._k === row.dataset.id);
       if (d && e.target.dataset.f === 'unit') d.unit = e.target.value;
-      if (d && e.target.dataset.f === 'name') this.refreshNames(); // il nuovo nome entra subito nei suggerimenti
+      if (d && e.target.dataset.f === 'name') { this.refreshNames(); this.tagRows(); } // il nuovo nome entra subito nei suggerimenti
     });
     ingl.addEventListener('click', (e) => {
       const b = e.target.closest('[data-rm]'); if (!b) return;
       this.draft = this.draft.filter((x) => x._k !== b.dataset.rm);
       this.rows();
+      this.tagRows();
     });
     sortable(ingl, {
       itemSel: '.ing-edit', handleSel: '.grip',
@@ -442,8 +457,23 @@ Views.recipeEdit = {
       }
     };
 
-    // --- salvataggio
+    // --- portata, caratteristiche (con i suggerimenti) e pubblicazione
     const f = $('#ref');
+    $('#rcourse').onclick = (e) => { const b = e.target.closest('[data-c]'); if (!b) return; this.course = this.course === b.dataset.c ? '' : b.dataset.c; this.tagRows(); };
+    $('#rtraits').onclick = (e) => { const b = e.target.closest('[data-t]'); if (!b) return; const t = b.dataset.t; this.traits.has(t) ? this.traits.delete(t) : this.traits.add(t); this.tagRows(); };
+    for (const n of ['prep_min', 'cook_min']) f.elements[n].addEventListener('input', () => this.tagRows());
+    const pubHint = () => {
+      $('#pub-h').innerHTML = f.elements.public.checked
+        ? `La trovano tutti in Scopri, firmata “${h(authorLabel(myAuthor()))}”. Foto, ingredienti e passaggi diventano visibili. <button type="button" class="link" id="pub-sig">Cambia firma</button>`
+        : 'La vede solo questo gruppo.';
+      const sig = $('#pub-sig');
+      if (sig) sig.onclick = () => authorSheet({ done: (a) => { this.author = a; api('PATCH', '/api/me', { author_name: a }).catch(() => {}); pubHint(); } });
+    };
+    f.elements.public.onchange = pubHint;
+    pubHint();
+    this.tagRows();
+
+    // --- salvataggio
     f.onsubmit = (e) => {
       e.preventDefault();
       if (this.uploading) return toast('Attendi la fine del caricamento delle foto');
@@ -454,17 +484,29 @@ Views.recipeEdit = {
         .map((d) => ({ name: d.name.trim(), qty: d.qty ?? null, unit: d.unit || '', brand: (d.brand || '').trim() }));
       const steps = this.steps.map((s) => ({ text: s.text.trim() })).filter((s) => s.text);
       const num = (v) => (v === '' ? null : Math.max(0, parseInt(v, 10) || 0));
-      enqueue({
-        k: 'recipe.put', id: this.id,
-        data: {
-          name, servings: Math.max(1, parseInt(el.servings.value, 10) || 1), description: el.description.value.trim(),
-          difficulty: el.difficulty.value, prep_min: num(el.prep_min.value), cook_min: num(el.cook_min.value),
-          ingredients, steps, notes: '', photos: this.photos,
-        },
-      }, { silent: true });
-      Views.recipe.rid = null;
-      history.replaceState(null, '', `#/r/${this.id}`);
-      mount();
+      const data = {
+        name, servings: Math.max(1, parseInt(el.servings.value, 10) || 1), description: el.description.value.trim(),
+        difficulty: el.difficulty.value, prep_min: num(el.prep_min.value), cook_min: num(el.cook_min.value),
+        ingredients, steps, notes: '', photos: this.photos, course: this.course, traits: [...this.traits],
+      };
+      const save = (visibility, author) => {
+        data.visibility = visibility;
+        if (visibility === 'public') {
+          if (author !== undefined) data.author_name = author;
+          // Firma mostrata subito (il server conferma); una ricetta già pubblica tiene la sua.
+          if (!r || r.visibility !== 'public' || author !== undefined) data.author_name_shown = author !== undefined ? author : myAuthor();
+        }
+        const shown = data.author_name_shown; delete data.author_name_shown;
+        enqueue({ k: 'recipe.put', id: this.id, data }, { silent: true });
+        if (shown !== undefined) { const x = st.recipes.get(this.id); if (x) x.author_name = shown; }
+        Views.recipe.rid = null;
+        history.replaceState(null, '', `#/r/${this.id}`);
+        mount();
+      };
+      if (!el.public.checked) return save('private');
+      const firstTime = !st.me || st.me.author_name == null;
+      if (firstTime && (!r || r.visibility !== 'public')) return authorSheet({ first: true, done: (a) => (a === null ? save('private') : save('public', a)) });
+      save('public', this.author);
     };
     const del = $('#rdel');
     if (del) del.onclick = () => {
@@ -477,6 +519,15 @@ Views.recipeEdit = {
     this.stepRows();
     this.photoRows();
     this.suggest();
+  },
+  tagRows() {
+    const f = $('#ref'); if (!f) return;
+    const el = f.elements;
+    const mins = (parseInt(el.prep_min.value, 10) || 0) + (parseInt(el.cook_min.value, 10) || 0);
+    const sug = new Set(S.suggestTraits(this.draft, mins).filter((t) => !this.traits.has(t)));
+    $('#rcourse').innerHTML = S.COURSES.map((c) => `<button type="button" class="chip ${this.course === c.id ? 'on' : ''}" data-c="${c.id}">${h(c.label)}</button>`).join('');
+    $('#rtraits').innerHTML = S.TRAITS.map((t) => `<button type="button" class="chip ${this.traits.has(t.id) ? 'on' : ''} ${sug.has(t.id) ? 'sug' : ''}" data-t="${t.id}">${sug.has(t.id) ? '✦ ' : ''}${h(t.label)}</button>`).join('');
+    $('#rtraits-h').textContent = sug.size ? '✦ suggerite dagli ingredienti e dai tempi: tocca per confermare.' : '';
   },
   refreshNames() {
     const dl = $('#ing-names');

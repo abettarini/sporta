@@ -370,6 +370,34 @@
       },
     },
     {
+      name: 'sporta_search_public_recipes',
+      description: 'Cerca tra le ricette pubbliche di tutti gli utenti di Sporta per nome, portata, caratteristiche e ingredienti (con/senza).',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Nome o ingrediente' },
+          course: { type: 'string', enum: S.COURSES.map((c) => c.id) },
+          traits: { type: 'array', items: { type: 'string', enum: S.TRAITS.map((t) => t.id) } },
+          with: { type: 'array', items: { type: 'string' }, description: 'Ingredienti che devono esserci tutti' },
+          without: { type: 'array', items: { type: 'string' }, description: 'Ingredienti da escludere' },
+          max_minutes: { type: 'integer', minimum: 1 },
+        },
+      },
+      annotations: { readOnlyHint: true },
+      execute: async ({ query, course, traits, with: w, without, max_minutes } = {}) => {
+        const ng = needGroup(); if (ng) return ng;
+        const p = { limit: 20 };
+        if (query) p.q = query; if (course) p.course = course;
+        if (traits && traits.length) p.traits = traits.join(',');
+        if (w && w.length) p.with = w.join(','); if (without && without.length) p.without = without.join(',');
+        if (max_minutes) p.max_min = max_minutes;
+        try {
+          const j = await api('GET', '/api/recipes/search?' + new URLSearchParams(p));
+          return ok({ total: j.total, recipes: j.recipes.map((r) => ({ id: r.id, name: r.name, course: S.courseLabel(r.course), traits: r.traits.map(S.traitLabel), minutes: (r.prep_min || 0) + (r.cook_min || 0) || null, author: r.author_name || 'Anonimo', link: `#/r/pub/${r.id}` })) });
+        } catch (e) { return fail(e.message); }
+      },
+    },
+    {
       name: 'sporta_get_menu',
       description: 'Menu "La faccio" del gruppo: le ricette da preparare (con le persone) e gli ingredienti sommati, ognuno segnato "have" (ce l\'ho) o "buy" (da comprare).',
       inputSchema: { type: 'object', properties: {} },

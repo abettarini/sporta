@@ -316,7 +316,66 @@
     return { text, state: diff < 0 ? 'late' : diff <= 2 ? 'soon' : '', diff };
   }
 
-  const api = { parseQuick, normUnit, normName, parseNum, addQty, compatible, convert,
+  // ---------------------------------------------------------------- ricette: portate e caratteristiche
+  const COURSES = [
+    { id: 'antipasto', label: 'Antipasto' }, { id: 'primo', label: 'Primo' }, { id: 'secondo', label: 'Secondo' },
+    { id: 'contorno', label: 'Contorno' }, { id: 'unico', label: 'Piatto unico' }, { id: 'dolce', label: 'Dolce' },
+    { id: 'colazione', label: 'Colazione' }, { id: 'salsa', label: 'Salsa e condimento' },
+    { id: 'pane', label: 'Pane e lievitati' }, { id: 'bevanda', label: 'Bevanda' },
+  ];
+  // auto: suggerita in automatico (dagli ingredienti o dai tempi); le altre le decide solo chi scrive.
+  const TRAITS = [
+    { id: 'vegetariana', label: 'Vegetariana', auto: true }, { id: 'vegana', label: 'Vegana', auto: true },
+    { id: 'carne', label: 'Con carne', auto: true }, { id: 'pesce', label: 'Con pesce', auto: true },
+    { id: 'senza-glutine', label: 'Senza glutine' }, { id: 'senza-lattosio', label: 'Senza lattosio' },
+    { id: 'veloce', label: 'Veloce', auto: true }, { id: 'bambini', label: 'Per bambini' },
+    { id: 'economica', label: 'Economica' }, { id: 'light', label: 'Light' },
+    { id: 'prima', label: 'Da preparare prima' }, { id: 'forno', label: 'Al forno' },
+  ];
+  const courseLabel = (id) => (COURSES.find((c) => c.id === id) || {}).label || '';
+  const traitLabel = (id) => (TRAITS.find((t) => t.id === id) || {}).label || '';
+
+  // Minuscole, spazi singoli e niente accenti: "Città" e "citta" coincidono nella ricerca.
+  function foldText(s) {
+    return normName(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  const MEAT = ['carne', 'manzo', 'vitello', 'vitellone', 'maiale', 'suino', 'pollo', 'tacchino', 'agnello', 'capretto', 'coniglio',
+    'anatra', 'faraona', 'cinghiale', 'cervo', 'guanciale', 'pancetta', 'prosciutto', 'speck', 'salame', 'salsiccia', 'salsicce',
+    'mortadella', 'bresaola', 'lardo', 'wurstel', 'würstel', 'cotechino', 'zampone', 'bacon', 'macinato', 'ragu', 'ragù',
+    'fegato', 'trippa', 'polpette', 'hamburger', 'braciola', 'braciole', 'bistecca', 'fesa', 'lonza', 'arista', 'nduja', 'coppa',
+    'brodo di carne', 'dado di carne', 'strutto', 'gelatina animale', 'colla di pesce'];
+  const FISH = ['pesce', 'tonno', 'salmone', 'merluzzo', 'baccala', 'baccalà', 'stoccafisso', 'acciughe', 'acciuga', 'alici', 'alice',
+    'sardine', 'sarde', 'orata', 'branzino', 'spigola', 'sgombro', 'pesce spada', 'trota', 'nasello', 'platessa', 'sogliola',
+    'gamberi', 'gamberetti', 'gambero', 'scampi', 'calamari', 'calamaro', 'seppie', 'seppia', 'polpo', 'moscardini', 'totani',
+    'cozze', 'vongole', 'frutti di mare', 'ostriche', 'capesante', 'granchio', 'aragosta', 'astice', 'bottarga', 'colatura', 'surimi'];
+  const ANIMAL = ['uova', 'uovo', 'tuorli', 'tuorlo', 'albume', 'albumi', 'latte', 'burro', 'panna', 'yogurt', 'formaggio', 'parmigiano',
+    'grana', 'pecorino', 'mozzarella', 'ricotta', 'mascarpone', 'gorgonzola', 'fontina', 'stracchino', 'scamorza', 'provola',
+    'taleggio', 'emmental', 'asiago', 'burrata', 'stracciatella', 'feta', 'caciocavallo', 'besciamella', 'miele', 'crescenza',
+    'robiola', 'philadelphia', 'formaggino', 'caprino', 'brie', 'cheddar', 'groviera', 'gruviera', 'provolone', 'quark', 'kefir'];
+  const PLANT_OK = ['latte di soia', 'latte di mandorla', 'latte di riso', 'latte di avena', 'latte di cocco', 'panna vegetale',
+    'panna di soia', 'burro di arachidi', 'burro di cacao', 'yogurt di soia', 'yogurt vegetale', 'formaggio vegano', 'burro vegetale'];
+  const hasWord = (name, list) => list.some((w) => (' ' + name + ' ').includes(' ' + foldText(w) + ' '));
+
+  // Caratteristiche suggerite da ingredienti e tempi (chi scrive le conferma).
+  function suggestTraits(ingredients, minutes) {
+    const names = (ingredients || []).map((i) => foldText(i && i.name)).filter(Boolean);
+    const out = [];
+    if (names.length) {
+      const meat = names.some((n) => hasWord(n, MEAT));
+      const fish = names.some((n) => hasWord(n, FISH));
+      if (meat) out.push('carne');
+      if (fish) out.push('pesce');
+      if (!meat && !fish) {
+        out.push('vegetariana');
+        if (!names.some((n) => hasWord(n, ANIMAL) && !hasWord(n, PLANT_OK))) out.push('vegana');
+      }
+    }
+    if (minutes > 0 && minutes <= 30) out.push('veloce');
+    return out;
+  }
+
+  const api = { COURSES, TRAITS, courseLabel, traitLabel, foldText, suggestTraits, parseQuick, normUnit, normName, parseNum, addQty, compatible, convert,
     roundSmart, scaleQty, fmtQty, fmtNum, UNITS, DEPARTMENTS, guessDepartment, deptOf, fmtMinutes, fmtMoney,
     LIST_TYPES, COLLECTION_KINDS, kindOf, parseTodo, parseCollection, fmtDue, ymd, fromYmd, addDays };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

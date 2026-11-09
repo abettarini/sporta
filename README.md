@@ -76,6 +76,9 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - Foto, descrizione, **difficoltà**, **tempi di preparazione e cottura**, ingredienti e **procedimento a passaggi** (riordinabili con drag & drop).
 - **Autocompletamento** degli ingredienti dal catalogo e dalle altre ricette; gli ingredienti nuovi entrano subito nei suggerimenti.
 - Si sceglie per quante persone cucinare: le quantità vengono ricalcolate e arrotondate in modo sensato (uova e pezzi interi, grammi a 5/10). Si deselezionano gli ingredienti già in casa e il resto va nella lista.
+- **Ricette pubbliche e Scopri**: ogni ricetta è *privata* (solo il gruppo) o *pubblica* (la trovano tutti). Le ricette che esistevano prima restano private; per quelle nuove l'interruttore **Pubblica** parte attivo. Alla prima pubblicazione si sceglie la **firma** (proposta: "<nome> da <gruppo>", nel gruppo Personale solo il nome; oppure un altro nome o Anonimo), che si cambia da *Altro* e vale per le pubblicazioni successive. Ogni ricetta ha una **portata** e delle **caratteristiche** (vegetariana, vegana, con carne, con pesce, senza glutine, senza lattosio, veloce, per bambini, economica, light, da preparare prima, al forno): quelle calcolabili vengono suggerite dagli ingredienti e dai tempi e si confermano con un tocco.
+- In **Ricette → Scopri** si cerca tra le ricette pubbliche di tutti per nome o ingrediente, con filtri per portata, caratteristiche, ingredienti *con* (tutti) e *senza*, tempo massimo e ordine. Una ricetta di un altro gruppo si apre in sola lettura: si scelgono le persone, si mettono gli ingredienti in lista (nota "per <ricetta>"), si **salva una copia** (privata, con "Da una ricetta di …") o si **segnala**. Nei testi pubblici non sono ammessi link; al massimo 20 pubblicazioni al giorno per gruppo.
+- **Segnalazioni**: dopo 3 segnalazioni da persone diverse una ricetta pubblica viene nascosta. Gli amministratori della piattaforma (variabile `ADMIN_EMAILS`, email separate da virgola) le rivedono da *Altro → Segnalazioni* e le nascondono o ripristinano.
 - **La faccio**: dalla ricetta si tocca *La faccio* e si apre *Preparo*, il menu del gruppo (visibile e modificabile da tutti, resta finché qualcuno non lo svuota). Si possono mettere più ricette, ognuna con le sue persone: gli ingredienti uguali si sommano quando le unità sono compatibili. Ogni ingrediente si segna **Ce l'ho** o **Da comprare** (scelta condivisa, in tempo reale), con gli indizi *già in lista*, *comprato N giorni fa* (ultimi 7 giorni) e *sempre in casa*. *Aggiungi* mette nella lista scelta quello che manca, con la nota "per <ricetta>" e sommando a quello che c'è già; il messaggio offre *Annulla*. Eliminare una ricetta la toglie dal menu.
 - **Sempre in casa**: nella scheda di un prodotto (*Altro → Prodotti*, con il filtro apposito) si segnano sale, olio e simili; nel menu partono come *Ce l'ho*.
 - **Condivisione con link privato** (non indicizzato e revocabile): chi lo apre vede la ricetta anche senza Sporta e, se usa Sporta, può salvarla nelle sue ricette. Le ricette si possono anche copiare in un altro dei propri gruppi.
@@ -157,6 +160,7 @@ Ogni 4 minuti circa la funzione chiude la connessione per rispettare i limiti di
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | chiavi per le notifiche push: si generano una volta con `npm run vapid` (la privata è **riservata**). Senza, l'app funziona e non offre le notifiche. |
 | `VAPID_SUBJECT` | contatto per i servizi push, `mailto:…` o `https://…` (default: `APP_URL`) |
 | `CRON_SECRET` | segreto del cron dei promemoria: Vercel lo manda da solo a `/api/cron/reminders` (vedi `crons` in `vercel.json`, una volta al giorno) |
+| `ADMIN_EMAILS` | facoltativa: email (separate da virgola) degli amministratori della piattaforma, che vedono *Altro → Segnalazioni* e possono nascondere o ripristinare le ricette pubbliche segnalate. |
 | `APP_TIMEZONE` | facoltativa, default `Europe/Rome`: fuso usato per "oggi" e "domani" nelle scadenze |
 
 Sul server locale le chiavi VAPID, se mancano, vengono create e salvate in `data/vapid.json`, e i promemoria partono ogni ora.
@@ -260,6 +264,7 @@ Sporta espone i suoi strumenti agli agenti AI del browser tramite [WebMCP](https
 | `sporta_search_recipes`, `sporta_get_recipe` | cerca e legge le ricette |
 | `sporta_add_recipe_to_list` | aggiunge gli ingredienti di una ricetta per N persone, escludendo quelli già in casa |
 | `sporta_create_recipe` | crea una ricetta |
+| `sporta_search_public_recipes` | cerca tra le ricette pubbliche (nome, portata, caratteristiche, ingredienti con/senza, tempo) |
 | `sporta_get_menu`, `sporta_cook_recipe`, `sporta_mark_menu_ingredients`, `sporta_add_menu_to_list` | menu "La faccio": legge, aggiunge ricette, segna Ce l'ho / Da comprare, mette in lista quello che manca |
 | `sporta_get_shopping_history` | storico delle spese |
 | `sporta_create_list` | crea una lista |
@@ -307,6 +312,7 @@ lib/members.js         membri: chiavi di gruppo, ruoli, richieste, inviti, prese
 lib/notify.js          avvisi, notifiche push (Web Push), promemoria delle scadenze
 lib/events.js          eventi, risposte con ospiti, liste collegate, promemoria del giorno prima
 lib/menu.js            menu "La faccio": ricette da preparare e scelte Ce l'ho / Da comprare
+lib/pubrecipes.js      ricette pubbliche: visibilità, firma, ricerca, segnalazioni
 lib/util.js            funzioni di supporto del server
 lib/backends.js        adattatori: SQLite o Postgres, tempo reale in memoria o LISTEN/NOTIFY
 lib/http.js            adattamento richiesta/risposta HTTP
@@ -323,6 +329,7 @@ public/termini.html    condizioni d'uso
 public/privacy.html    informativa sulla privacy
 public/js/recipes.js   ricette, foto, condivisione
 public/js/cook.js      "La faccio": menu condiviso e ingredienti da comprare
+public/js/discover.js  Scopri, ricette pubbliche di altri, firma, segnalazioni
 public/js/trips.js     storico delle spese
 public/js/overview.js  panoramica di tutti i gruppi, avvisi, notifiche push
 public/js/events.js    eventi: elenco, calendario, risposte, liste dell'evento, .ics

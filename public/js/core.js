@@ -134,6 +134,7 @@ function setState(j) {
   st.menuEntries = new Map(((j.menu && j.menu.entries) || []).map((x) => [x.id, x]));
   st.menuMarks = new Map(((j.menu && j.menu.marks) || []).map((x) => [x.key, x]));
   st.me = j.me || null;
+  st.platformAdmin = !!j.platform_admin;
   st.members = new Map((j.members || []).map((x) => [x.id, x]));
   // Aggiorna i dati del gruppo salvati sul telefono.
   const g = groupOf(st.code);
@@ -946,6 +947,8 @@ function parseRoute() {
   if (p[0] === 'go' && p[1]) return { name: 'go', hid: p[1], list: p[2] || '', item: p[3] || '' };
   if (p[0] === 'e' && p[1]) return { name: 'event', id: p[1] };
   if (p[0] === 'e') return { name: 'events' };
+  if (p[0] === 'r' && p[1] === 'scopri') return { name: 'discover' };
+  if (p[0] === 'r' && p[1] === 'pub' && p[2]) return { name: 'pubRecipe', id: p[2] };
   if (p[0] === 'r' && p[1] && p[2] === 'edit') return { name: 'recipeEdit', id: p[1] };
   if (p[0] === 'r' && p[1]) return { name: 'recipe', id: p[1] };
   if (p[0] === 'r') return { name: 'recipes' };
@@ -957,6 +960,7 @@ function parseRoute() {
   if (p[0] === 'a') return { name: 'account' };
   if (p[0] === 'share') return { name: 'shareIn' };
   if (p[0] === 'cook') return { name: 'cook' };
+  if (p[0] === 'admin') return { name: 'reports' };
   return { name: 'home' };
 }
 

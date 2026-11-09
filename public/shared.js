@@ -236,8 +236,89 @@
     return Number(v).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
   }
 
+
+  // ------------------------------------------------------------------ tipi di lista
+  const LIST_TYPES = {
+    spesa: { label: 'Spesa', hint: 'Quantità, reparti, carrello', icon: 'cart' },
+    todo: { label: 'Da fare', hint: 'Chi, entro quando, priorità', icon: 'todo' },
+    collezione: { label: 'Libri, film e desideri', hint: 'Autore, stato, voto', icon: 'book' },
+    generica: { label: 'Generica', hint: 'Solo testo e spunta', icon: 'note' },
+  };
+  // Varianti della lista "collezione": etichette degli stati e del creatore.
+  const COLLECTION_KINDS = {
+    libri: { label: 'Libri', icon: 'book', creator: 'Autore', states: ['Da leggere', 'In lettura', 'Letto'], example: 'Dune - Frank Herbert' },
+    film: { label: 'Film e serie', icon: 'film', creator: 'Regia', states: ['Da vedere', 'In visione', 'Visto'], example: 'Oppenheimer - Nolan' },
+    desideri: { label: 'Desideri e regali', icon: 'gift', creator: 'Dove / marca', states: ['Desiderato', 'Prenotato', 'Ricevuto'], example: 'Cuffie - Sony' },
+    altro: { label: 'Altro', icon: 'star', creator: 'Di', states: ['Da fare', 'In corso', 'Fatto'], example: 'Titolo - autore' },
+  };
+  const kindOf = (variant) => COLLECTION_KINDS[variant] || COLLECTION_KINDS.libri;
+
+  // Date come stringhe "AAAA-MM-GG" (giorno locale, senza fusi orari).
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const ymd = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const fromYmd = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const WEEKDAYS = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+  const MONTHS = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+  const deaccentLc = (x) => String(x).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+  // "prenotare il campo @Luca venerdì !" -> { name, due: 'AAAA-MM-GG', priority: 1, assignee: 'Luca' }
+  // Date: oggi, domani, dopodomani, giorni della settimana (il prossimo), 12/12, 12/12/2026, 12 dic.
+  function parseTodo(text, now = new Date()) {
+    let s = ' ' + String(text || '').trim() + ' ';
+    const out = { name: '', due: '', priority: 0, assignee: '' };
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const take = (re, fn) => { const m = s.match(re); if (m) { fn(m); s = s.slice(0, m.index) + ' ' + s.slice(m.index + m[0].length); } return !!m; };
+    take(/\s(!{1,3})(?=\s)/, () => { out.priority = 1; });
+    take(/\s@([^\s@!]+(?:\s[A-Z][^\s@!]*\.?)?)(?=\s)/u, (m) => { out.assignee = m[1].trim(); });
+    const words = { oggi: 0, domani: 1, dopodomani: 2 };
+    take(/\s(?:entro\s+)?(oggi|domani|dopodomani)(?=\s)/i, (m) => { out.due = ymd(addDays(today, words[m[1].toLowerCase()])); }) ||
+    take(/\s(?:entro\s+|per\s+)?(luned[iì]|marted[iì]|mercoled[iì]|gioved[iì]|venerd[iì]|sabato|domenica|lun|mar|mer|gio|ven|sab|dom)(?=\s)/i, (m) => {
+      const target = WEEKDAYS.indexOf(deaccentLc(m[1]).slice(0, 3));
+      let diff = (target - today.getDay() + 7) % 7; if (diff === 0) diff = 7;
+      out.due = ymd(addDays(today, diff));
+    }) ||
+    take(/\s(?:entro\s+|il\s+)?(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?(?=\s)/, (m) => {
+      let y = m[3] ? +m[3] : today.getFullYear(); if (y < 100) y += 2000;
+      let d = new Date(y, +m[2] - 1, +m[1]);
+      if (!m[3] && d < today) d = new Date(y + 1, +m[2] - 1, +m[1]);
+      if (d.getDate() === +m[1]) out.due = ymd(d);
+    }) ||
+    take(/\s(?:entro\s+|il\s+)?(\d{1,2})\s+(gen|feb|mar|apr|mag|giu|lug|ago|set|ott|nov|dic)[a-z]*(?=\s)/i, (m) => {
+      let d = new Date(today.getFullYear(), MONTHS.indexOf(m[2].toLowerCase()), +m[1]);
+      if (d < today) d = new Date(today.getFullYear() + 1, d.getMonth(), d.getDate());
+      out.due = ymd(d);
+    });
+    s = s.replace(/\s+/g, ' ').trim();
+    out.name = s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+    return out;
+  }
+
+  // "Dune - Frank Herbert" -> { name: 'Dune', creator: 'Frank Herbert' }
+  function parseCollection(text) {
+    const s = String(text || '').trim();
+    const m = s.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+    const name = (m ? m[1] : s).trim();
+    return { name: name ? name.charAt(0).toUpperCase() + name.slice(1) : '', creator: m ? m[2].trim() : '' };
+  }
+
+  // Scadenza leggibile e stato: 'late' (scaduta), 'soon' (entro 2 giorni), '' (più avanti).
+  function fmtDue(due, now = new Date()) {
+    const d = fromYmd(due); if (!d) return { text: '', state: '' };
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diff = Math.round((d - today) / 864e5);
+    let text;
+    if (diff === 0) text = 'oggi';
+    else if (diff === 1) text = 'domani';
+    else if (diff === -1) text = 'ieri';
+    else if (diff > 1 && diff < 7) text = WEEKDAYS[d.getDay()] + ' ' + d.getDate();
+    else text = d.getDate() + ' ' + MONTHS[d.getMonth()] + (d.getFullYear() !== today.getFullYear() ? ' ' + d.getFullYear() : '');
+    return { text, state: diff < 0 ? 'late' : diff <= 2 ? 'soon' : '', diff };
+  }
+
   const api = { parseQuick, normUnit, normName, parseNum, addQty, compatible, convert,
-    roundSmart, scaleQty, fmtQty, fmtNum, UNITS, DEPARTMENTS, guessDepartment, deptOf, fmtMinutes, fmtMoney };
+    roundSmart, scaleQty, fmtQty, fmtNum, UNITS, DEPARTMENTS, guessDepartment, deptOf, fmtMinutes, fmtMoney,
+    LIST_TYPES, COLLECTION_KINDS, kindOf, parseTodo, parseCollection, fmtDue, ymd, fromYmd, addDays };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Shared = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

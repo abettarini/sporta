@@ -30,7 +30,10 @@
     return r;
   }
   const itemOut = (i) => ({
-    name: i.name, quantity: i.qty, unit: i.unit || undefined, brand: i.brand || undefined, note: i.note || undefined,
+    name: i.name, quantity: i.qty ?? undefined, unit: i.unit || undefined, brand: i.brand || undefined, note: i.note || undefined,
+    due_date: i.due_date || undefined, priority: i.priority > 0 ? 'alta' : i.priority < 0 ? 'bassa' : undefined,
+    assigned_to: i.assigned_to ? memberLabel(i.assigned_to) || undefined : undefined,
+    creator: (i.data || {}).creator, rating: (i.data || {}).rating, price: (i.data || {}).price, link: (i.data || {}).link,
     department: S.deptOf(i.department).label, tags: (i.tags || []).length ? i.tags : undefined,
     checked: !!i.checked, checked_by: i.checked_by || undefined, added_by: i.created_by || undefined,
   });
@@ -49,7 +52,7 @@
       annotations: { readOnlyHint: true },
       execute: () => needGroup() || ok({
         member: st.member, active_group: groupName(), groups: st.groups.map((g) => g.name),
-        lists: sortedLists().map((l) => ({ name: l.name, to_buy: todoOf(l.id).length, in_cart: doneOf(l.id).length })),
+        lists: sortedLists().map((l) => ({ name: l.name, type: typeOf(l), open: todoOf(l.id).length, done: doneOf(l.id).length })),
         recipes: st.recipes.size, saved_trips: st.trips.size,
       }),
     },
@@ -91,7 +94,7 @@
     },
     {
       name: 'sporta_add_items',
-      description: 'Aggiunge articoli a una lista della spesa condivisa. Se un articolo è già presente, le quantità compatibili vengono sommate. Quantità, unità e marca sono facoltative.',
+      description: 'Aggiunge elementi a una lista. Liste della spesa: quantità, unità e marca facoltative (le quantità compatibili si sommano). Liste da fare: scadenza (AAAA-MM-GG), priorità e persona facoltative. Liste di libri/film/desideri: autore o creatore facoltativo.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -107,6 +110,10 @@
                 brand: { type: 'string' },
                 note: { type: 'string' },
                 tags: { type: 'array', items: { type: 'string' } },
+                due_date: { type: 'string', description: 'Solo liste da fare: AAAA-MM-GG' },
+                priority: { type: 'string', enum: ['bassa', 'normale', 'alta'], description: 'Solo liste da fare' },
+                assign_to: { type: 'string', description: 'Solo liste da fare: nome di un membro del gruppo' },
+                creator: { type: 'string', description: 'Solo liste di libri/film/desideri: autore, regia…' },
               },
               required: ['name'],
             },
@@ -121,6 +128,17 @@
           const added = [];
           for (const it of items || []) {
             if (!it || !String(it.name || '').trim()) continue;
+            if (typeOf(l) !== 'spesa') {
+              const m = it.assign_to ? findMember(it.assign_to) : null;
+              enqueue({ k: 'item.put', id: uid(), data: {
+                list_id: l.id, name: String(it.name).trim(), note: it.note || '', tags: Array.isArray(it.tags) ? parseTags(it.tags.join(',')) : [],
+                checked: false, position: topPos(l.id), due_date: S.fromYmd(it.due_date) ? it.due_date : '',
+                priority: it.priority === 'alta' ? 1 : it.priority === 'bassa' ? -1 : 0, assigned_to: m ? m.id : null,
+                data: it.creator ? { creator: String(it.creator) } : {},
+              } }, { silent: true });
+              added.push(it.name);
+              continue;
+            }
             addToList(l.id, {
               name: String(it.name).trim(), qty: S.parseNum(it.quantity), unit: S.normUnit(it.unit || ''), brand: it.brand || undefined,
               note: it.note || '', tags: Array.isArray(it.tags) ? parseTags(it.tags.join(',')) : undefined,
@@ -286,17 +304,23 @@
     },
     {
       name: 'sporta_create_list',
-      description: 'Crea una nuova lista della spesa nel gruppo attivo.',
+      description: 'Crea una nuova lista nel gruppo attivo: spesa, da fare (con persone e scadenze), libri/film/desideri, oppure generica.',
       inputSchema: {
         type: 'object',
-        properties: { name: { type: 'string' }, icon: { type: 'string', enum: LIST_ICONS, description: 'Icona della lista' } },
+        properties: {
+          name: { type: 'string' }, icon: { type: 'string', enum: LIST_ICONS, description: 'Icona della lista' },
+          type: { type: 'string', enum: Object.keys(S.LIST_TYPES), default: 'spesa' },
+          variant: { type: 'string', enum: Object.keys(S.COLLECTION_KINDS), description: 'Solo per type=collezione' },
+        },
         required: ['name'],
       },
-      execute: ({ name, icon: ic } = {}) => {
+      execute: ({ name, icon: ic, type, variant } = {}) => {
         const ng = needGroup(); if (ng) return ng;
         if (!String(name || '').trim()) return fail('Nome obbligatorio');
         const maxPos = Math.max(0, ...[...st.lists.values()].map((l) => l.position));
-        enqueue({ k: 'list.put', id: uid(), data: { name: String(name).trim(), emoji: listIconId(ic), position: maxPos + 1 } });
+        const t = S.LIST_TYPES[type] ? type : 'spesa';
+        const v = t === 'collezione' && S.COLLECTION_KINDS[variant] ? variant : t === 'collezione' ? 'libri' : '';
+        enqueue({ k: 'list.put', id: uid(), data: { name: String(name).trim(), emoji: ic ? listIconId(ic) : defaultListIcon(t, v), position: maxPos + 1, type: t, variant: v } });
         return ok(`Lista "${name}" creata.`);
       },
     },

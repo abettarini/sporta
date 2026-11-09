@@ -92,12 +92,12 @@ Views.trip = {
             <span class="txt"><span class="name">${h(i.name)}${q ? `<span class="qty">${h(q)}</span>` : ''}</span>
             ${meta || (i.tags || []).length ? `<span class="meta">${meta} <span class="tags">${tagPills(i.tags)}</span></span>` : ''}</span></button></li>`;
         }).join('')}</ul>`).join('')}`;
-    const tl = $('#ttl'), cur = tl.value || lastListId();
-    tl.innerHTML = sortedLists().map((l) => listOption(l, cur)).join('');
+    const tl = $('#ttl'), cur = tl.value || lastShoppingListId();
+    tl.innerHTML = shoppingLists().map((l) => listOption(l, cur)).join('');
     const n = t.items.length - this.off.size;
     const btn = $('#tadd');
     btn.textContent = n ? `Rimetti in lista (${n})` : 'Rimetti in lista';
-    btn.disabled = !n || !st.lists.size;
+    btn.disabled = !n || !shoppingLists().length;
   },
   addToList() {
     const t = st.trips.get(this.tid);

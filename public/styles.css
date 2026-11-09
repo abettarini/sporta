@@ -602,3 +602,31 @@ small.as { display: block; color: var(--muted); font-size: 13px; }
 .or { text-align: center; color: var(--muted); font-size: 13px; margin: 12px 0 8px; }
 .opt .row { display: flex; gap: 8px; }
 .opt .row .input { flex: 1; }
+
+/* ------------------------------------------------ tipi di lista */
+.type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.type-grid button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; border-radius: 14px; border: 2px solid transparent; background: var(--surface); text-align: left; box-shadow: var(--shadow); }
+.type-grid button.on { border-color: var(--accent); }
+.type-grid b { font-size: 14px; }
+.type-grid small { color: var(--muted); font-size: 12px; line-height: 1.3; }
+.list-card .t span.late { color: var(--danger); }
+.due { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 7px; background: var(--surface-2); color: var(--muted); white-space: nowrap; flex: none; }
+.due.late { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); color: var(--danger); }
+.due.soon { background: color-mix(in srgb, var(--warn) 16%, var(--surface)); color: var(--warn); }
+.item.prio-high { box-shadow: inset 4px 0 0 var(--danger); }
+.mini { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 10px; font-size: 12.5px; font-weight: 600; color: var(--accent); white-space: nowrap; flex: none; }
+.assignee { flex: none; display: inline-flex; margin-left: 2px; }
+.todo-item .tap, .coll-item .tap { padding-right: 6px; }
+.item .creator { display: block; color: var(--muted); font-size: 14px; }
+.st { font-size: 11.5px; font-weight: 700; padding: 1px 7px; border-radius: 6px; }
+.st.s0 { background: var(--surface-2); color: var(--muted); }
+.st.s1 { background: color-mix(in srgb, #2f6fb8 15%, var(--surface)); color: #2f6fb8; }
+.st.s2 { background: var(--accent-soft); color: var(--accent); }
+.stars { color: #e0a20c; letter-spacing: 1px; font-size: 12px; }
+.stars i { color: var(--line); font-style: normal; }
+.lnk { color: var(--accent); font-weight: 600; }
+.coll-item.done .name { text-decoration: none; color: var(--text); }
+.rate { display: flex; gap: 4px; }
+.rate button { border: 0; background: none; font-size: 28px; line-height: 1; color: var(--line); padding: 0 2px; }
+.rate button.on { color: #e0a20c; }
+.decline { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin: 4px 0 8px; border-radius: 12px; background: color-mix(in srgb, var(--warn) 12%, var(--surface)); font-size: 14px; }

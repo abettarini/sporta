@@ -21,7 +21,12 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - **Nomi**: unici nel gruppo (controllo mentre si scrive); in ogni gruppo ci si può presentare con un nome diverso e cambiarlo in *Altro*: lo storico si aggiorna da solo.
 
 ### Liste
-- **Più liste** per gruppo (Supermercato, Farmacia…), ognuna con la sua icona.
+- **Tipi di lista**, scelti alla creazione:
+  - **Spesa**: quantità, marca, reparti, carrello e "Concludi spesa" (vedi sotto);
+  - **Da fare**: chi se ne occupa, scadenza e priorità. Inserimento rapido con persona e data: `prenotare il campo @Luca venerdì !` (`!` = priorità alta; date: oggi, domani, giorni della settimana, `22/11`, `30 nov`). Chiunque può assegnare; con **Prendo io** ci si offre, con **Non posso** si rifiuta un'assegnazione. Filtri "Mie" e "Senza nessuno", ordinamento per scadenza, scadenze colorate;
+  - **Libri, film e desideri**: autore o regia, stato (es. da leggere → in lettura → letto), voto, prezzo e link. Inserimento rapido `Dune - Frank Herbert`;
+  - **Generica**: testo, tag e spunta.
+- **Più liste** per gruppo, ognuna con il suo tipo e la sua icona.
 - **Tempo reale**: articoli aggiunti, modificati, spuntati o riordinati compaiono subito su tutti i telefoni.
 - **Inserimento rapido** in una sola riga, con i dettagli facoltativi:
   - `latte` → solo il nome

@@ -125,12 +125,12 @@ Views.recipe = {
     const y = window.scrollY;
     $('#rbody').innerHTML = recipeBodyHtml(r, this.people, this.off);
     window.scrollTo(0, y);
-    const tl = $('#tl'), cur = tl.value || lastListId();
-    tl.innerHTML = sortedLists().map((l) => listOption(l, cur)).join('');
+    const tl = $('#tl'), cur = tl.value || lastShoppingListId();
+    tl.innerHTML = shoppingLists().map((l) => listOption(l, cur)).join('');
     const n = scaledSelected(r, this.people, this.off).length;
     const btn = $('#addr');
     btn.textContent = n ? `Aggiungi ${n}` : 'Aggiungi';
-    btn.disabled = !n || !st.lists.size;
+    btn.disabled = !n || !shoppingLists().length;
   },
   addToList() {
     const r = st.recipes.get(this.rid);

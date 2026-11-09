@@ -35,6 +35,9 @@ const ICONS = {
   cake: '<path d="M4 13h16v7.5H4z"/><path d="M4 16.3c2 1.4 4 1.4 6 0s4-1.4 6 0 3 1.4 4 0"/><path d="M8 13v-3M12 13v-3M16 13v-3"/><path d="M8 6.5c-.6.6-.6 1.3 0 1.8.6-.5.6-1.2 0-1.8zM12 6.5c-.6.6-.6 1.3 0 1.8.6-.5.6-1.2 0-1.8zM16 6.5c-.6.6-.6 1.3 0 1.8.6-.5.6-1.2 0-1.8z"/>',
   tent: '<path d="M2.5 20.5 12 4l9.5 16.5z"/><path d="M12 4v16.5M12 13l-3.5 7.5M12 13l3.5 7.5"/>',
   leaf: '<path d="M5 19c-.5-7 4-13 15-14-.5 10-6 15-13 14.5"/><path d="M5 19c3-4 6-7 10-9"/>',
+  film: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9.5h4M3 14.5h4M17 9.5h4M17 14.5h4"/>',
+  note: '<path d="M6 3.5h8.5L19 8v12a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z"/><path d="M14.5 3.5V8H19"/><path d="M8.5 12h7M8.5 15.5h7"/>',
+  todo: '<rect x="4" y="3.8" width="16" height="17" rx="2.5"/><path d="M8 9.5l1.6 1.6L12.5 8M8 15.5l1.6 1.6 2.9-3.1M14.5 9.6h2.5M14.5 15.6h2.5"/>',
   // ------------------------------------------------ interfaccia e stati vuoti
   list: '<rect x="5" y="3.8" width="14" height="17.2" rx="2"/><path d="M9 3.8V2.8h6v1"/><path d="M8.5 9.5h7M8.5 13.5h7M8.5 17.5h4"/>',
   done: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8 5.7-5.8"/>',
@@ -54,10 +57,11 @@ const ICON_COLORS = {
   persona: '#c45fa0', casa: '#2a9d8f', animali: '#a0703c', bimbi: '#e07a86', altro: '#7b8794',
   cart: '#1f8a5b', basket: '#1f8a5b', pharmacy: '#d0463f', home: '#4f86d6', ball: '#3d7a3f', party: '#d0569b',
   gift: '#c8504a', tree: '#2f8a4a', wine: '#8e3b5a', beer: '#cf9a12', cake: '#d0569b', tent: '#3d7a3f', leaf: '#3f9a4a',
+  todo: '#b7791f', book: '#2f6fb8', film: '#7a5fc4', note: '#66736c', star: '#cf9a12',
 };
 
 // Icone tra cui scegliere per una lista.
-const LIST_ICONS = ['cart', 'basket', 'frutta', 'pane', 'carne', 'pesce', 'salumi', 'pasta', 'bevande', 'wine', 'beer',
+const LIST_ICONS = ['cart', 'basket', 'todo', 'book', 'film', 'note', 'frutta', 'pane', 'carne', 'pesce', 'salumi', 'pasta', 'bevande', 'wine', 'beer',
   'pharmacy', 'persona', 'casa', 'animali', 'bimbi', 'home', 'ball', 'party', 'cake', 'gift', 'tree', 'tent', 'leaf'];
 
 // Le liste create con le versioni precedenti avevano un'emoji: la convertiamo nell'icona equivalente.

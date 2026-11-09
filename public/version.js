@@ -1,2 +1,2 @@
 // Generato da scripts/sync-version.js: non modificare a mano.
-self.SPORTA_VERSION = '3.2.0';
+self.SPORTA_VERSION = '3.3.0';

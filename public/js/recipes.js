@@ -130,7 +130,7 @@ Views.recipe = {
     $('#rbody').innerHTML = recipeBodyHtml(r, this.people, this.off);
     $('#rmeta').innerHTML = `<div class="pub-head">${tagsHtml(r)}
       <span class="vis-line">${r.visibility === 'public'
-        ? `<i class="vis pub">Pubblica</i> firmata <b>${h(authorLabel(r.author_name))}</b>${r.hidden ? ' · <b class="warn">nascosta per segnalazioni</b>' : ''}`
+        ? `<i class="vis pub">Pubblica</i> firmata <b>${h(authorLabel(r.author_name))}</b>${r.hidden ? ' · <b class="warn">nascosta per segnalazioni</b>' : ''}${r.slug && !r.hidden ? ` · <a href="/ricetta/${h(r.slug)}" target="_blank" rel="noopener">pagina web ↗</a>` : ''}`
         : '<i class="vis prv">Privata</i> la vede solo il gruppo'}</span>
       ${r.origin ? `<span class="origin">${h(r.origin)}</span>` : ''}</div>`;
     window.scrollTo(0, y);
@@ -343,8 +343,9 @@ Views.recipeEdit = {
           <ol class="steps-edit" id="stepl"></ol>
           <button type="button" class="btn block" id="addstep">${I.plus} Aggiungi passaggio</button>
         </div>
-        <div class="card pub-toggle"><label class="switch"><input type="checkbox" name="public" ${(r ? r.visibility === 'public' : true) ? 'checked' : ''}>
+        <div class="card pub-toggle"${isCookbook() ? ' hidden' : ''}><label class="switch"><input type="checkbox" name="public" ${(r ? r.visibility === 'public' : true) || isCookbook() ? 'checked' : ''}>
           <span><b>Pubblica</b><small id="pub-h"></small></span></label></div>
+        ${isCookbook() ? `<p class="hint">${icon('book')} In un ricettario ogni ricetta è pubblica, firmata “${h(groupName())}”.</p>` : ''}
         <div class="actions">${r ? '<button type="button" class="btn danger" id="rdel">Elimina</button>' : ''}<button class="btn primary" id="rsave">Salva ricetta</button></div>
       </form></main>` + tabBar('recipes');
 
@@ -503,6 +504,7 @@ Views.recipeEdit = {
         history.replaceState(null, '', `#/r/${this.id}`);
         mount();
       };
+      if (isCookbook()) return save('public');
       if (!el.public.checked) return save('private');
       const firstTime = !st.me || st.me.author_name == null;
       if (firstTime && (!r || r.visibility !== 'public')) return authorSheet({ first: true, done: (a) => (a === null ? save('private') : save('public', a)) });

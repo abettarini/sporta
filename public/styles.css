@@ -996,3 +996,17 @@ button.link { border: 0; background: none; color: var(--accent); font: inherit; 
 .recipe-card.gone { opacity: .7; }
 .recipe-card.gone .btn { flex: none; }
 #pstar { display: contents; }
+/* ricettario e importazione */
+button.link-card { width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer; }
+.avatar.cookbook { background: #fbf0dc; color: #9a6a10; }
+.avatar.cookbook svg { width: 60%; height: 60%; }
+.kind-pick { margin-bottom: 6px; }
+.kind-pick b svg { width: 18px; height: 18px; vertical-align: -3px; }
+.imp-list { margin: 8px 0 12px; max-height: 55vh; overflow: auto; }
+.imp-list .item.bad .name { color: var(--muted); text-decoration: line-through; }
+.imp-msg { display: block; font-size: 12.5px; color: #9a6a10; }
+.imp-msg.err { color: var(--danger, #c23b33); }
+.imp-msg::before { content: "⚠ "; }
+.hint svg { width: 16px; height: 16px; vertical-align: -3px; }
+@media (prefers-color-scheme: dark) { .avatar.cookbook { background: #3a2e14; color: #e6ac3a; } .imp-msg { color: #e6b75a; } }
+.imp-list .item.done .name, .share-lines .item.done .name { text-decoration: none; color: var(--text); }

@@ -23,6 +23,12 @@ Views.settings = {
       <a class="card link-card" href="#/m" id="mb-card">${iconTile('home')}<span class="t"><b>Membri <i class="tab-badge inline" data-badge hidden></i></b><span id="mb-sub">Chi c'è nel gruppo, inviti e richieste</span></span><span class="chev">›</span></a>
       <a class="card link-card narrow-only" href="#/t">${iconTile('receipt')}<span class="t"><b>Spese</b><span>Storico delle spese concluse</span></span><span class="chev">›</span></a>
       <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
+      ${isCookbook() ? `<div class="card" id="cb-card"><h3>${icon('book')} Ricettario</h3>
+        <p>Ogni ricetta è pubblica e firmata “${h(groupName())}”. La pagina web raccoglie tutte le ricette.</p>
+        <label class="field"><span>Descrizione della pagina</span><textarea class="input" id="cb-desc" rows="2" maxlength="500" placeholder="es. Le ricette di base, provate in cucina">${h((st.household && st.household.description) || '')}</textarea></label>
+        <div class="actions"><button class="btn" id="cb-save">Salva descrizione</button>${st.household && st.household.slug ? `<a class="btn primary" href="/ricettario/${h(st.household.slug)}" target="_blank" rel="noopener">Apri la pagina web ↗</a>` : ''}</div>
+      </div>` : ''}
+      <button type="button" class="card link-card" id="imp-card">${iconTile('book')}<span class="t"><b>Importa ricette</b><span>Da un file JSON${isCookbook() ? ': diventano pubbliche nel ricettario' : ''}</span></span><span class="chev">›</span></button>
       ${st.platformAdmin ? `<a class="card link-card" href="#/admin">${iconTile('note')}<span class="t"><b>Segnalazioni</b><span>Ricette pubbliche segnalate (solo amministratori)</span></span><span class="chev">›</span></a>` : ''}
       <div class="card" id="inv-card"><h3>Invita</h3>
         <p id="inv-p"></p>
@@ -46,6 +52,12 @@ Views.settings = {
         <p class="hint center" id="logout-hint"></p></div>
       <p class="muted small center">Sporta v${h(window.SPORTA_VERSION || 'dev')}</p>
     </main>` + tabBar('settings');
+    $('#imp-card').onclick = () => importRecipesSheet();
+    const cbSave = $('#cb-save');
+    if (cbSave) cbSave.onclick = async () => {
+      try { await api('PATCH', '/api/household', { description: $('#cb-desc').value.trim() }); st.household.description = $('#cb-desc').value.trim(); toast('Descrizione salvata'); } catch (e) { toast(e.message); }
+    };
+    if (isCookbook()) { const sr = document.querySelector('.sig-row'); if (sr) sr.hidden = true; document.querySelectorAll('a[href="#/p"], a[href="#/t"]').forEach((a) => { a.hidden = true; }); }
     // --- firma delle ricette pubbliche (per questo gruppo)
     const sigShow = () => { $('#sig-v').textContent = `“${authorLabel(myAuthor())}”${st.me && st.me.author_name != null ? '' : ' (proposta)'} · vale per le prossime pubblicazioni`; };
     sigShow();

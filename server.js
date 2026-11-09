@@ -63,6 +63,9 @@ function serveStatic(req, res, url) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
+  // Pagine web pubbliche: /ricetta/<slug>, /ricettario/<slug>, /sitemap.xml, /robots.txt.
+  const page = url.pathname.match(/^\/(ricetta|ricettario)\/([^/]+)\/?$/) || url.pathname.match(/^\/(sitemap\.xml|robots\.txt)$/);
+  if (page) return handleApi(core, req, res, ['pages', ...page.slice(1).filter(Boolean)], url);
   if (url.pathname.startsWith('/api/')) {
     const parts = url.pathname.split('/').filter(Boolean).slice(1);
     return handleApi(core, req, res, parts, url, (rq, rs, ctx) => realtime.open(rq, rs, ctx.hh.id, 0, core.streamHooks(ctx)));

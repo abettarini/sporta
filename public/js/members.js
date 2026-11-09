@@ -66,8 +66,8 @@ async function enterGroup(res) {
   addGroup(await r.json(), { token: res.token, me: res.me });
 }
 
-async function createGroup(name, alias, acceptTerms) {
-  const j = await publicApi('POST', '/api/households', { name: name || 'Gruppo', alias, accept_terms: !!acceptTerms });
+async function createGroup(name, alias, acceptTerms, extra = {}) {
+  const j = await publicApi('POST', '/api/households', { name: name || 'Gruppo', alias, accept_terms: !!acceptTerms, ...extra });
   if (j.account && acct) { acct.terms_ok = j.account.terms_ok; saveAcct(); }
   ls.set('member', alias);
   st.member = alias;
@@ -378,18 +378,30 @@ function newGroupSheet() {
   if (!acct) { toast('Prima conferma la tua email'); return confirmEmailSheet(); }
   openSheet(`<h2>Nuovo gruppo</h2>
     <p class="muted">Una famiglia, la squadra di calcetto, una festa… Ne sarai l'amministratore.</p>
-    <form id="ng"><label class="field"><span>Nome del gruppo</span><input class="input" name="gname" required maxlength="80" placeholder="es. Calcetto del giovedì"></label>
+    <form id="ng"><div class="kind-pick">
+      <label class="radio-row"><input type="radio" name="kind" value="group" checked><span><b>Gruppo</b><small>Liste, eventi e ricette con le persone che inviti.</small></span></label>
+      <label class="radio-row"><input type="radio" name="kind" value="cookbook"><span><b>${icon('book')} Ricettario</b><small>Solo ricette, tutte pubbliche, firmate con il nome del ricettario e con una pagina web.</small></span></label></div>
+    <label class="field"><span id="ng-l">Nome del gruppo</span><input class="input" name="gname" required maxlength="80" placeholder="es. Calcetto del giovedì"></label>
+    <label class="field" id="ng-desc" hidden><span>Descrizione (facoltativa)</span><textarea class="input" name="description" rows="2" maxlength="500" placeholder="es. Le ricette di base, provate in cucina"></textarea></label>
     <label class="field"><span>Il tuo nome in questo gruppo</span><input class="input" name="alias" required maxlength="40" value="${h(st.member || ls.get('member') || '')}"></label>
     <p class="err" id="ng-err"></p>
     <div class="actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn primary">Crea</button></div></form>`, (sh) => {
     const f = $('#ng', sh);
     setTimeout(() => f.elements.gname.focus(), 50);
+    const cook = () => f.elements.kind.value === 'cookbook';
+    f.addEventListener('change', (e) => {
+      if (e.target.name !== 'kind') return;
+      $('#ng-desc', sh).hidden = !cook();
+      $('#ng-l', sh).textContent = cook() ? 'Nome del ricettario (firma delle ricette)' : 'Nome del gruppo';
+      f.elements.gname.placeholder = cook() ? 'es. La cucina di casa Bardi' : 'es. Calcetto del giovedì';
+    });
     f.onsubmit = async (e) => {
       e.preventDefault();
       try {
-        const j = await createGroup(f.elements.gname.value.trim(), f.elements.alias.value.trim());
-        closeSheetAndGo('#/l');
-        toast(`Gruppo "${j.household.name}" creato: invita gli altri da Membri`);
+        const extra = cook() ? { kind: 'cookbook', description: f.elements.description.value.trim() } : {};
+        const j = await createGroup(f.elements.gname.value.trim(), f.elements.alias.value.trim(), false, extra);
+        closeSheetAndGo(cook() ? '#/r' : '#/l');
+        toast(cook() ? `Ricettario "${j.household.name}" creato: aggiungi le ricette con +` : `Gruppo "${j.household.name}" creato: invita gli altri da Membri`);
       } catch (err) { $('#ng-err', sh).textContent = err.message; }
     };
   });

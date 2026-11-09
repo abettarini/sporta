@@ -327,7 +327,7 @@ function pubActions(r) {
     };
     $('#pa-share', sh).onclick = async () => {
       const text = `${r.name} — ricetta su Sporta`;
-      const url = `${location.origin}/#/r/pub/${r.id}`;
+      const url = r.slug ? `${location.origin}/ricetta/${r.slug}` : `${location.origin}/#/r/pub/${r.id}`;
       if (navigator.share) { try { await navigator.share({ title: r.name, text, url }); } catch { /* annullato */ } }
       else { try { await navigator.clipboard.writeText(url); toast('Link copiato'); } catch { prompt('Copia il link:', url); } }
     };

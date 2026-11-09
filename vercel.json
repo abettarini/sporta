@@ -4,6 +4,22 @@
   "outputDirectory": "public",
   "rewrites": [
     {
+      "source": "/ricetta/:slug",
+      "destination": "/api?__path=pages/ricetta/:slug"
+    },
+    {
+      "source": "/ricettario/:slug",
+      "destination": "/api?__path=pages/ricettario/:slug"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api?__path=pages/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/api?__path=pages/robots.txt"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api?__path=:path*"
     },
@@ -58,7 +74,7 @@
       ]
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!ricetta/|ricettario/|sitemap\\.xml|robots\\.txt|api/photos/).*)",
       "headers": [
         {
           "key": "X-Robots-Tag",

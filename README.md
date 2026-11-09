@@ -79,6 +79,9 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - **Ricette pubbliche e Scopri**: ogni ricetta è *privata* (solo il gruppo) o *pubblica* (la trovano tutti). Le ricette che esistevano prima restano private; per quelle nuove l'interruttore **Pubblica** parte attivo. Alla prima pubblicazione si sceglie la **firma** (proposta: "<nome> da <gruppo>", nel gruppo Personale solo il nome; oppure un altro nome o Anonimo), che si cambia da *Altro* e vale per le pubblicazioni successive. Ogni ricetta ha una **portata** e delle **caratteristiche** (vegetariana, vegana, con carne, con pesce, senza glutine, senza lattosio, veloce, per bambini, economica, light, da preparare prima, al forno): quelle calcolabili vengono suggerite dagli ingredienti e dai tempi e si confermano con un tocco.
 - In **Ricette → Scopri** si cerca tra le ricette pubbliche di tutti per nome o ingrediente, con filtri per portata, caratteristiche, ingredienti *con* (tutti) e *senza*, tempo massimo e ordine. Una ricetta di un altro gruppo si apre in sola lettura: si scelgono le persone, si mettono gli ingredienti in lista (nota "per <ricetta>"), si **salva una copia** (privata, con "Da una ricetta di …") o si **segnala**. Nei testi pubblici non sono ammessi link; al massimo 20 pubblicazioni al giorno per gruppo.
 - **Preferite**: la ★ su una ricetta pubblica (in Scopri o nella ricetta) la mette in *Ricette → Preferite*. Le preferite sono della persona, non del gruppo: si ritrovano in tutti i propri gruppi, si aprono anche senza rete e si usano in **La faccio** come le ricette proprie (il menu del gruppo porta con sé i dati della ricetta, così la vedono tutti i membri). Sono un riferimento all'originale: se l'autore la corregge si vede la versione nuova; se la rende privata o la elimina resta in fondo, grigia, con "non più disponibile" finché non la si toglie, ed esce dai menu degli altri gruppi. Le ricette pubbliche mostrano quante persone le hanno tra le preferite.
+- **Ricettario**: un tipo di gruppo (*Nuovo gruppo → Ricettario*) con solo ricette, tutte pubbliche e firmate con il nome del ricettario (rinominandolo cambia la firma di tutte). Niente liste, eventi e spese; si possono invitare altre persone a scrivere. Ha una pagina web con tutte le ricette divise per portata e una descrizione (*Altro → Ricettario*). È il modo per mettere ricette pubbliche nel sistema, anche importandole da file.
+- **Pagine web delle ricette pubbliche**: `/ricetta/<nome>-<codice>` (se il nome cambia, il vecchio indirizzo reindirizza) e `/ricettario/<nome>-<codice>`, generate sul server e trovabili dai motori di ricerca, con i dati strutturati *schema.org/Recipe* (ingredienti, passaggi, tempi, porzioni, diete), anteprima per i social, `sitemap.xml` e `robots.txt` (indicizzabili solo queste pagine e le foto). Mostrano solo la firma, mai email, membri o altri dati del gruppo. Le ricette private o nascoste non hanno pagina (404).
+- **Importa ricette** (*Altro → Importa ricette*): da un file JSON, con anteprima, avvisi e scelta delle ricette (al massimo 200 per file). Nel ricettario diventano pubbliche; negli altri gruppi restano private salvo `"visibility": "public"`. Le foto non vengono importate. Formato: vedi [Importazione di ricette](#importazione-di-ricette).
 - **Segnalazioni**: dopo 3 segnalazioni da persone diverse una ricetta pubblica viene nascosta. Gli amministratori della piattaforma (variabile `ADMIN_EMAILS`, email separate da virgola) le rivedono da *Altro → Segnalazioni* e le nascondono o ripristinano.
 - **La faccio**: dalla ricetta si tocca *La faccio* e si apre *Preparo*, il menu del gruppo (visibile e modificabile da tutti, resta finché qualcuno non lo svuota). Si possono mettere più ricette, ognuna con le sue persone: gli ingredienti uguali si sommano quando le unità sono compatibili. Ogni ingrediente si segna **Ce l'ho** o **Da comprare** (scelta condivisa, in tempo reale), con gli indizi *già in lista*, *comprato N giorni fa* (ultimi 7 giorni) e *sempre in casa*. *Aggiungi* mette nella lista scelta quello che manca, con la nota "per <ricetta>" e sommando a quello che c'è già; il messaggio offre *Annulla*. Eliminare una ricetta la toglie dal menu.
 - **Sempre in casa**: nella scheda di un prodotto (*Altro → Prodotti*, con il filtro apposito) si segnano sale, olio e simili; nel menu partono come *Ce l'ho*.
@@ -174,7 +177,7 @@ Le email (codice per entrare, inviti, avvisi agli amministratori, esito delle ri
 |---|---|
 | `EMAIL_API_KEY` | chiave API di Procmail (**riservata**) |
 | `EMAIL_FROM` | mittente, su un dominio verificato per l'invio (es. `Sporta <noreply@tuodominio.it>`) |
-| `APP_URL` | indirizzo pubblico dell'app, usato nei link (es. `https://sporta.vercel.app`) |
+| `APP_URL` | indirizzo pubblico dell'app, usato nei link e negli indirizzi canonici delle pagine web delle ricette e nella sitemap (es. `https://sporta.vercel.app`; se manca si usa l'indirizzo della richiesta) |
 | `EMAIL_API_URL` | facoltativa, default `https://api-eu.procmail.sh` |
 
 I modelli sono nel repository, in `emails/templates.js` (oggetto, HTML e testo per ognuno):
@@ -272,6 +275,40 @@ Sporta espone i suoi strumenti agli agenti AI del browser tramite [WebMCP](https
 
 Gli strumenti usano le stesse funzioni dell'interfaccia: le modifiche passano dalla coda offline e arrivano in tempo reale a tutto il gruppo.
 
+## Importazione di ricette
+
+Il file JSON può essere un elenco di ricette, un oggetto `{ "recipes": [...] }` oppure ricette nel formato [schema.org/Recipe](https://schema.org/Recipe) (anche dentro `@graph`, come le pubblicano molti siti). L'app ne propone un esempio (*Scarica un esempio*).
+
+```json
+{
+  "recipes": [
+    {
+      "name": "Pasta zucchine e menta",
+      "description": "Un primo veloce e fresco.",
+      "servings": 4, "prep_min": 10, "cook_min": 15, "difficulty": "facile",
+      "course": "primo", "traits": ["vegetariana", "veloce"],
+      "ingredients": ["320 g spaghetti", "600 g zucchine", { "name": "Pecorino", "qty": 60, "unit": "g" }, "sale q.b."],
+      "steps": ["Taglia le zucchine.", "Cuoci la pasta.", "Manteca con pecorino e menta."],
+      "visibility": "public"
+    }
+  ]
+}
+```
+
+| Campo | Note |
+|---|---|
+| `name` | obbligatorio |
+| `servings` / `recipeYield` | persone (default 4) |
+| `prep_min`, `cook_min` / `prepTime`, `cookTime`, `totalTime` | minuti, oppure durate ISO 8601 (`PT1H30M`) |
+| `difficulty` | `facile`, `media`, `difficile` (anche `easy`, `medium`, `hard`) |
+| `course` / `recipeCategory` | `antipasto`, `primo`, `secondo`, `contorno`, `unico`, `dolce`, `colazione`, `salsa`, `pane`, `bevanda` (riconosce anche le etichette e parole come "Dessert", "Primi piatti") |
+| `traits` / `suitableForDiet` | `vegetariana`, `vegana`, `carne`, `pesce`, `senza-glutine`, `senza-lattosio`, `veloce`, `bambini`, `economica`, `light`, `prima`, `forno` |
+| `ingredients` / `recipeIngredient` | testo come nell'inserimento rapido (`"150 g guanciale"`, `"pepe q.b."`) o oggetti `{ name, qty, unit, brand }` |
+| `steps` / `recipeInstructions` | testi, `{ "text": … }` o sezioni `HowToSection` |
+| `visibility` | `public` o `private` (ignorato nel ricettario, dove tutto è pubblico) |
+
+Le ricette pubbliche non possono contenere indirizzi web: nel ricettario vengono scartate, negli altri gruppi restano private.
+
 ## Condivisione e sicurezza
 
 - Si entra con un **codice usa e getta via email** (6 cifre, valido 10 minuti, al massimo 5 tentativi, un nuovo codice ogni minuto e non più di 5 l'ora per email, con limiti anche per indirizzo IP); i codici sono conservati solo come impronta e la risposta non rivela se un'email è registrata.
@@ -313,7 +350,8 @@ lib/members.js         membri: chiavi di gruppo, ruoli, richieste, inviti, prese
 lib/notify.js          avvisi, notifiche push (Web Push), promemoria delle scadenze
 lib/events.js          eventi, risposte con ospiti, liste collegate, promemoria del giorno prima
 lib/menu.js            menu "La faccio": ricette da preparare e scelte Ce l'ho / Da comprare
-lib/pubrecipes.js      ricette pubbliche: visibilità, firma, ricerca, segnalazioni
+lib/pubrecipes.js      ricette pubbliche: visibilità, firma, ricerca, preferite, segnalazioni
+lib/pages.js           pagine web delle ricette e dei ricettari, sitemap.xml, robots.txt
 lib/util.js            funzioni di supporto del server
 lib/backends.js        adattatori: SQLite o Postgres, tempo reale in memoria o LISTEN/NOTIFY
 lib/http.js            adattamento richiesta/risposta HTTP
@@ -330,7 +368,8 @@ public/termini.html    condizioni d'uso
 public/privacy.html    informativa sulla privacy
 public/js/recipes.js   ricette, foto, condivisione
 public/js/cook.js      "La faccio": menu condiviso e ingredienti da comprare
-public/js/discover.js  Scopri, ricette pubbliche di altri, firma, segnalazioni
+public/js/discover.js  Scopri, preferite, ricette pubbliche di altri, firma, segnalazioni
+public/js/import.js    importazione di ricette da file JSON
 public/js/trips.js     storico delle spese
 public/js/overview.js  panoramica di tutti i gruppi, avvisi, notifiche push
 public/js/events.js    eventi: elenco, calendario, risposte, liste dell'evento, .ics

@@ -32,6 +32,7 @@ Views.settings = {
         <p>Se lo spegni, chi ha il codice entra subito (comodo per un evento). I link personali entrano sempre senza approvazione.</p>
         <button class="btn" id="regen">Rigenera il codice</button>
         <p class="hint">Il vecchio codice smette di funzionare; chi è già nel gruppo non è toccato.</p>
+        <button class="btn danger-text" id="del-group" style="margin-top:14px">Elimina il gruppo</button>
       </div>
       <div class="card"><h3>I tuoi gruppi</h3>
         <p>Puoi far parte di più gruppi: la famiglia, gli amici del calcetto, un evento…</p>
@@ -68,6 +69,7 @@ Views.settings = {
       try { await api('PATCH', '/api/household', { require_approval: e.target.checked }); toast(e.target.checked ? 'Chi usa il codice dovrà essere accettato' : 'Chi ha il codice entra subito'); this.update(); }
       catch (x) { e.target.checked = !e.target.checked; toast(x.message); }
     };
+    $('#del-group').onclick = () => deleteGroupSheet();
     $('#regen').onclick = async () => {
       if (!confirm('Generare un nuovo codice? Il codice attuale e i link che lo contengono smetteranno di funzionare.')) return;
       try { await api('POST', '/api/household/code', {}); toast('Nuovo codice creato'); this.update(); } catch (x) { toast(x.message); }

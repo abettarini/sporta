@@ -36,6 +36,7 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
   - **nuovo gruppo**: nome della persona e nome del gruppo.
 - **Inviti in attesa**: in *Membri* gli amministratori vedono gli inviti non ancora usati (a chi sono stati mandati, da chi, quando scadono) e possono **annullarli**: il link smette subito di funzionare. Gli inviti scaduti o usati vengono cancellati da soli dopo 30 giorni.
 - **Richieste**: gli amministratori le vedono in cima a *Membri* (con un contatore nella navigazione) e possono correggere il nome, scegliere relazione e permesso, poi accettare, rifiutare o rifiutare e bloccare.
+- **Eliminare un gruppo**: un amministratore può eliminarlo da *Altro* (bisogna scriverne il nome per confermare). Si cancellano per tutti liste, articoli, ricette e foto, eventi, storico delle spese, membri e inviti; le altre persone ricevono un avviso e il gruppo sparisce dai loro dispositivi.
 - **Rimozione**: un amministratore può rimuovere una persona; il suo accesso viene revocato subito e il suo telefono mostra "Non fai più parte del gruppo". Quello che aveva aggiunto resta nello storico.
 - **Profilo nel gruppo**: opzione **"non mostrare quando sono online"**. Gli amministratori vedono l'email (verificata ✓) di ogni persona.
 - **Email** (vedi sotto): codice per entrare, invito via email, avviso agli amministratori per ogni nuova richiesta, esito della richiesta.

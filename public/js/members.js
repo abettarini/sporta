@@ -498,6 +498,7 @@ Views.notice = {
     const text = {
       removed: [`Non fai più parte di «${n.name}»`, `Un amministratore ti ha rimosso dal gruppo, oppure sei uscito da un altro dispositivo. Le liste e le ricette di ${n.name} sono state tolte da questo telefono.`],
       rejected: [`Richiesta non accettata`, `La tua richiesta di entrare in «${n.name}» non è stata accettata.`],
+      deleted: [`Gruppo eliminato`, `${n.by ? n.by + ' ha eliminato' : 'Un amministratore ha eliminato'} il gruppo «${n.name}»: le sue liste, ricette ed eventi non ci sono più e sono stati tolti anche da questo dispositivo.`],
       legacy_expired: [`Accesso da rinnovare`, `Per ritrovare «${n.name}» entra con la tua email: se fai parte del gruppo, lo ritrovi subito.`],
     }[n.reason] || [`Non fai più parte di «${n.name}»`, ''];
     app.innerHTML = `<div class="welcome center">
@@ -595,6 +596,34 @@ async function revokeInvite(i) {
   if (!i) return;
   if (!confirm(i.email ? `Annullare l'invito a ${i.email}? Il link nell'email smetterà subito di funzionare.` : 'Annullare questo link d\'invito? Smetterà subito di funzionare.')) return;
   try { await api('DELETE', '/api/invites/' + encodeURIComponent(i.id)); toast('Invito annullato'); Views.members.loadInvites(); } catch (e) { toast(e.message); }
+}
+
+// Eliminazione del gruppo (amministratori): conferma scrivendo il nome del gruppo.
+function deleteGroupSheet() {
+  const name = groupName(), code = st.code;
+  const others = [...st.members.values()].filter((m) => m.status === 'active' && (!st.me || m.id !== st.me.id)).length;
+  openSheet(`<h2>Eliminare «${h(name)}»?</h2>
+    <p>Verranno cancellati per sempre, per tutti: <b>liste, articoli, ricette e foto, eventi, storico delle spese</b> e l'elenco dei membri. Le ricette condivise smetteranno di funzionare.</p>
+    ${others ? `<p class="muted">${others === 1 ? 'L\'altra persona del gruppo riceverà' : `Le altre ${others} persone del gruppo riceveranno`} un avviso.</p>` : ''}
+    <form id="dg"><label class="field"><span>Per confermare scrivi il nome del gruppo</span><input class="input" name="confirm" autocomplete="off" placeholder="${h(name)}"></label>
+      <p class="err" id="dg-err"></p>
+      <div class="actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn danger" disabled>Elimina per sempre</button></div></form>`, (sh) => {
+    const f = $('#dg', sh), btn = f.querySelector('.btn.danger');
+    f.elements.confirm.oninput = () => { btn.disabled = f.elements.confirm.value.trim().toLowerCase() !== name.trim().toLowerCase(); };
+    setTimeout(() => f.elements.confirm.focus(), 50);
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      deletingGroup = true;
+      try {
+        await api('POST', '/api/household/delete', { confirm: f.elements.confirm.value.trim() });
+        closeSheet(true);
+        dropGroup(code);
+        toast(`Il gruppo «${name}» è stato eliminato`);
+      } catch (x) { $('#dg-err', sh).textContent = x.message; btn.disabled = false; }
+      deletingGroup = false;
+    };
+  });
 }
 
 async function rejectRequest(m) {

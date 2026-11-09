@@ -471,6 +471,7 @@ function applyEvents(evs) {
       if (m) Object.assign(m, { online: e.online, viewing: e.viewing ?? m.viewing, last_seen: e.last_seen });
       continue;
     }
+    if (e.t === 'group_deleted') { if (!deletingGroup) { unauthorized(st.code, 'deleted', e.by); return; } continue; }
     if (e.t === 'kick') { if (st.me && e.id === st.me.id) { unauthorized(st.code, 'removed'); return; } continue; }
     if (e.t === 'joined') { if (!st.me || e.id !== st.me.id) toast(`${e.alias} è entrato nel gruppo`); continue; }
     if (e.t === 'invites') { if (view === Views.members && Views.members.loadInvites) Views.members.loadInvites(); continue; }
@@ -513,11 +514,12 @@ async function loadState() {
 
 // Il server non riconosce più questo telefono nel gruppo: rimosso, richiesta rifiutata,
 // oppure fine del periodo di transizione dalla versione 2.
-function unauthorized(code, reason) {
+let deletingGroup = false; // l'eliminazione l'ha chiesta questo dispositivo
+function unauthorized(code, reason, by) {
   const g = groupOf(code);
   if (!g) return;
   if (!g.token && !reason) reason = 'legacy_expired';
-  st.notice = { name: g.name, reason: reason || 'removed', code: g.code };
+  st.notice = { name: g.name, reason: reason || 'removed', code: g.code, by: by || '' };
   dropGroup(code);
 }
 

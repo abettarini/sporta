@@ -472,6 +472,7 @@ function applyEvents(evs) {
     }
     if (e.t === 'kick') { if (st.me && e.id === st.me.id) { unauthorized(st.code, 'removed'); return; } continue; }
     if (e.t === 'joined') { if (!st.me || e.id !== st.me.id) toast(`${e.alias} è entrato nel gruppo`); continue; }
+    if (e.t === 'invites') { if (view === Views.members && Views.members.loadInvites) Views.members.loadInvites(); continue; }
     if (e.t === 'notify') { if (st.me && e.to === st.me.id) onNotifySignal(); continue; }
     const map = { list: st.lists, item: st.items, recipe: st.recipes, product: st.products, trip: st.trips, event: st.events }[e.t];
     if (!map) continue;

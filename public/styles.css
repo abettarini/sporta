@@ -781,3 +781,6 @@ small.as { display: block; color: var(--muted); font-size: 13px; }
 .acc-email b { overflow-wrap: anywhere; }
 .dev-row .t { font-size: 15.5px; }
 .welcome .big-ico svg { width: 34px; height: 34px; }
+.avatar.inv { background: var(--surface-2); color: var(--muted); }
+.avatar.inv svg { width: 18px; height: 18px; }
+.inv-row .mt small { white-space: normal; }

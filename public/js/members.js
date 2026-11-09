@@ -547,8 +547,21 @@ Views.members = {
       const m = st.members.get(row.dataset.mid);
       if (m.status === 'pending') reviewSheet(m); else memberSheet(m);
     };
+    $('#mb').addEventListener('click', (e) => {
+      const x = e.target.closest('[data-revoke-inv]'); if (!x) return;
+      e.stopPropagation();
+      revokeInvite((this.invites || []).find((i) => i.id === x.dataset.revokeInv));
+    }, true);
+    this.invites = null;
     refreshMembers();
+    this.loadInvites();
     this.update();
+  },
+  // Inviti in attesa (solo per gli amministratori).
+  async loadInvites() {
+    if (!isAdmin() || !tokenFor(st.code)) { this.invites = []; return; }
+    try { this.invites = (await api('GET', '/api/invites')).invites; } catch { this.invites = this.invites || []; }
+    if (view === Views.members) this.update();
   },
   update() {
     const all = sortedMembers();
@@ -560,11 +573,29 @@ Views.members = {
     $('#mb').innerHTML = (!tokenFor(st.code) ? `<div class="card pad muted small">Sto collegando questo telefono al gruppo…</div>` : '') +
       (isAdmin() ? sec('Richieste in attesa', pending, { requests: true }) : '') +
       sec('Online ora', online) + sec(online.length ? 'Altri membri' : 'Membri', others) +
+      (isAdmin() && this.invites && this.invites.length ? `<div class="section-h"><span>Inviti in attesa · ${this.invites.length}</span></div>
+        <div class="card mcard">${this.invites.map(inviteRow).join('')}</div>` : '') +
       `<p class="muted small center" style="margin-top:16px">${isAdmin()
         ? (st.household && st.household.require_approval ? 'Chi entra con il codice del gruppo deve essere accettato da un amministratore.' : 'Chi ha il codice del gruppo entra senza approvazione (puoi cambiarlo in Altro).')
         : 'Solo gli amministratori possono accettare richieste e rimuovere membri.'}</p>`;
   },
 };
+
+function inviteRow(i) {
+  const who = i.email || 'Link condiviso';
+  const days = Math.max(0, Math.ceil((i.expires_at - Date.now()) / 864e5));
+  const sub = [relLabel(i.relation), i.role === 'admin' ? 'amministratore' : '', i.created_by ? 'da ' + i.created_by : '', fmtAgo(i.created_at),
+    days <= 1 ? 'scade oggi' : `scade tra ${days} giorni`].filter(Boolean).join(' · ');
+  return `<div class="mrow inv-row"><span class="avatar inv">${i.email ? I.mail : icon('link')}</span>
+    <span class="mt"><b>${h(who)}</b><small>${h(sub)}</small></span>
+    <button class="btn ghost danger-text sm" data-revoke-inv="${h(i.id)}">Annulla</button></div>`;
+}
+
+async function revokeInvite(i) {
+  if (!i) return;
+  if (!confirm(i.email ? `Annullare l'invito a ${i.email}? Il link nell'email smetterà subito di funzionare.` : 'Annullare questo link d\'invito? Smetterà subito di funzionare.')) return;
+  try { await api('DELETE', '/api/invites/' + encodeURIComponent(i.id)); toast('Invito annullato'); Views.members.loadInvites(); } catch (e) { toast(e.message); }
+}
 
 async function rejectRequest(m) {
   if (!confirm(`Rifiutare la richiesta di ${m.alias}?`)) return;

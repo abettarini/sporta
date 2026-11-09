@@ -216,6 +216,7 @@ Views.list = {
       back: hasPane() ? '' : '#/l',
       right: `<span id="lv" class="viewers"></span><button class="icon-btn" id="list-menu" aria-label="Opzioni lista">${I.more}</button>`,
     }) + (hasPane() ? `<aside class="pane" id="pane-lists"></aside>` : '') + `<main class="wide">
+      <div id="lev"></div>
       <div class="quick">
         <form id="qf" autocomplete="off">
           <input id="qi" enterkeyhint="done" placeholder="${h(PLACEHOLDER[type](list))}" aria-label="Aggiungi">
@@ -286,6 +287,9 @@ Views.list = {
     if (!list) { toast('La lista è stata eliminata'); history.replaceState(null, '', '#/l'); return mount(); }
     $('#lt').innerHTML = `${listTile(list, 'sm')} ${h(list.name)}`;
     $('#lv').innerHTML = viewersHtml(list.id);
+    // Lista di un evento: collegamento all'evento.
+    const ev = list.event_id && st.events.get(list.event_id);
+    $('#lev').innerHTML = ev ? `<a class="event-chip" href="#/e/${ev.id}">${I.cal}<span>${h(ev.title)} · ${h(eventWhen(ev, true))}</span><span class="chev">›</span></a>` : '';
     const pane = $('#pane-lists');
     if (pane) { pane.innerHTML = listsPaneBody(list.id); if (!pane.onclick) bindListsPane(list.id); }
     const type = typeOf(list);

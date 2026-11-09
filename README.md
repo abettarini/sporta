@@ -11,6 +11,12 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - **Avvisi** (campanella): quando qualcuno ti assegna una cosa, quando chi l'ha ricevuta tocca **Non posso**, quando una cosa che hai assegnato è fatta, e il **promemoria** delle cose assegnate a te che scadono oggi o domani (o già scadute).
 - **Notifiche push** sul telefono e sul computer, anche ad app chiusa (si attivano da Altro → Avvisi, valgono per tutti i gruppi; su iPhone serve l'app installata). Gli avvisi di assegnazione e scadenza possono arrivare anche **per email**, se lo scegli per quel gruppo.
 
+### Eventi
+- **Eventi del gruppo** (cena, festa, partita…) con giorno, ora, luogo (aperto nelle mappe) e note. Tutti ricevono un avviso e rispondono **Ci sono / Forse / Non ci sono**, aggiungendo quanti **ospiti** portano (+1, +2, +3…): il totale delle persone si aggiorna in tempo reale, con chi non ha ancora risposto.
+- **Liste dell'evento**: "Spesa per l'evento" e "Chi porta cosa" (una lista *Da fare* dove ognuno tocca **Prendo io**), oppure qualunque lista del gruppo collegata all'evento.
+- **Calendario** del mese sugli schermi larghi, prossimi eventi nella panoramica di tutti i gruppi, esportazione in **.ics** (un evento o tutti quelli in programma) e condivisione dei dettagli.
+- Avvisi quando un evento viene creato, cambia data, ora o luogo, o viene annullato, e un **promemoria il giorno prima** (a chi ha detto sì o forse e a chi non ha ancora risposto). Può modificarlo o annullarlo chi l'ha creato o un amministratore.
+
 ### Gruppi e persone
 - Un telefono può partecipare a **più gruppi** (la famiglia, la squadra di calcetto, una festa…) e passare dall'uno all'altro toccando il nome del gruppo. Ogni gruppo ha liste, ricette, prodotti e spese separati.
 - **Ruoli**: ogni persona ha un *permesso* — **Amministratore** o **Partecipante** — e una *relazione* descrittiva (Familiare, Amico, Collega, Ospite o personalizzata). Chi crea il gruppo ne è l'amministratore; deve sempre restarcene almeno uno.
@@ -150,7 +156,7 @@ controlla la sintassi e genera le anteprime in `emails/preview/` con dati di ese
 EMAIL_API_KEY=... npm run emails:sync
 ```
 
-crea o aggiorna i modelli sul servizio (si riconoscono per nome: `sporta-invite`, `sporta-join-request`, `sporta-request-approved`, `sporta-request-rejected`, `sporta-recovery`, `sporta-assigned`, `sporta-reminder`). Va rilanciato ogni volta che si modifica un modello.
+crea o aggiorna i modelli sul servizio (si riconoscono per nome: `sporta-invite`, `sporta-join-request`, `sporta-request-approved`, `sporta-request-rejected`, `sporta-recovery`, `sporta-assigned`, `sporta-reminder`, `sporta-event`). Va rilanciato ogni volta che si modifica un modello.
 
 ## Avvio locale / self-hosted
 
@@ -214,6 +220,9 @@ Sporta espone i suoi strumenti agli agenti AI del browser tramite [WebMCP](https
 | `sporta_get_overview` | gruppo attivo, gruppi, liste con il numero di articoli |
 | `sporta_get_my_overview` | tutti i gruppi insieme: cose da fare assegnate a me, cose da comprare, avvisi non letti |
 | `sporta_get_members` | persone del gruppo, ruoli, chi è online (sola lettura) |
+| `sporta_list_events` | eventi del gruppo con le risposte e gli ospiti |
+| `sporta_create_event` | crea un evento, anche con le liste "Spesa" e "Chi porta cosa" |
+| `sporta_rsvp_event` | risponde a un evento (sì, forse, no) con il numero di ospiti |
 | `sporta_switch_group` | passa a un altro gruppo |
 | `sporta_get_list` | articoli di una lista (da prendere e nel carrello) |
 | `sporta_add_items` | aggiunge articoli con quantità, unità, marca, nota e tag facoltativi |
@@ -250,6 +259,7 @@ server.js              server locale/self-hosted: statici + API + SSE
 lib/core.js            logica delle API, schema del database e migrazioni
 lib/members.js         membri: chiavi personali, ruoli, richieste, inviti, presenza
 lib/notify.js          avvisi, notifiche push (Web Push), promemoria delle scadenze
+lib/events.js          eventi, risposte con ospiti, liste collegate, promemoria del giorno prima
 lib/util.js            funzioni di supporto del server
 lib/backends.js        adattatori: SQLite o Postgres, tempo reale in memoria o LISTEN/NOTIFY
 lib/http.js            adattamento richiesta/risposta HTTP
@@ -263,6 +273,7 @@ public/js/members.js   ingresso nei gruppi, membri, richieste, inviti, attesa
 public/js/recipes.js   ricette, foto, condivisione
 public/js/trips.js     storico delle spese
 public/js/overview.js  panoramica di tutti i gruppi, avvisi, notifiche push
+public/js/events.js    eventi: elenco, calendario, risposte, liste dell'evento, .ics
 public/js/webmcp.js    strumenti WebMCP per gli agenti AI
 public/js/settings.js  impostazioni, avvio e aggiornamenti
 public/sw.js           service worker versionato (offline e aggiornamenti)

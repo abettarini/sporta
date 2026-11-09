@@ -158,6 +158,23 @@ Apri la lista: {{ link }}
 
 Puoi disattivare gli avvisi per email da Altro → Avvisi.`,
   },
+  {
+    // Eventi: nuovo, cambiato, annullato, promemoria del giorno prima (solo con gli avvisi per email attivi).
+    name: 'sporta-event',
+    variables: ['group', 'alias', 'actor', 'event', 'when_label', 'location', 'kind', 'title', 'link'],
+    subject: '{% if kind == "event" %}Nuovo evento: «{{ event }}»{% elsif kind == "event_changed" %}Cambiato: «{{ event }}»{% elsif kind == "event_cancelled" %}Annullato: «{{ event }}»{% else %}Domani: «{{ event }}»{% endif %}',
+    html: layout('Evento',
+      h1('{% if kind == "event" %}Nuovo evento in «{{ group }}»{% elsif kind == "event_changed" %}Un evento è cambiato{% elsif kind == "event_cancelled" %}Un evento è stato annullato{% else %}Domani c\'è un evento{% endif %}') +
+      p('Ciao {{ alias }}, {% if kind == "event" %}<b>{{ actor }}</b> ha creato{% elsif kind == "event_changed" %}è cambiato{% elsif kind == "event_cancelled" %}{% if actor != blank %}<b>{{ actor }}</b> ha annullato{% else %}è stato annullato{% endif %}{% else %}ti ricordiamo{% endif %} l\'evento <b>{{ event }}</b>.') +
+      quote('{{ when_label }}{% if location != blank %} · {{ location }}{% endif %}') +
+      '{% if kind != "event_cancelled" %}' + p('Apri l\'evento per dire se ci sei, quanti ospiti porti e cosa porti.') + button('{{ link }}', 'Apri l\'evento') + '{% endif %}' +
+      muted('Ricevi questi avvisi per email perché li hai attivati nelle impostazioni del gruppo «{{ group }}». Puoi disattivarli da Altro → Avvisi.')),
+    text: `Ciao {{ alias }}, {{ title }}.
+{{ when_label }}{% if location != blank %} · {{ location }}{% endif %}
+{% if kind != "event_cancelled" %}Apri l'evento: {{ link }}
+{% endif %}
+Puoi disattivare gli avvisi per email da Altro → Avvisi.`,
+  },
 ];
 
 // Dati di esempio per l'anteprima (npm run emails:preview).
@@ -174,6 +191,7 @@ const SAMPLES = {
     expires_hours: 24,
   },
   'sporta-assigned': { group: 'Calcetto del giovedì', alias: 'Luca', actor: 'Marco', item: 'Prenotare il campo', list: 'Torneo', due: 'giovedì 12 novembre', link: 'https://sporta.example.it/#/go/abc/def' },
+  'sporta-event': { group: 'Calcetto del giovedì', alias: 'Luca', actor: 'Marco', event: 'Cena di fine torneo', when_label: 'sabato 14 novembre, 20:30', location: 'Da Mario, via Roma 3', kind: 'event', title: 'Marco ha creato l\'evento "Cena di fine torneo"', link: 'https://sporta.example.it/#/go/abc/e/def' },
   'sporta-reminder': { group: 'Calcetto del giovedì', alias: 'Luca', item: 'Prenotare il campo', list: 'Torneo', due: 'giovedì 12 novembre', when: 'tomorrow', title: '', link: 'https://sporta.example.it/#/go/abc/def' },
 };
 

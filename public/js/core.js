@@ -46,6 +46,9 @@ const I = {
   chart: svg('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
   users: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>'),
   down: svg('<path d="M6 9l6 6 6-6"/>'),
+  cal: svg('<rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>'),
+  pin: svg('<path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>'),
+  download: svg('<path d="M12 3v12M7 10l5 5 5-5M4 20h16"/>'),
   bell: svg('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>'),
   home: svg('<path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/>'),
 };
@@ -76,6 +79,7 @@ const st = {
   recipes: new Map(),
   products: new Map(), // chiave: nome normalizzato
   trips: new Map(),
+  events: new Map(),   // eventi del gruppo attivo (con le risposte)
   me: null,            // io nel gruppo attivo (ruolo, relazione, stato)
   members: new Map(),  // membri del gruppo attivo (con presenza)
   notice: null,        // avviso da mostrare (es. rimozione dal gruppo)
@@ -117,6 +121,7 @@ function setState(j) {
   st.recipes = new Map((j.recipes || []).map((x) => [x.id, x]));
   st.products = new Map((j.products || []).map((x) => [x.key, x]));
   st.trips = new Map((j.trips || []).map((x) => [x.id, x]));
+  st.events = new Map((j.events || []).map((x) => [x.id, x]));
   st.me = j.me || null;
   st.members = new Map((j.members || []).map((x) => [x.id, x]));
   // Aggiorna i dati del gruppo salvati sul telefono.
@@ -131,7 +136,7 @@ function setState(j) {
 
 function clearState() {
   st.household = null;
-  for (const k of ['lists', 'items', 'recipes', 'products', 'trips', 'members']) st[k] = new Map();
+  for (const k of ['lists', 'items', 'recipes', 'products', 'trips', 'members', 'events']) st[k] = new Map();
   st.me = null;
 }
 
@@ -143,7 +148,7 @@ function writeCache() {
   ls.setJson('cache.' + st.code, {
     household: st.household, lists: [...st.lists.values()], items: [...st.items.values()],
     recipes: [...st.recipes.values()], products: [...st.products.values()], trips: [...st.trips.values()],
-    me: st.me, members: [...st.members.values()],
+    events: [...st.events.values()], me: st.me, members: [...st.members.values()],
   });
 }
 function saveCache() {
@@ -323,6 +328,28 @@ function applyLocal(op) {
     case 'trip.put': { const ex = st.trips.get(op.id); if (ex) st.trips.set(op.id, { ...ex, ...op.data }); break; }
     case 'trip.del': st.trips.delete(op.id); break;
     case 'hh.put': st.household = { ...st.household, ...op.data }; break;
+    case 'event.put': {
+      const ex = st.events.get(op.id);
+      const me = st.me && st.me.id;
+      st.events.set(op.id, {
+        ...(ex || { id: op.id, time: '', end_time: '', location: '', notes: '', icon: 'party', created_by: st.member, created_by_id: me || null, created_at: t,
+          participants: me ? [{ member_id: me, rsvp: 'yes', guests: 0, note: '', updated_at: t }] : [] }),
+        ...op.data, updated_at: t,
+      });
+      break;
+    }
+    case 'event.del':
+      st.events.delete(op.id);
+      for (const l of st.lists.values()) if (l.event_id === op.id) l.event_id = null;
+      break;
+    case 'event.rsvp': {
+      const ev = st.events.get(op.id);
+      const me = st.me && st.me.id;
+      if (!ev || !me) break;
+      const p = { member_id: me, rsvp: op.data.rsvp, guests: op.data.rsvp === 'no' ? 0 : op.data.guests || 0, note: op.data.note || '', updated_at: t };
+      st.events.set(op.id, { ...ev, participants: ev.participants.filter((x) => x.member_id !== me).concat(p) });
+      break;
+    }
   }
 }
 
@@ -341,6 +368,9 @@ function opRequest(op) {
     case 'trip.put': return ['PUT', `/api/trips/${op.id}`, op.data];
     case 'trip.del': return ['DELETE', `/api/trips/${op.id}`];
     case 'hh.put': return ['PATCH', '/api/household', op.data];
+    case 'event.put': return ['PUT', `/api/events/${op.id}`, op.data];
+    case 'event.del': return ['DELETE', `/api/events/${op.id}`];
+    case 'event.rsvp': return ['POST', `/api/events/${op.id}/rsvp`, op.data];
   }
   return null;
 }
@@ -442,7 +472,7 @@ function applyEvents(evs) {
     if (e.t === 'kick') { if (st.me && e.id === st.me.id) { unauthorized(st.code, 'removed'); return; } continue; }
     if (e.t === 'joined') { if (!st.me || e.id !== st.me.id) toast(`${e.alias} è entrato nel gruppo`); continue; }
     if (e.t === 'notify') { if (st.me && e.to === st.me.id) onNotifySignal(); continue; }
-    const map = { list: st.lists, item: st.items, recipe: st.recipes, product: st.products, trip: st.trips }[e.t];
+    const map = { list: st.lists, item: st.items, recipe: st.recipes, product: st.products, trip: st.trips, event: st.events }[e.t];
     if (!map) continue;
     if (e.op === 'put') {
       const prev = map.get(id);
@@ -452,6 +482,7 @@ function applyEvents(evs) {
     } else {
       map.delete(id);
       if (e.t === 'list') for (const [iid, it] of st.items) if (it.list_id === id) st.items.delete(iid);
+      if (e.t === 'event') for (const l of st.lists.values()) if (l.event_id === id) l.event_id = null;
     }
   }
   saveCache();
@@ -653,7 +684,7 @@ function tabBar(active) {
   const g = groupName();
   return `<nav class="tabs">
     <button type="button" class="nav-group wide-only" id="nav-grp" title="Cambia gruppo"><span class="avatar">${h((g || '?').slice(0, 1).toUpperCase())}</span><span class="g-name">${h(g)}</span>${I.down}</button>
-    ${t('home', '#/', I.home, 'Panoramica', '', 'n')}${t('lists', '#/l', I.cart, 'Liste')}${t('recipes', '#/r', I.book, 'Ricette')}${t('trips', '#/t', I.receipt, 'Spese')}
+    ${t('home', '#/', I.home, 'Panoramica', '', 'n')}${t('lists', '#/l', I.cart, 'Liste')}${t('events', '#/e', I.cal, 'Eventi')}${t('recipes', '#/r', I.book, 'Ricette')}${t('trips', '#/t', I.receipt, 'Spese', 'wide-only')}
     ${t('products', '#/p', icon('tag'), 'Prodotti', 'wide-only')}${t('members', '#/m', I.users, 'Membri', 'wide-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'narrow-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'wide-only')}</nav>`;
 }
 
@@ -879,7 +910,10 @@ function parseRoute() {
   if (p[0] === 'l' && p[1]) return { name: 'list', id: p[1] };
   if (p[0] === 'l') return { name: 'lists' };
   if (p[0] === 'n') return { name: 'notifs' };
+  if (p[0] === 'go' && p[1] && p[2] === 'e') return { name: 'go', hid: p[1], event: p[3] || '' };
   if (p[0] === 'go' && p[1]) return { name: 'go', hid: p[1], list: p[2] || '', item: p[3] || '' };
+  if (p[0] === 'e' && p[1]) return { name: 'event', id: p[1] };
+  if (p[0] === 'e') return { name: 'events' };
   if (p[0] === 'r' && p[1] && p[2] === 'edit') return { name: 'recipeEdit', id: p[1] };
   if (p[0] === 'r' && p[1]) return { name: 'recipe', id: p[1] };
   if (p[0] === 'r') return { name: 'recipes' };

@@ -20,6 +20,7 @@ function ovGroups() {
       return {
         code: g.code, hid: st.household.id || g.hid, name: groupName(), current: true, me: st.me ? st.me.id : g.memberId,
         lists, items: [...st.items.values()].filter((i) => !i.checked), members: activeMembers(), inbox: o.inbox || { unread: 0, items: [] },
+        events: [...st.events.values()],
       };
     }
     // Altri gruppi: riepilogo salvato + le nostre modifiche ancora in coda.
@@ -35,6 +36,12 @@ function ovGroups() {
       code: g.code, hid: g.hid, name: g.name, current: false, me: (o.me && o.me.id) || g.memberId,
       lists: (o.lists || []).slice().sort((a, b) => a.position - b.position || a.created_at - b.created_at),
       items: [...items.values()], members: o.members || [], inbox: o.inbox || { unread: 0, items: [] }, stale: !o.lists,
+      events: (o.events || []).map((e) => {
+        // Le nostre risposte ancora in coda.
+        const op = st.outbox.filter((x) => x.g === g.code && x.k === 'event.rsvp' && x.id === e.id).pop();
+        const me = (o.me && o.me.id) || g.memberId;
+        return op && me ? { ...e, participants: e.participants.filter((p) => p.member_id !== me).concat({ member_id: me, rsvp: op.data.rsvp, guests: op.data.guests || 0 }) } : e;
+      }),
     };
   });
 }
@@ -113,7 +120,7 @@ function enqueueIn(code, op) {
 // Apre una lista (o un articolo) di qualunque gruppo: #/go/<id gruppo>/<lista>/<articolo>.
 Views.go = {
   mount() {
-    const { hid, list, item } = this.route;
+    const { hid, list, item, event } = this.route;
     const g = st.groups.find((x) => x.hid === hid);
     if (!g) { toast('Non fai più parte di questo gruppo'); history.replaceState(null, '', '#/'); return mount(); }
     if (item) {
@@ -125,12 +132,20 @@ Views.go = {
     }
     // Prima si passa al gruppo (la vista si ricarica con il gruppo attivo), poi alla lista.
     if (g.code !== st.code) return switchGroup(g.code, location.hash);
+    if (event) {
+      const o = ov.data[g.code];
+      const ids = o && o.inbox ? o.inbox.items.filter((n) => !n.read && n.data && n.data.event === event).map((n) => n.id) : [];
+      if (ids.length) markRead(g.code, ids);
+    }
     const go = () => {
-      if (list && !st.lists.has(list)) { toast('Questa lista non c\'è più'); history.replaceState(null, '', '#/l'); }
+      if (event) {
+        if (!st.events.has(event)) { toast('Questo evento non c\'è più'); history.replaceState(null, '', '#/e'); }
+        else history.replaceState(null, '', '#/e/' + event);
+      } else if (list && !st.lists.has(list)) { toast('Questa lista non c\'è più'); history.replaceState(null, '', '#/l'); }
       else history.replaceState(null, '', list ? '#/l/' + list : '#/l');
       mount();
     };
-    if (!list || st.lists.has(list)) return go();
+    if (event ? st.events.has(event) : !list || st.lists.has(list)) return go();
     // La lista non è ancora nella copia locale del gruppo: la aspettiamo dal server.
     app.innerHTML = topBar('Apro la lista…', { back: '#/' }) + `<main><div class="empty">Caricamento…</div></main>`;
     const route = this.route;
@@ -138,11 +153,12 @@ Views.go = {
   },
 };
 const goHref = (grp, listId, itemId) => `#/go/${grp.hid}${listId ? '/' + listId : ''}${itemId ? '/' + itemId : ''}`;
+const goEvent = (grp, eventId) => `#/go/${grp.hid}/e/${eventId}`;
 
 function openNotification(code, n) {
   const g = groupOf(code); if (!g) return;
   if (!n.read) markRead(code, [n.id]);
-  location.hash = goHref(g, n.list_id, n.item_id);
+  location.hash = n.data && n.data.event ? goEvent(g, n.data.event) : goHref(g, n.list_id, n.item_id);
 }
 async function markRead(code, ids) {
   const o = ov.data[code];
@@ -267,7 +283,13 @@ Views.home = {
       </div>`).join('')}
       <button class="btn ghost block" data-newlist>${I.plus} Nuova lista${many ? ' in ' + h(groupName()) : ''}</button></section>`;
 
-    $('#ov').innerHTML = `<div class="ov-col">${todoHtml}${shopHtml}</div><div class="ov-col">${listsHtml}</div>`;
+    // Prossimi eventi di tutti i gruppi (le prossime 5 settimane, al massimo 6).
+    const limit = S.ymd(S.addDays(new Date(), 35));
+    const evs = groups.flatMap((grp) => upcomingEvents(grp.events || []).filter((e) => e.date <= limit).map((e) => ({ grp, e })))
+      .sort((a, b) => a.e.date.localeCompare(b.e.date) || (a.e.time || '99').localeCompare(b.e.time || '99')).slice(0, 6);
+    const evHtml = evs.length ? `<section class="ov-sec"><div class="section-h"><span>Prossimi eventi</span></div>
+      <div class="list-cards">${evs.map(({ grp, e }) => eventCard(e, { href: goEvent(grp, e.id), meId: grp.me, members: grp.members, group: many ? grp.name : '' })).join('')}</div></section>` : '';
+    $('#ov').innerHTML = `<div class="ov-col">${todoHtml}${shopHtml}</div><div class="ov-col">${evHtml}${listsHtml}</div>`;
   },
 };
 

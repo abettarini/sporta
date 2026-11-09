@@ -77,6 +77,64 @@
       },
     },
     {
+      name: 'sporta_list_events',
+      description: 'Eventi del gruppo attivo (cene, feste, partite…): data, ora, luogo, chi c\'è (con gli ospiti), chi forse, chi no, chi non ha risposto, e la mia risposta. past=true per includere quelli passati.',
+      inputSchema: { type: 'object', properties: { past: { type: 'boolean' } } },
+      annotations: { readOnlyHint: true },
+      execute: ({ past } = {}) => needGroup() || ok((past ? sortedEvents() : upcomingEvents()).map((e) => {
+        const t = eventTally(e, activeMembers());
+        const names = (arr) => arr.map(({ m, p }) => m.alias + (p && p.guests ? ' +' + p.guests : ''));
+        const mine = myRsvp(e, st.me && st.me.id);
+        return {
+          title: e.title, date: e.date, time: e.time || undefined, end_time: e.end_time || undefined, location: e.location || undefined, notes: e.notes || undefined,
+          people_total: t.total, yes: names(t.yes), maybe: names(t.maybe), no: names(t.no), no_answer: names(t.none),
+          my_answer: mine ? { yes: 'sì', maybe: 'forse', no: 'no' }[mine.rsvp] + (mine.guests ? ' +' + mine.guests : '') : 'non ancora',
+          lists: eventLists(e.id).map((l) => l.name),
+        };
+      })),
+    },
+    {
+      name: 'sporta_create_event',
+      description: 'Crea un evento nel gruppo attivo (tutti ricevono un avviso per rispondere). Data in formato AAAA-MM-GG, ora HH:MM facoltativa. with_lists: crea anche le liste "Spesa per l\'evento" e/o "Chi porta cosa".',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' }, date: { type: 'string', description: 'AAAA-MM-GG' }, time: { type: 'string', description: 'HH:MM' },
+          end_time: { type: 'string' }, location: { type: 'string' }, notes: { type: 'string' },
+          with_lists: { type: 'array', items: { type: 'string', enum: ['spesa', 'chi_porta_cosa'] } },
+        },
+        required: ['title', 'date'],
+      },
+      execute: (a) => {
+        const miss = needGroup(); if (miss) return miss;
+        if (!S.fromYmd(a.date)) return fail('Data non valida: usa AAAA-MM-GG');
+        const id = uid();
+        const valid = (x) => (/^([01]\d|2[0-3]):[0-5]\d$/.test(x || '') ? x : '');
+        enqueue({ k: 'event.put', id, data: { title: String(a.title).slice(0, 100), date: a.date, time: valid(a.time), end_time: valid(a.time) ? valid(a.end_time) : '', location: a.location || '', notes: a.notes || '', icon: 'party' } });
+        const e = st.events.get(id);
+        for (const w of a.with_lists || []) createEventList(e, w === 'spesa' ? 'spesa' : 'todo');
+        return ok(`Evento creato: ${a.title}, ${eventWhen(e)}`);
+      },
+    },
+    {
+      name: 'sporta_rsvp_event',
+      description: 'Rispondo a un evento del gruppo attivo: sì, forse o no, con il numero di ospiti che porto (0 = solo io).',
+      inputSchema: {
+        type: 'object',
+        properties: { event: { type: 'string', description: 'Nome dell\'evento' }, answer: { type: 'string', enum: ['yes', 'maybe', 'no'] }, guests: { type: 'integer', minimum: 0, maximum: 20 } },
+        required: ['event', 'answer'],
+      },
+      execute: ({ event, answer, guests }) => {
+        const miss = needGroup(); if (miss) return miss;
+        const n = S.normName(event);
+        const evs = upcomingEvents();
+        const e = evs.find((x) => S.normName(x.title) === n) || evs.find((x) => S.normName(x.title).includes(n));
+        if (!e) return fail(`Evento "${event}" non trovato tra quelli in programma`);
+        enqueue({ k: 'event.rsvp', id: e.id, data: { rsvp: answer, guests: answer === 'no' ? 0 : Math.max(0, Math.min(20, guests || 0)) } });
+        return ok(`Risposta a "${e.title}": ${{ yes: 'ci sono', maybe: 'forse', no: 'non ci sono' }[answer]}${guests && answer !== 'no' ? ' +' + guests : ''}`);
+      },
+    },
+    {
       name: 'sporta_get_members',
       description: 'Elenca le persone del gruppo attivo: nome, ruolo (amministratore o partecipante), relazione, se sono online e quale lista stanno guardando. Sola lettura: accettare o rimuovere persone si fa solo dall\'app.',
       inputSchema: { type: 'object', properties: {} },

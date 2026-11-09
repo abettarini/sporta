@@ -23,6 +23,7 @@ Views.settings = {
       </div>
       <div class="card" id="ntf"></div>
       <a class="card link-card" href="#/m">${iconTile('home')}<span class="t"><b>Membri <i class="tab-badge inline" data-badge hidden></i></b><span id="mb-sub">Chi c'è nel gruppo, inviti e richieste</span></span><span class="chev">›</span></a>
+      <a class="card link-card narrow-only" href="#/t">${iconTile('receipt')}<span class="t"><b>Spese</b><span>Storico delle spese concluse</span></span><span class="chev">›</span></a>
       <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
       <div class="card"><h3>Invita</h3>
         <p id="inv-p"></p>

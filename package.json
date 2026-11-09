@@ -15,7 +15,9 @@
     "sync-version": "node scripts/sync-version.js",
     "emails:preview": "node scripts/email-templates.js preview",
     "emails:sync": "node scripts/email-templates.js sync",
-    "vapid": "node -e \"const k=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+k.publicKey+'\\nVAPID_PRIVATE_KEY='+k.privateKey)\""
+    "vapid": "node -e \"const k=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+k.publicKey+'\\nVAPID_PRIVATE_KEY='+k.privateKey)\"",
+    "site:build": "node site/build.js",
+    "site:og": "node site/make-og.js"
   },
   "dependencies": {
     "altcha-lib": "2.8.0",

@@ -282,6 +282,15 @@ Gli strumenti usano le stesse funzioni dell'interfaccia: le modifiche passano da
 - Le **foto** sono servite tramite identificativi casuali non indovinabili, come i link condivisi.
 - L'app chiede ai motori di ricerca di non indicizzare le pagine (`noindex`).
 
+## Sito di presentazione
+
+Nella cartella `site/` c'è il sito che presenta l'app (italiano in `/`, inglese in `/en/`), statico e senza dipendenze: nessun font, script o servizio esterno.
+
+- **Nome e indirizzi** in `site/site.config.js` (`name`, `appUrl` dell'app, `siteUrl` quando c'è il dominio, `contactEmail`); i testi in `site/src/strings.js` (`{name}` diventa il nome).
+- `npm run site:build` genera `site/dist`, usando gli screenshot e le icone dell'app (`public/screenshots`, `public/icons`); con `siteUrl` impostato genera anche link canonici e `sitemap.xml`.
+- `npm run site:og` rigenera le immagini di anteprima per i social (serve Playwright).
+- **Pubblicazione su Vercel**: un secondo progetto dallo stesso repository, con *Root Directory* `site` (il resto è in `site/vercel.json`). Lasciare attiva l'opzione che include i file fuori dalla Root Directory, perché il sito usa le immagini dell'app.
+
 ## Struttura
 
 ```

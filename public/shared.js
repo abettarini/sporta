@@ -210,6 +210,9 @@
   // ("passata di pomodoro" -> dispensa); a parità vince la parola chiave più lunga.
   const deaccent = (x) => x.normalize('NFD').replace(/[̀-ͯ]/g, '');
   function guessDepartment(name) {
+    // Prima il database centrale degli alimenti (foods.json), poi le parole chiave.
+    const fd = api.foodIndex && api.foodIndex.deptOf(name);
+    if (fd) return fd;
     const n = ' ' + deaccent(normName(name)) + ' ';
     let best = null;
     for (const [w, dept] of DEPT_INDEX) {
@@ -359,23 +362,41 @@
 
   // Caratteristiche suggerite da ingredienti e tempi (chi scrive le conferma).
   function suggestTraits(ingredients, minutes) {
-    const names = (ingredients || []).map((i) => foldText(i && i.name)).filter(Boolean);
+    const list = (ingredients || []).map((i) => i && i.name).filter((n) => foldText(n));
     const out = [];
-    if (names.length) {
-      const meat = names.some((n) => hasWord(n, MEAT));
-      const fish = names.some((n) => hasWord(n, FISH));
+    if (list.length) {
+      // Tipo di ogni ingrediente: dal database degli alimenti se lo conosce, altrimenti dalle parole chiave.
+      const kinds = list.map((name) => {
+        const k = api.foodIndex ? api.foodIndex.kindOf(name) : null;
+        if (k !== null && k !== undefined) return k;
+        const n = foldText(name);
+        if (hasWord(n, MEAT)) return 'carne';
+        if (hasWord(n, FISH)) return 'pesce';
+        if (hasWord(n, ANIMAL) && !hasWord(n, PLANT_OK)) return 'latte';
+        return '';
+      });
+      const meat = kinds.includes('carne');
+      const fish = kinds.includes('pesce');
       if (meat) out.push('carne');
       if (fish) out.push('pesce');
       if (!meat && !fish) {
         out.push('vegetariana');
-        if (!names.some((n) => hasWord(n, ANIMAL) && !hasWord(n, PLANT_OK))) out.push('vegana');
+        if (!kinds.some((k) => k === 'latte' || k === 'uova' || k === 'miele')) out.push('vegana');
       }
     }
     if (minutes > 0 && minutes <= 30) out.push('veloce');
     return out;
   }
 
-  const api = { COURSES, TRAITS, courseLabel, traitLabel, foldText, suggestTraits, parseQuick, normUnit, normName, parseNum, addQty, compatible, convert,
+  // Due nomi indicano lo stesso alimento? ("uova" e "uovo", "olio evo" e "olio extravergine d'oliva")
+  function sameFood(a, b) {
+    if (normName(a) === normName(b)) return true;
+    if (!api.foodIndex) return false;
+    const x = api.foodIndex.match(a), y = api.foodIndex.match(b);
+    return !!(x && y && x.food.id === y.food.id);
+  }
+
+  const api = { sameFood, foodIndex: null, COURSES, TRAITS, courseLabel, traitLabel, foldText, suggestTraits, parseQuick, normUnit, normName, parseNum, addQty, compatible, convert,
     roundSmart, scaleQty, fmtQty, fmtNum, UNITS, DEPARTMENTS, guessDepartment, deptOf, fmtMinutes, fmtMoney,
     LIST_TYPES, COLLECTION_KINDS, kindOf, parseTodo, parseCollection, fmtDue, ymd, fromYmd, addDays };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

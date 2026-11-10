@@ -1,0 +1,69 @@
+# Verdure, ortaggi, erbe fresche, tuberi
+Aglio | frutta | q:garlic, raw | pz=40 u=spicchi:5 | spicchio d'aglio; spicchi d'aglio; spicchio di aglio; d'aglio; aglio fresco; testa d'aglio
+Cipolla | frutta | q:onion, raw | pz=100 | cipolle; cipolla bianca; cipolle bianche; cipolla dorata; cipolle dorate; cipolla ramata; cipolle ramate; cipolla piccola; cipolla media
+Cipolla rossa | frutta | 20238 | pz=100 p=cipolla | cipolle rosse; cipolla di tropea; cipolle rosse di tropea; cipolla rossa di tropea
+Cipollotto | frutta | 11003 | pz=20 | cipollotti; cipollotto fresco; cipolla fresca; cipolline
+Scalogno | frutta | q:shallot, raw | pz=25 | scalogni
+Porro | frutta | q:leek, raw | pz=200 | porri
+Carota | frutta | q:carrot, raw | pz=80 | carote
+Sedano | frutta | q:celery stalk, raw | pz=40 u=coste:40 | costa di sedano; coste di sedano; gambo di sedano; sedano bianco; gamba di sedano
+Sedano rapa | frutta | q:celeriac, raw | pz=500 | sedano-rapa
+Patate | frutta | 4008 | pz=150 | patata; patate rosse; patate a pasta gialla; patate novelle; patate grandi; patate medie; patata media
+Patate dolci | frutta | q:sweet potato, raw | pz=250 | patata dolce; patata americana; batata
+Pomodori | frutta | q:tomato, raw | pz=120 | pomodoro; pomodori ramati; pomodori perini; pomodori maturi; pomodori san marzano; pomodoro fresco; pomodori freschi; pomodori cuore di bue
+Pomodorini | frutta | q:cherry tomato, raw | pz=15 p=pomodori | pomodorini ciliegino; pomodori ciliegini; pomodorini datterini; datterini; pomodorini pachino; pomodorini rossi
+Zucchine | frutta | q:courgette, raw | pz=200 | zucchina; zucchine verdi; zucchine romanesche; zucchine tonde
+Melanzane | frutta | q:aubergine, raw | pz=300 | melanzana; melanzane lunghe; melanzane tonde; melanzana viola
+Peperoni | frutta | q:sweet pepper, raw | pz=200 | peperone; peperoni rossi; peperoni gialli; peperoni verdi; peperone rosso; peperone giallo; peperoni dolci; peperoni misti
+Peperoncino | dispensa | q:chili pepper, raw | pz=5 | peperoncino fresco; peperoncini; peperoncino rosso; peperoncino piccante
+Peperoncino secco | dispensa | usda:171319 | pz=1 p=peperoncino | peperoncino in polvere; peperoncino tritato; peperoncino essiccato; peperoncino in fiocchi
+Cetrioli | frutta | q:cucumber, raw | pz=300 | cetriolo
+Lattuga | frutta | q:lettuce, raw | pz=300 | insalata; insalata verde; lattuga romana; lattughino; lattughino verde; lattuga iceberg; insalata iceberg; cespo di lattuga
+Rucola | frutta | q:rocket, raw | | rucola fresca; ruchetta
+Valeriana | frutta | q:lamb's lettuce, raw | | songino; soncino; valerianella
+Spinaci | frutta | q:spinach, raw | | spinaci freschi; spinacini; spinaci novelli
+Bietole | frutta | usda:169991 | | bieta; biete; coste; erbette
+Cavolfiore | frutta | q:cauliflower, raw | pz=800 | cavolfiori
+Broccoli | frutta | q:broccoli, raw | pz=400 | broccolo; cime di broccoli
+Cime di rapa | frutta | usda:170061 | | broccoletti; friarielli
+Cavolo cappuccio | frutta | 20116 | pz=1000 | cavolo bianco; cavolo cappuccio bianco
+Cavolo rosso | frutta | 20014 | pz=1000 p=cavolo cappuccio | cavolo cappuccio rosso; cavolo viola
+Verza | frutta | 20069 | pz=1000 approx=1 | cavolo verza
+Cavolo nero | frutta | q:kale, raw | | cavolo riccio; kale
+Cavolini di Bruxelles | frutta | q:brussels sprout, raw | pz=10 | cavoletti di bruxelles
+Finocchi | frutta | q:fennel, raw | pz=250 | finocchio
+Carciofi | frutta | q:artichoke, raw | pz=200 | carciofo; carciofi romaneschi; cuori di carciofo
+Asparagi | frutta | q:asparagus, green, raw | pz=20 | asparago; asparagi verdi; asparagi bianchi
+Fagiolini | frutta | 20061 | | fagiolini verdi; cornetti
+Piselli | frutta | 20072 | | pisellini; piselli freschi; piselli surgelati; piselli fini
+Fave | frutta | q:broad bean, raw | | fave fresche
+Mais | dispensa | q:sweet corn, canned | | mais dolce; mais in scatola; chicchi di mais
+Zucca | frutta | q:pumpkin, raw | | zucca mantovana; zucca delica; zucca violina; zucca già pulita; polpa di zucca; zucca butternut; zucca gialla
+Funghi champignon | frutta | 20056 | pz=20  | champignon; funghi; funghi freschi; funghi misti; funghi coltivati
+Funghi porcini | frutta | 20160 | pz=80 p=funghi champignon | porcini; funghi porcini freschi; porcini freschi
+Funghi porcini secchi | dispensa | usda:168436 | p=funghi champignon approx=1 | porcini secchi; funghi secchi
+Radicchio | frutta | usda:168564 | pz=250 | radicchio rosso; radicchio di treviso; radicchio tardivo; radicchio di chioggia; cespo di radicchio; cespi di radicchio invernale
+Indivia | frutta | q:endive, raw | pz=150 | indivia belga; cicoria belga; indivia riccia; scarola; cicoria; insalata belga; ceppi di insalata belga
+Ravanelli | frutta | 20045 | pz=10 | ravanello
+Rape | frutta | q:turnip, raw | pz=150 | rapa
+Barbabietole | frutta | q:beetroot, cooked | pz=150 | barbabietola; barbabietole rosse; barbabietola cotta
+Topinambur | frutta | q:jerusalem artichoke | |
+Avocado | frutta | 13004 | pz=200 | avocado maturo; avocadi
+Olive verdi | dispensa | q:olive, green, in brine | pz=4 | olive verdi denocciolate; olive verdi in salamoia; olive baresane
+Olive nere | dispensa | q:olive, black | pz=4 | olive nere denocciolate; olive taggiasche; olive di gaeta; olive kalamata
+Capperi | dispensa | usda:172238 | | capperi sotto sale; capperi dissalati; capperi sott'aceto; capperi sotto aceto
+Pomodori secchi | dispensa | usda:169384 | pz=6 | pomodori secchi sott'olio
+Germogli di soia | frutta | q:bean sprout | | germogli
+Basilico | frutta | q:basil, fresh | u=foglie:0.5,mazzi:30 | basilico fresco; foglie di basilico; foglia di basilico; mazzetto di basilico; ciuffo di basilico; basilico genovese
+Prezzemolo | frutta | q:parsley, fresh | u=mazzi:30 | prezzemolo fresco; prezzemolo tritato; ciuffo di prezzemolo; mazzetto di prezzemolo; ciuffetto di prezzemolo; prezzemolo 1 ciuffo; prezzemolo riccio
+Rosmarino | frutta | q:rosemary, fresh | u=rametti:2 | rosmarino fresco; rametto di rosmarino; rametti di rosmarino; aghi di rosmarino
+Salvia | frutta | q:sage, fresh | u=foglie:0.5 | salvia fresca; foglie di salvia; foglia di salvia
+Timo | frutta | q:thyme, fresh | u=rametti:1 | timo fresco; rametto di timo; rametti di timo; timo limone
+Menta | frutta | q:mint, fresh | u=foglie:0.3,mazzi:20 | menta fresca; foglie di menta; mazzetto di menta; mentuccia
+Erba cipollina | frutta | 11003 | | erba cipollina fresca
+Aneto | frutta | q:dill, fresh | | aneto fresco
+Coriandolo | frutta | q:coriander, fresh | | coriandolo fresco; cilantro
+Maggiorana | frutta | 11034 | | maggiorana fresca
+Alloro | dispensa | 11053 | u=foglie:0.2 | foglie di alloro; foglia di alloro; lauro
+Dragoncello | frutta | 11050 | approx=1 | estragone
+Zenzero | frutta | q:ginger, raw | | zenzero fresco; radice di zenzero

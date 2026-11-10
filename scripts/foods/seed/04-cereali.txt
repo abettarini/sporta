@@ -1,0 +1,49 @@
+# Pasta, riso, cereali, farine, pane
+Pasta | pasta | q:pasta, dry | | pasta secca; pasta corta; pasta lunga; pasta di semola
+Spaghetti | pasta | q:pasta, dry | p=pasta | spaghetti grossi; spaghettoni; spaghetto; spaghetti quadrati; spaghetti alla chitarra; vermicelli
+Linguine | pasta | q:pasta, dry | p=pasta | bavette
+Bucatini | pasta | q:pasta, dry | p=pasta |
+Penne | pasta | q:pasta, dry | p=pasta | penne rigate; pennette; mezze penne; mezze penne rigate
+Rigatoni | pasta | q:pasta, dry | p=pasta | mezze maniche; tortiglioni
+Fusilli | pasta | q:pasta, dry | p=pasta | eliche
+Farfalle | pasta | q:pasta, dry | p=pasta |
+Paccheri | pasta | q:pasta, dry | p=pasta |
+Orecchiette | pasta | q:pasta, dry | p=pasta |
+Mezzi rigatoni | pasta | q:pasta, dry | p=pasta | sedanini; maccheroni; ditalini; ditali; conchiglie; gnocchetti sardi; mafaldine; calamarata; conchiglioni; scialatielli; taloni rigati; anelli siciliani; abissine; pastina; mezzi paccheri; pasta corta
+Pasta all'uovo | pasta | q:egg pasta, dry | p=pasta | tagliatelle; fettuccine; pappardelle; tagliolini; lasagne; sfoglie per lasagne; tagliatelle all'uovo; pasta fresca all'uovo; fettuccine all'uovo; sfoglie fresche di pasta all'uovo; sfoglie di lasagne; sfoglie di lasagne senza uova
+Pasta integrale | pasta | 9870 | p=pasta | spaghetti integrali; penne integrali
+Gnocchi di patate | pasta | q:gnocchi, from potato | | gnocchi; gnocchi freschi
+Tortellini | pasta | 25181 | approx=1 | tortelloni; ravioli; cappelletti
+Cous cous | pasta | usda:169699 | | couscous; cuscus
+Riso | pasta | q:rice, white, raw | | riso bianco; riso arborio; riso carnaroli; riso vialone nano; riso per risotti; riso originario; riso roma
+Riso basmati | pasta | q:basmati rice, raw | p=riso | riso thai; riso jasmine; riso per sushi; riso venere
+Riso integrale | pasta | 9102 | p=riso |
+Orzo | pasta | q:pearl barley | | orzo perlato
+Farro | pasta | q:spelt | | farro perlato; farro decorticato
+Quinoa | pasta | q:quinoa, raw | |
+Miglio | pasta | 9330 | |
+Avena | colazione | q:oat flakes | | fiocchi d'avena; fiocchi di avena; avena in fiocchi
+Bulgur | pasta | q:bulgur | |
+Polenta | pasta | 9614 | | farina di mais per polenta; farina gialla; farina di mais; polenta istantanea; polenta taragna
+Farina 00 | pasta | q:wheat flour, type 55 | d=0.55 | farina; farina bianca; farina 00 di grano tenero; farina di grano tenero; farina per dolci; farina tipo 00; circa di farina 00
+Farina 0 | pasta | q:wheat flour, type 65 | d=0.55 p=farina 00 | farina tipo 0
+Farina Manitoba | pasta | q:wheat flour, type 45 | d=0.55 p=farina 00 | farina manitoba; farina di forza
+Farina integrale | pasta | q:wheat flour, type 150 | d=0.55 p=farina 00 | farina integrale di grano tenero
+Semola | pasta | q:durum wheat semolina | d=0.6 | semola rimacinata; semola di grano duro; farina di semola; semolino
+Farina di riso | pasta | q:rice flour | d=0.55 |
+Farina di farro | pasta | q:spelt flour | d=0.55 |
+Fecola di patate | dispensa | q:potato starch | d=0.6 | fecola
+Amido di mais | dispensa | q:corn starch | d=0.6 | maizena; amido; amido di riso; amido di frumento
+Pane | pane | 7001 | pz=50  | pane bianco; pane comune; pane casereccio; pane a fette; pane raffermo; pane toscano; pane di semola; mollica di pane; mollica di pane raffermo; filone di pane; sfilatino di pane; bruschella
+Pane integrale | pane | 7111 | p=pane | pane ai cereali
+Pane in cassetta | pane | 7200 | pz=25 p=pane | pane per tramezzino; pane bianco in cassetta; pancarré; pan carrè
+Pane per hamburger | pane | 7259 | pz=60 p=pane | panini per hamburger; panini al latte; burger buns
+Pangrattato | pane | q:breadcrumb | d=0.45 | pan grattato; pane grattugiato
+Grissini | pane | 7525 | pz=6  |
+Crackers | pane | q:cracker | pz=5  |
+Fette biscottate | colazione | q:rusk | pz=9  |
+Piadina | pane | q:wrap, wheat | pz=80  | piadine; tortillas; tortilla; piadina romagnola
+Pasta sfoglia | pane | q:puff pastry, raw | pz=230  | rotolo di pasta sfoglia; pasta sfoglia rettangolare; pasta sfoglia rotonda; rotolo di pasta sfoglia rettangolare
+Pasta brisée | pane | 23414 | pz=230  | rotolo di pasta brisée; pasta brisè; pasta frolla pronta
+Pasta per pizza | pane | q:pizza dough | pz=250  | impasto per pizza; pasta di pane
+Pasta kataifi | pane | q:filo pastry | | pasta fillo; pasta phyllo

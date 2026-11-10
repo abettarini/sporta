@@ -1,0 +1,15 @@
+# Altri alimenti emersi dalle ricette reali
+Tartufo | frutta | 20056 | approx=1 | tartufo nero; tartufo bianco; scaglie di tartufo; qualche scaglia di tartufo nero
+Alga nori | dispensa | 20987 | u=fogli:2.5 | alghe nori; fogli di alga nori; alga kombu; alghe
+Daikon | frutta | q:radish, black, raw | approx=1 | ravanello bianco
+Pastinaca | frutta | q:parsnip, raw | |
+Cavolo cinese | frutta | q:chinese cabbage | | pak choi; cavolo pak choi
+Amarene | frutta | usda:173954 | pz=4  | amarene sciroppate; amarena; ciliegie sciroppate
+Triglie | pesce | q:red mullet | pz=80 k=pesce | triglia
+Superalcolici | bevande | q:vodka//whisky | d=0.95 | vodka; tequila; grappa; gin; whisky; whiskey; bicchierino di vodka; grappa o altro liquore; curacao; curaçao
+Noodles | pasta | q:noodles, dry//asian noodles | | spaghetti di riso; noodles di riso; spaghetti cinesi; ramen
+Crema pasticcera | colazione | q:custard | k=uova | crema pasticciera; crema pasticciera al cioccolato
+Latticello | latticini | usda:170874 | k=latte |
+Cetriolini sottaceto | dispensa | q:gherkin | | cetriolini; cetriolini sott'aceto; giardiniera; giardiniera sott'aceto; papaccelle sott'aceto; sottaceti
+Coloranti alimentari | dispensa | zero | | colorante alimentare; colorante alimentare rosso; colorante alimentare rosa; coloranti
+Decorazioni di zucchero | colazione | 31016 | p=zucchero | confettini colorati; codette o zuccherini; codette e confettini colorati; decorazioni di zucchero; ovetti confettati

@@ -1,0 +1,64 @@
+# Carne
+Manzo | carne | 6102 | k=carne | carne di manzo; manzo magro; polpa di manzo; fesa di manzo; girello; noce di manzo; carne bovina; bistecca; bistecche; fettine di manzo; scamone di manzo; spalla di manzo; coda di manzo; costata di manzo; carne di manzo magra
+Filetto di manzo | carne | q:beef, tenderloin, raw | k=carne p=manzo | filetto
+Carne macinata | carne | 6254 | k=carne | macinato; macinato di manzo; carne trita; trito di manzo; macinato misto; carne macinata mista; carne tritata
+Spezzatino | carne | usda:170810 | k=carne p=manzo | spezzatino di manzo; carne per spezzatino; manzo per brasato; cappello del prete; muscolo di manzo
+Vitello | carne | q:veal, escalope, raw | k=carne | carne di vitello; fesa di vitello; fettine di vitello; scaloppine; fettine sottili di vitello; noce di vitello; vitello tonnato; costate di vitello; fianchetto di vitello; costata di vitello
+Ossobuco | carne | usda:172648 | k=carne p=vitello | ossibuchi
+Maiale | carne | q:pork, loin, raw | k=carne | carne di maiale; lonza di maiale; lonza; arista di maiale; arista; braciole di maiale; braciola di maiale; filetto di maiale; costolette di maiale
+Macinato di maiale | carne | usda:167902 | k=carne p=maiale | maiale macinato
+Costine di maiale | carne | q:pork, spare ribs, raw | k=carne p=maiale | costine; puntine di maiale
+Salsiccia | carne | 30110 | pz=100 k=carne | salsicce; salsiccia fresca; salsiccia di maiale; luganega
+Pollo | carne | q:chicken, meat and skin, raw | k=carne | pollo intero; carne di pollo; pollo a pezzi
+Petto di pollo | carne | q:chicken, breast, without skin, raw | k=carne p=pollo | fette di petto di pollo; petti di pollo; filetti di pollo; bocconcini di pollo; straccetti di pollo
+Cosce di pollo | carne | 36002 | k=carne p=pollo | coscia di pollo; sovracosce di pollo; fusi di pollo; sovracoscia di pollo
+Ali di pollo | carne | q:chicken, wing, raw | k=carne p=pollo | alette di pollo
+Tacchino | carne | 36301 | k=carne | petto di tacchino; fesa di tacchino; fettine di tacchino
+Coniglio | carne | q:rabbit, raw | k=carne |
+Agnello | carne | q:lamb, leg, raw | k=carne | carne di agnello; costolette di agnello; cosciotto di agnello; abbacchio; capretto; cosciotto d'agnello; carré d'agnello; cosciotto d'agnello da latte
+Anatra | carne | q:duck, raw | k=carne | petto d'anatra
+Fegato | carne | q:calf liver, raw | k=carne | fegato di vitello; fegatini di pollo; fegatini
+Cotechino | salumi | 30110 | pz=500 k=carne approx=1 | zampone
+Wurstel | salumi | q:frankfurter | pz=50 k=carne | würstel; wurstel di pollo
+Hamburger | carne | 6254 | pz=100 k=carne | hamburger di manzo; burger
+# Salumi
+Prosciutto crudo | salumi | 28812 | k=carne | prosciutto di parma; prosciutto crudo dolce; prosciutto san daniele; crudo
+Prosciutto cotto | salumi | q:cooked ham, superior | k=carne | prosciutto cotto a cubetti; prosciutto cotto a fette; prosciutto cotto a dadini; cotto
+Speck | salumi | 28801 | k=carne approx=1 | speck a cubetti; speck a listarelle
+Pancetta | salumi | 28501 | k=carne | pancetta tesa; pancetta a cubetti; pancetta arrotolata; pancetta dolce; dadini di pancetta; rigatino; rigatino toscano
+Pancetta affumicata | salumi | 28720 | k=carne p=pancetta | bacon; pancetta affumicata a cubetti
+Guanciale | salumi | usda:167812 | k=carne p=pancetta approx=1 | guanciale stagionato; guanciale di amatrice
+Salame | salumi | q:salami | k=carne | salame milano; salame napoli; salamino; salame piccante
+Mortadella | salumi | q:mortadella | k=carne | mortadella di bologna
+Bresaola | salumi | q:bresaola | k=carne |
+Coppa | salumi | q:coppa | k=carne | capocollo
+Nduja | salumi | q:salami | k=carne approx=1 | 'nduja
+Lardo | salumi | q:lard | k=carne | lardo di colonnata
+Strutto | dispensa | q:lard | k=carne | sugna
+# Pesce e frutti di mare
+Salmone | pesce | q:salmon, raw | k=pesce | filetto di salmone; filetti di salmone; trancio di salmone; tranci di salmone; salmone fresco
+Salmone affumicato | pesce | q:smoked salmon | k=pesce p=salmone |
+Tonno | pesce | q:tuna, raw | k=pesce | tonno fresco; trancio di tonno; tranci di tonno
+Tonno sott'olio | dispensa | q:tuna, in oil, canned, drained | k=pesce p=tonno | tonno in scatola; tonno all'olio d'oliva; tonno sott'olio sgocciolato
+Tonno al naturale | dispensa | q:tuna, in brine | k=pesce p=tonno |
+Merluzzo | pesce | q:cod, raw | k=pesce | filetti di merluzzo; filetto di merluzzo; nasello; filetti di nasello; pesce bianco; tranci di merluzzo; coda di pescatrice; rana pescatrice; pescatrice; cuori di nasello
+Baccalà | pesce | q:salted cod | k=pesce | baccala; baccalà dissalato; stoccafisso
+Orata | pesce | q:sea bream, raw | pz=350 k=pesce | orate; filetti di orata
+Branzino | pesce | usda:175142 | pz=350 k=pesce | spigola; filetti di branzino
+Sogliola | pesce | q:sole, raw | k=pesce | platessa; filetti di platessa
+Pesce spada | pesce | q:swordfish, raw | k=pesce |
+Sgombro | pesce | q:mackerel, raw | pz=300 k=pesce |
+Trota | pesce | q:trout, raw | pz=300 k=pesce | trota salmonata
+Alici | pesce | q:anchovy, raw | pz=20 k=pesce | acciughe fresche; alici fresche
+Acciughe sott'olio | dispensa | q:anchovy, in oil | pz=3 k=pesce p=alici | acciughe; filetti di acciughe; filetti di acciuga; acciughe sotto sale; acciuga
+Sardine | pesce | q:sardine, raw | pz=40 k=pesce | sarde
+Gamberi | pesce | 10021 | pz=15 k=pesce | gamberetti; gamberoni; code di gambero; mazzancolle; gamberi sgusciati; scampi; code di gamberetti
+Calamari | pesce | q:squid, raw | pz=150 k=pesce | calamaro; totani; anelli di calamaro
+Seppie | pesce | q:cuttlefish, raw | pz=150 k=pesce | seppia; seppioline
+Polpo | pesce | q:octopus, raw | k=pesce | polpo da pulire; moscardini; polipo; polpetti
+Cozze | pesce | q:mussel, raw | pz=10 k=pesce | cozze fresche
+Vongole | pesce | q:clam, raw | pz=8 k=pesce | vongole veraci; lupini
+Capesante | pesce | q:scallop, raw | pz=30 k=pesce | capesante sgusciate
+Surimi | pesce | 26046 | k=pesce | bastoncini di surimi
+Bottarga | pesce | usda:175132 | k=pesce approx=1 |
+Colatura di alici | dispensa | 11194 | k=pesce approx=1 |

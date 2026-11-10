@@ -259,7 +259,19 @@ async function leaveGroup(code) {
 }
 
 // =============================================================== catalogo prodotti
-const productOf = (name) => st.products.get(S.normName(name));
+// Prodotto del catalogo per un nome: lo stesso nome, oppure lo stesso alimento del database centrale ("uovo" -> "Uova").
+function productOf(name) {
+  const p = st.products.get(S.normName(name));
+  if (p || !S.foodIndex) return p;
+  const m = S.foodIndex.match(name); if (!m) return undefined;
+  for (const x of st.products.values()) { const y = S.foodIndex.match(x.name); if (y && y.food.id === m.food.id) return x; }
+  return undefined;
+}
+
+// Database centrale degli alimenti (/foods.json, in cache per l'uso offline): nomi, reparti, valori nutrizionali.
+(function loadFoods() {
+  fetch('/foods.json').then((r) => (r.ok ? r.json() : Promise.reject())).then((j) => { S.foodIndex = Foods.createIndex(j); render(); }).catch(() => {});
+})();
 
 // Aggiorna subito il catalogo locale (il server farà lo stesso e lo confermerà).
 function rememberProduct(d, { use = true } = {}) {

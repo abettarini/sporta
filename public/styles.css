@@ -1013,3 +1013,16 @@ button.link-card { width: 100%; border: 0; font: inherit; text-align: left; curs
 .sys-group { padding: 12px 14px; margin-bottom: 12px; }
 .sys-group .actions { margin-top: 10px; }
 .input.mono { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+/* valori nutrizionali nella ricetta */
+.nutri { padding: 0 14px; margin: 14px 0; }
+.nutri summary { display: flex; align-items: baseline; gap: 10px; padding: 12px 0; cursor: pointer; list-style: none; }
+.nutri summary::-webkit-details-marker { display: none; }
+.nutri summary::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 20px; transform: rotate(90deg); transition: transform .15s; }
+.nutri[open] summary::after { transform: rotate(-90deg); }
+.nutri .nk b { font-size: 22px; }
+.nutri .nl { color: var(--muted); font-size: 14px; }
+.nt { width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 8px; }
+.nt td { padding: 6px 0; border-top: 1px solid var(--line); }
+.nt td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.nt tr.sub td { color: var(--muted); font-size: 14px; padding-left: 12px; border-top: 0; padding-top: 0; }
+.nutri .hint { margin: 4px 0 10px; }

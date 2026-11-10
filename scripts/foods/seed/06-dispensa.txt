@@ -1,0 +1,94 @@
+# Oli e grassi
+Olio extravergine d'oliva | dispensa | 17270 | d=0.92 | olio extravergine di oliva; olio di oliva extravergine; olio extra vergine di oliva; olio extra vergine d'oliva; olio extra vergine; olio evo; olio d'oliva; olio di oliva; olio; olio extravergine; un filo d'olio; olio di oliva extra vergine
+Olio di semi | dispensa | q:sunflower oil | d=0.92 | olio di semi di girasole; olio di girasole; olio di semi vari; olio per friggere; olio di semi per friggere
+Olio di arachidi | dispensa | 17040 | d=0.92 p=olio di semi | olio di semi di arachide; olio di arachide
+Olio di mais | dispensa | q:corn oil | d=0.92 p=olio di semi |
+Olio di sesamo | dispensa | q:sesame oil | d=0.92 |
+Olio di cocco | dispensa | 16040 | d=0.92 |
+# Zuccheri, dolcificanti
+Zucchero | colazione | q:white sugar | d=0.85 | zucchero semolato; zucchero bianco; zucchero fine; zucchero semolato fine; zucchero extrafine
+Zucchero a velo | colazione | usda:169656 | d=0.55 p=zucchero | zucchero a velo per decorare; zucchero a velo vanigliato
+Zucchero di canna | colazione | q:brown sugar | d=0.85 p=zucchero | zucchero grezzo; zucchero di canna integrale; zucchero muscovado; zucchero demerara
+Miele | colazione | q:honey | d=1.4 k=miele | miele millefiori; miele di acacia; miele d'acacia; miele di castagno
+Sciroppo d'acero | colazione | q:maple syrup | d=1.33 |
+Malto | colazione | 31008 | d=1.4 approx=1 | malto d'orzo; malto di riso; sciroppo di glucosio; glucosio
+Marmellata | colazione | q:jam, apricot | | confettura; marmellata di albicocche; confettura di albicocche; marmellata di arance; confettura extra; marmellata di frutti di bosco
+Nutella | colazione | 31032 | | crema spalmabile alle nocciole; crema di nocciole; crema al cioccolato
+# Cioccolato e dolci
+Cioccolato fondente | colazione | 31074 | | cioccolato fondente al 70%; cioccolato fondente al 60%; cioccolato fondente al 55%; cioccolato fondente al 50%; cioccolato fondente 70%; cioccolato fondente extra
+Cioccolato al latte | colazione | 31004 | p=cioccolato fondente |
+Cioccolato bianco | colazione | 31010 | p=cioccolato fondente |
+Gocce di cioccolato | colazione | 31074 | p=cioccolato fondente approx=1 | gocce di cioccolato fondente; gocce di cioccolato al latte; scaglie di cioccolato; codette di cioccolato; cioccolato
+Cacao amaro | colazione | usda:169593 | d=0.45 | cacao amaro in polvere; cacao; cacao in polvere; cacao amaro in polvere senza glutine
+Biscotti secchi | colazione | 24000 | pz=8  | biscotti; biscotti oro saiwa; biscotti digestive; biscotti integrali; frollini; oreo; biscotti oreo; oreo biscotti; pan di stelle; frollini al cacao
+Savoiardi | colazione | 24430 | pz=10  | pavesini
+Amaretti | colazione | 23027 | pz=6 approx=1 | amaretti secchi
+Pan di Spagna | colazione | q:sponge cake | | disco di pan di spagna; sco di pan di spagna
+Wafer | colazione | 24685 | pz=8 approx=1 | wafer alla nocciola
+Panna spray | latticini | q:whipped cream, aerosol | k=latte | panna montata spray
+Gelato | surgelati | usda:167575 | k=latte | gelato alla vaniglia
+Granella di zucchero | colazione | q:sugar | p=zucchero | zuccherini colorati; codette colorate; granella di zucchero per decorare
+# Lieviti, addensanti, aromi
+Lievito per dolci | dispensa | q:baking powder | u=bustine:16 | lievito in polvere per dolci; bustina di lievito per dolci; lievito vanigliato; lievito chimico; lievito istantaneo per dolci; lievito pane degli angeli; lievito in polvere; raso di lievito per dolci
+Lievito di birra fresco | dispensa | 11010 | u=cubetti:25 | lievito di birra; cubetto di lievito di birra; lievito fresco
+Lievito di birra secco | dispensa | 11045 | u=bustine:7 p=lievito di birra fresco | lievito secco; lievito di birra disidratato; lievito di birra secco attivo
+Lievito istantaneo per salati | dispensa | q:baking powder | u=bustine:16 p=lievito per dolci | lievito istantaneo per preparazioni salate; lievito per torte salate
+Lievito madre | dispensa | 37001 | approx=1 | pasta madre; lievito naturale
+Bicarbonato | dispensa | zero | | bicarbonato di sodio; bicarbonato di soda
+Cremor tartaro | dispensa | zero | |
+Gelatina in fogli | dispensa | q:gelatin | pz=2 u=fogli:2 | colla di pesce; gelatina; fogli di gelatina; agar agar
+Vanillina | dispensa | zero | u=bustine:0.5 | bustina di vanillina; vanillina in polvere
+Vaniglia | dispensa | zero | | bacca di vaniglia; baccello di vaniglia; essenza di vaniglia; estratto di vaniglia; aroma vaniglia; semi di vaniglia; stecca di vaniglia
+Aroma | dispensa | zero | | aroma di limone; aroma di mandorla; aroma rum; fiala di aroma; essenza di menta; aromi; spezie
+# Sale, condimenti, salse
+Sale | dispensa | q:salt, white | d=1.2 | sale fino; sale grosso; sale marino; sale integrale; un pizzico di sale; fiocchi di sale; sale rosa; sale dell'himalaya
+Pepe nero | dispensa | q:black pepper | | pepe; pepe nero macinato; pepe nero in grani; pepe macinato; pepe in grani; pepe nero macinato fresco; grani di pepe
+Pepe bianco | dispensa | q:white pepper | p=pepe nero |
+Pepe rosa | dispensa | q:black pepper | p=pepe nero approx=1 | pepe rosa in grani
+Aceto di vino | dispensa | q:wine vinegar | d=1.01 | aceto; aceto di vino bianco; aceto bianco; aceto di vino rosso; aceto rosso
+Aceto di mele | dispensa | usda:173469 | d=1.01 p=aceto di vino |
+Aceto balsamico | dispensa | q:balsamic vinegar | d=1.1 | aceto balsamico di modena; glassa di aceto balsamico; crema di aceto balsamico
+Aceto di riso | dispensa | q:wine vinegar | d=1.01 p=aceto di vino approx=1 |
+Salsa di soia | dispensa | q:soy sauce | d=1.15 | salsa di soia scura; tamari; shoyu
+Passata di pomodoro | dispensa | 20260 | d=1.03 | passata; salsa di pomodoro; pomodoro passato; sugo di pomodoro; polpa di pomodoro; pomodori pelati; pelati; pomodori pelati in scatola; polpa di pomodoro a pezzi
+Concentrato di pomodoro | dispensa | q:tomato paste//tomato, concentrate | | doppio concentrato di pomodoro; triplo concentrato di pomodoro
+Ketchup | dispensa | q:ketchup | |
+Maionese | dispensa | q:mayonnaise | | maionese pronta
+Senape | dispensa | q:mustard | | senape di digione; senape delicata; senape dolce
+Pesto | dispensa | q:pesto | | pesto alla genovese; pesto genovese
+Tabasco | dispensa | 11112 | approx=1 |
+Salsa worcestershire | dispensa | usda:171610 | | worcester
+Brodo vegetale | dispensa | 25930 | d=1.0 approx=1 | brodo; brodo di verdure; brodo vegetale caldo; brodo vegetale leggero; fumetto; fumetto di pesce; fumetto di crostacei
+Brodo di carne | dispensa | 25930 | d=1.0 k=carne p=brodo vegetale | brodo di manzo; brodo di pollo
+Dado | dispensa | 11041 | pz=10 u=pz:10 | dado da brodo; dado vegetale; dado di carne; preparato per brodo
+Acqua | bevande | zero | d=1.0 | acqua fredda; acqua tiepida; acqua calda; acqua a temperatura ambiente; acqua frizzante; acqua minerale; acqua ghiacciata; acqua naturale; acqua bollente
+Ghiaccio | bevande | zero | | cubetti di ghiaccio
+# Spezie ed erbe secche
+Noce moscata | dispensa | q:nutmeg | | noce moscata in polvere; noce moscata grattugiata
+Cannella | dispensa | q:cinnamon | | cannella in polvere; stecca di cannella; stecche di cannella; bastoncino di cannella
+Chiodi di garofano | dispensa | q:clove | |
+Zenzero in polvere | dispensa | 11006 | p=zenzero |
+Curcuma | dispensa | q:turmeric | | curcuma in polvere
+Paprika | dispensa | q:paprika | | paprika dolce; paprica; paprika affumicata; paprica affumicata; paprika piccante
+Curry | dispensa | q:curry powder | | curry in polvere
+Cumino | dispensa | q:cumin | | cumino in polvere; semi di cumino
+Coriandolo in semi | dispensa | q:coriander, seed | p=coriandolo | coriandolo in polvere; semi di coriandolo
+Zafferano | dispensa | q:saffron | u=bustine:0.15 | bustina di zafferano; pistilli di zafferano; zafferano in pistilli; bustine di zafferano
+Origano | dispensa | q:oregano, dried | | origano secco; origano essiccato; origano fresco
+Anice stellato | dispensa | usda:171316 | approx=1 |
+Semi di finocchio | dispensa | q:fennel seed | | finocchietto
+Ginepro | dispensa | zero | | bacche di ginepro
+Cardamomo | dispensa | q:cardamom | |
+Erbe di Provenza | dispensa | q:herbes de provence | | erbe aromatiche; erbe aromatiche miste
+Lievito alimentare | dispensa | 11009 |  | lievito alimentare in scaglie
+# Bevande e alcolici in cucina
+Vino bianco | bevande | q:white wine | d=0.99 | vino bianco secco; bicchiere di vino bianco; bicchiere di vino bianco secco; vino; bicchiere vino bianco
+Vino rosso | bevande | q:red wine | d=0.99 | barolo; vino rosso corposo; bicchiere di vino rosso; chianti
+Marsala | bevande | q:marsala//port | d=1.0 |
+Rum | bevande | q:rum | d=0.94 |
+Brandy | bevande | q:brandy//cognac | d=0.95 | cognac
+Birra | bevande | q:beer, regular//beer | d=1.0 | birra chiara; birra bionda
+Liquore | bevande | q:liqueur | d=1.1 | grand marnier; cointreau; amaretto; limoncello; maraschino; alchermes
+Caffè | bevande | q:coffee, espresso | d=1.0 | caffè espresso; caffè ristretto; caffè amaro; caffè solubile
+Tè | bevande | usda:173227 | d=1.0 | the; te verde; tè verde; tè nero; matcha
+Vino di riso | bevande | q:sake | d=1.0 | sake; mirin

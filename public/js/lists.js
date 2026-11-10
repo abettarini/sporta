@@ -24,7 +24,7 @@ function addToList(listId, p) {
   const prod = st.products.get(key);
   const department = p.department ?? (prod && prod.department) ?? S.guessDepartment(p.name);
   const tags = p.tags ?? (prod && prod.tags) ?? [];
-  const same = itemsOf(listId).filter((i) => S.normName(i.name) === key);
+  const same = itemsOf(listId).filter((i) => S.normName(i.name) === key || S.sameFood(i.name, p.name));
   const open = same.find((i) => !i.checked);
   if (open) {
     if (p.qty == null) {
@@ -416,6 +416,12 @@ Views.list = {
       cand = starts.concat(has);
     } else {
       cand = cand.filter((x) => x.count > 0).sort((a, b) => (b.favorite - a.favorite) || b.count - a.count);
+    }
+    // Nomi del database centrale che non sono ancora nel catalogo del gruppo (es. si scrive "zucch" -> "Zucchine").
+    if (typed && typed.length >= 2 && S.foodIndex && cand.length < 12) {
+      const have = new Set([...cand.map((x) => x.key), ...inList]);
+      const extra = S.foodIndex.names().filter((n) => { const k = S.normName(n); return !have.has(k) && S.foldText(n).startsWith(S.foldText(typed)); }).sort((a, b) => a.length - b.length);
+      cand = cand.concat(extra.slice(0, 12 - cand.length).map((n) => ({ key: S.normName(n), name: n, brand: '', favorite: false })));
     }
     $('#sg').innerHTML = cand.slice(0, 12).map((x) =>
       `<button type="button" class="chip" data-name="${h(x.name)}">${x.favorite ? icon('starFill', 'fav') + ' ' : ''}${h(x.name)}${x.brand ? `<small>${h(x.brand)}</small>` : ''}</button>`).join('');

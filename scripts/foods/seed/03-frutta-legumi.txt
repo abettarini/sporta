@@ -1,0 +1,78 @@
+# Frutta fresca
+Limoni | frutta | 13009 | pz=120 | limone; limoni non trattati; limone non trattato; limone bio; limoni bio
+Succo di limone | frutta | q:lemon juice | d=1.03 p=limoni | succo di limone fresco; succo di mezzo limone
+Scorza di limone | frutta | usda:167749 | p=limoni | buccia di limone; scorza grattugiata di limone; buccia di limone grattugiata; la scorza grattugiata di 1 limone; scorza di limone grattugiata; buccia di arancia grattugiata; buccia di un limone; scorza grattugiata di un limone
+Lime | frutta | usda:168155 | pz=70 | succo di lime; lime non trattato
+Arance | frutta | 13034 | pz=200 | arancia; arance bionde; arance rosse; arance tarocco
+Succo d'arancia | bevande | q:orange juice, pure | d=1.04 | spremuta d'arancia; succo di arancia
+Scorza d'arancia | frutta | usda:167749 | p=arance approx=1 | buccia d'arancia; scorza di arancia
+Mandarini | frutta | 13024 | pz=80 | mandarino; clementine; clementina
+Pompelmo | frutta | 13040 | pz=300 |
+Mele | frutta | 13039 | pz=180 | mela; mele golden; mele renette; mele fuji; mela verde; mele gala; mele rosse
+Pere | frutta | 13037 | pz=180 | pera; pere williams; pere kaiser; pere abate
+Banane | frutta | 13005 | pz=120 | banana; banane mature
+Fragole | frutta | q:strawberry, raw | pz=15 | fragola
+Lamponi | frutta | q:raspberry, raw | | lampone
+Mirtilli | frutta | q:blueberry, raw | | mirtillo
+More | frutta | q:blackberry, raw | |
+Ribes | frutta | 13019 | | ribes rosso
+Frutti di bosco | frutta | 13015 | approx=1 | frutti di bosco surgelati; frutti rossi
+Ciliegie | frutta | 13008 | pz=6 | ciliegia; ciliegie fresche
+Albicocche | frutta | q:apricot, raw | pz=40 | albicocca
+Pesche | frutta | 13043 | pz=150 | pesca; pesche gialle; pesche bianche
+Pesche noci | frutta | q:nectarine, raw | pz=150 p=pesche | pesca noce; nettarine
+Prugne | frutta | q:plum, raw | pz=40 | susine; prugna; susina
+Uva | frutta | q:grape, white, raw | | uva bianca; uva nera; acini d'uva
+Kiwi | frutta | q:kiwi, raw | pz=80 |
+Ananas | frutta | 13002 | pz=1200 | ananas fresco
+Mango | frutta | 13025 | pz=300 |
+Melone | frutta | 13026 | pz=1000 | melone retato; melone giallo
+Anguria | frutta | 13036 | | cocomero
+Fichi | frutta | q:fig, raw | pz=50 | fico; fichi freschi
+Cachi | frutta | q:persimmon, raw | pz=200 | caco; kaki
+Melograno | frutta | q:pomegranate, raw | pz=300 | chicchi di melograno; melagrana
+Nespole | frutta | q:loquat | pz=40 | nespola
+Cocco | frutta | 15006 | | noce di cocco
+Cocco rapè | dispensa | q:coconut, dried | p=cocco | cocco grattugiato; farina di cocco; cocco disidratato
+Datteri | dispensa | q:date, dried | pz=8 | dattero; datteri medjoul
+Uvetta | dispensa | q:raisin | | uva passa; uvetta sultanina; uvette
+Albicocche secche | dispensa | q:apricot, dried | pz=8 p=albicocche |
+Fichi secchi | dispensa | q:fig, dried | pz=20 p=fichi |
+Prugne secche | dispensa | 13042 | pz=8 p=prugne |
+Ciliegie candite | dispensa | 31027 | pz=5  | canditi; frutta candita; arancia candita; scorze d'arancia candite; cedro candito
+# Frutta secca e semi
+Mandorle | dispensa | 15041 | | mandorle pelate; mandorle intere; mandorle in scaglie; mandorle tostate; granella di mandorle; mandorle sgusciate
+Farina di mandorle | dispensa | 15041 | p=mandorle | mandorle tritate; mandorle in polvere
+Nocciole | dispensa | 15004 | | nocciole tostate; nocciole intere spellate; granella di nocciole; nocciole sgusciate; nocciole pelate
+Noci | dispensa | q:walnut, dried | pz=5 | gherigli di noce; noci già sgusciate; noci sgusciate; noce
+Pistacchi | dispensa | 15044 | | pistacchi sgusciati; granella di pistacchi; pistacchi di bronte; farina di pistacchi
+Pinoli | dispensa | q:pine nut | |
+Anacardi | dispensa | usda:170162 | |
+Arachidi | dispensa | 15001 | | noccioline; arachidi tostate
+Burro di arachidi | dispensa | q:peanut butter | | crema di arachidi
+Castagne | frutta | q:chestnut, raw | pz=10 | castagne fresche; marroni
+Semi di sesamo | dispensa | q:sesame seed | | sesamo; semi di sesamo per decorare; sesamo nero
+Semi di girasole | dispensa | q:sunflower seed | |
+Semi di zucca | dispensa | q:pumpkin seed | |
+Semi di lino | dispensa | q:flaxseed | | lino
+Semi di chia | dispensa | q:chia seed | | chia
+Semi di papavero | dispensa | q:poppy seed | | papavero
+Tahina | dispensa | q:tahini | | crema di sesamo; tahin; salsa tahina
+# Legumi
+Ceci | dispensa | 20516 | | ceci secchi
+Ceci cotti | dispensa | 20532 | p=ceci | ceci già cotti; ceci in scatola; ceci lessati; ceci precotti
+Fagioli borlotti | dispensa | 20525 | approx=1 | borlotti; fagioli secchi; fagioli borlotti secchi
+Fagioli cannellini | dispensa | 20501 | | cannellini; fagioli bianchi
+Fagioli cotti | dispensa | 20511 | p=fagioli cannellini | fagioli in scatola; fagioli lessati; cannellini in scatola; borlotti in scatola; fagioli già cotti
+Fagioli neri | dispensa | usda:175186 | |
+Lenticchie | dispensa | q:lentil, green, dried | | lenticchie secche; lenticchie verdi; lenticchie di castelluccio
+Lenticchie rosse | dispensa | q:lentil, red, dried | p=lenticchie | lenticchie rosse decorticate
+Lenticchie cotte | dispensa | q:lentil, cooked | p=lenticchie | lenticchie in scatola; lenticchie lessate
+Piselli secchi | dispensa | q:split pea, dried | p=piselli | piselli spezzati
+Fave secche | dispensa | q:broad bean, dried | p=fave |
+Soia | dispensa | 20901 | | fagioli di soia
+Edamame | surgelati | usda:168410 | |
+Tofu | latticini | q:tofu, plain | | tofu naturale; tofu al naturale
+Tempeh | latticini | q:tempeh | |
+Seitan | latticini | q:seitan | |
+Farina di ceci | dispensa | 9580 | |

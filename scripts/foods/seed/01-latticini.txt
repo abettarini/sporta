@@ -1,0 +1,59 @@
+# Nome | reparto | fonte (codice CIQUAL, q:ricerca, usda:id, zero) | extra (pz= peso pezzo g, d= densità, u=unità:g, k=tipo, p=variante di) | nomi alternativi
+Uova | latticini | 22000 | pz=55 k=uova | uovo; uova medie; uovo medio; uova grandi; uova fresche; uova intere; uova bio
+Tuorli | latticini | 22002 | pz=18 k=uova | tuorlo; tuorli d'uovo; rossi d'uovo; tuorlo d'uovo
+Albumi | latticini | 22001 | pz=33 k=uova | albume; albumi d'uovo; chiare d'uovo; bianchi d'uovo
+Latte | latticini | q:milk semi-skimmed pasteurised | d=1.03 k=latte | latte vaccino; latte fresco
+Latte intero | latticini | q:milk whole pasteurised | d=1.03 k=latte p=latte | latte intero fresco
+Latte parzialmente scremato | latticini | q:milk semi-skimmed pasteurised | d=1.03 k=latte p=latte | latte ps; latte parz. scremato
+Latte scremato | latticini | q:milk skimmed pasteurised | d=1.03 k=latte p=latte |
+Latte senza lattosio | latticini | 19060 | d=1.03 k=latte p=latte | latte delattosato
+Latte condensato | latticini | 19027 | d=1.3 k=latte | latte condensato zuccherato
+Latte in polvere | latticini | q:milk powder whole | d=0.5 k=latte |
+Latte di soia | latticini | q:soy drink plain | d=1.03 | bevanda di soia; latte di soia non zuccherato
+Latte di mandorla | latticini | 18107 | d=1.03 | bevanda di mandorla
+Latte di avena | latticini | 18899 | d=1.03 | bevanda di avena
+Latte di riso | latticini | 18904 | d=1.03 | bevanda di riso
+Latte di cocco | latticini | q:coconut milk | d=1.0 | latte di cocco in lattina
+Panna fresca | latticini | q:cream 30% fat liquid | d=1.0 k=latte | panna; panna fresca liquida; panna liquida; panna da montare; panna per dolci; panna fresca da montare; panna montata
+Panna da cucina | latticini | usda:170857 | d=1.0 k=latte p=panna fresca | panna da cucina uht; panna per cucinare
+Panna acida | latticini | usda:171257 | d=1.0 k=latte p=panna fresca |
+Panna vegetale | latticini | usda:170857 | d=1.0 approx=1 | panna di soia; panna vegetale da montare
+Yogurt bianco | latticini | usda:171284 | pz=125 k=latte | yogurt; yogurt naturale; yogurt bianco naturale; yogurt intero
+Yogurt greco | latticini | q:greek-style yogurt | pz=150 k=latte p=yogurt bianco | yogurt greco intero; yogurt greco 0%
+Yogurt di soia | latticini | 19693 | pz=125 | yogurt vegetale
+Burro | latticini | 16400 | d=0.91 u=noci:10 k=latte | burro morbido; burro freddo; burro fuso; burro ammorbidito; burro a temperatura ambiente; burro freddo di frigo; burro chiarificato; noce di burro; burro di centrifuga
+Burro salato | latticini | q:butter salted | k=latte p=burro |
+Margarina | dispensa | usda:172349 | |
+Mozzarella | salumi | q:mozzarella cow | pz=125 k=latte | mozzarella fiordilatte; fiordilatte; mozzarella per pizza; mozzarelle; mozzarella vaccina; mozzarelline; ciliegine di mozzarella; mozzarelline ciliegine; formaggio a pasta filata; fior di latte
+Mozzarella di bufala | salumi | 19590 | pz=125 k=latte p=mozzarella approx=1 | mozzarella di bufala campana; bufala
+Burrata | salumi | q:burrata | pz=150 k=latte | stracciatella; stracciatella di burrata
+Ricotta | salumi | usda:170851 | k=latte | ricotta vaccina; ricotta fresca; ricotta di mucca
+Ricotta di pecora | salumi | usda:170851 | k=latte p=ricotta approx=1 | ricotta ovina
+Mascarpone | salumi | q:mascarpone | k=latte |
+Parmigiano | salumi | q:parmesan | k=latte | parmigiano reggiano; parmigiano reggiano dop; parmigiano grattugiato; parmigiano reggiano grattugiato; parmigiano reggiano dop grattugiato; parmigiano reggiano dop da grattugiare; formaggio grattugiato; formaggio parmigiano
+Grana padano | salumi | 12120 | k=latte p=parmigiano approx=1 | grana; grana grattugiato; grana padano dop; grana padano grattugiato; grana padano dop da grattugiare; formaggio grana grattugiato; formaggio grana
+Pecorino | salumi | q:pecorino | k=latte | pecorino romano; pecorino romano dop; pecorino grattugiato; pecorino sardo; pecorino toscano; formaggio pecorino
+Gorgonzola | salumi | q:gorgonzola | k=latte | gorgonzola dolce; gorgonzola piccante
+Fontina | salumi | q:fontina | k=latte |
+Provola | salumi | 12716 | k=latte approx=1 | provola affumicata; provola dolce
+Provolone | salumi | q:provolone | k=latte | provolone dolce; provolone piccante
+Scamorza | salumi | 12716 | k=latte approx=1 | scamorza dolce; scamorza affumicata; scamorza bianca
+Caciocavallo | salumi | 12716 | k=latte approx=1 | caciocavallo silano
+Asiago | salumi | q:asiago | k=latte |
+Taleggio | salumi | 12041 | k=latte approx=1 |
+Emmental | salumi | q:emmental | k=latte | emmenthal; groviera; gruviera; emmentaler
+Fontal | salumi | 12121 | k=latte approx=1 |
+Stracchino | salumi | usda:171246 | k=latte approx=1 | crescenza; squacquerone
+Robiola | salumi | usda:171246 | k=latte approx=1 |
+Formaggio spalmabile | salumi | usda:173418 | k=latte | philadelphia; formaggio philadelphia; formaggio fresco spalmabile; formaggio cremoso; exquisa formaggio fresco; formaggio fresco
+Feta | salumi | q:feta | k=latte |
+Brie | salumi | q:brie | k=latte |
+Camembert | salumi | q:camembert | k=latte |
+Cheddar | salumi | q:cheddar | k=latte |
+Edamer | salumi | q:edam | k=latte | edam
+Caprino | salumi | q:fresh goat cheese | k=latte | formaggio di capra; formaggio caprino
+Primo sale | salumi | usda:172223 | k=latte approx=1 | formaggio primo sale; primosale
+Fiocchi di latte | salumi | usda:172179 | k=latte | cottage cheese
+Quark | salumi | 19641 | k=latte |
+Kefir | latticini | q:kefir | k=latte |
+Besciamella | dispensa | usda:174525 | k=latte | salsa besciamella

@@ -19,6 +19,8 @@ function ingredientNames(extra = []) {
   for (const p of st.products.values()) m.set(p.key, p.name);
   for (const r of st.recipes.values()) for (const i of r.ingredients || []) { const k = S.normName(i.name); if (!m.has(k)) m.set(k, i.name); }
   for (const n of extra) { const k = S.normName(n); if (k && !m.has(k)) m.set(k, n); }
+  // più i nomi del database centrale degli alimenti
+  if (S.foodIndex) for (const n of S.foodIndex.names()) { const k = S.normName(n); if (!m.has(k)) m.set(k, n); }
   return [...m.values()].sort((a, b) => a.localeCompare(b, 'it'));
 }
 
@@ -51,9 +53,35 @@ function recipeBodyHtml(r, people, off) {
         <span class="txt"><span class="name">${h(i.name)}${q ? `<span class="qty">${h(q)}</span>` : ''}</span>
         ${i.brand ? `<span class="meta">${h(i.brand)}</span>` : ''}</span></button></li>`;
     }).join('')}</ul>` : '<div class="empty">Nessun ingrediente.</div>'}
+    ${nutritionHtml(r)}
     </div><div class="r-steps">
     ${steps.length ? `<div class="section-h">Procedimento</div><ol class="steps">${steps.map((s) => `<li>${h(s.text)}</li>`).join('')}</ol>` : ''}
     </div></div>`;
+}
+
+// Valori nutrizionali per porzione, dal database centrale degli alimenti (indicativi).
+const SOURCE_LABEL = { ciqual: 'CIQUAL 2025 (ANSES)', usda: 'USDA FoodData Central' };
+function nutritionHtml(r) {
+  if (!S.foodIndex || !(r.ingredients || []).length) return '';
+  const n = S.foodIndex.nutrition(r.ingredients, r.servings);
+  if (!n.counted) return '';
+  const p = n.per, fmt = (v, d = 1) => (v >= 10 ? Math.round(v) : (Math.round(v * 10 ** d) / 10 ** d)).toLocaleString('it');
+  const partial = n.counted < n.total;
+  const notes = [];
+  if (partial) notes.push(`Calcolati su ${n.counted} ingredienti su ${n.total}: mancano ${n.missing.slice(0, 4).map(h).join(', ')}${n.missing.length > 4 ? '…' : ''}.`);
+  if (n.noQty.length) notes.push(`Senza quantità, non contati: ${n.noQty.slice(0, 4).map(h).join(', ')}${n.noQty.length > 4 ? '…' : ''}.`);
+  if (n.approx) notes.push('Alcuni valori sono stimati da alimenti simili.');
+  return `<details class="card nutri" ${ls.get('nutriOpen') === '1' ? 'open' : ''}>
+    <summary><span class="nk"><b>${partial ? '≈ ' : ''}${fmt(p.kcal, 0)}</b> kcal</span><span class="nl">a porzione${partial ? ` · ${Math.round((100 * n.counted) / n.total)}% degli ingredienti` : ''}</span></summary>
+    <table class="nt">
+      <tr><td>Proteine</td><td>${fmt(p.prot)} g</td></tr>
+      <tr><td>Carboidrati</td><td>${fmt(p.carb)} g</td></tr><tr class="sub"><td>di cui zuccheri</td><td>${fmt(p.sugar)} g</td></tr>
+      <tr><td>Grassi</td><td>${fmt(p.fat)} g</td></tr><tr class="sub"><td>di cui saturi</td><td>${fmt(p.sat)} g</td></tr>
+      <tr><td>Fibre</td><td>${fmt(p.fiber)} g</td></tr><tr><td>Sale</td><td>${fmt(p.salt, 2)} g</td></tr>
+    </table>
+    ${notes.map((t) => `<p class="hint">${t}</p>`).join('')}
+    <p class="hint">Valori indicativi per una porzione (ricetta per ${r.servings}), calcolati sugli ingredienti crudi. Fonte: ${n.sources.map((s) => SOURCE_LABEL[s] || s).join(', ')}.</p>
+  </details>`;
 }
 
 function scaledSelected(r, people, off) {
@@ -579,3 +607,6 @@ function autoGrow(t) {
   t.style.height = 'auto';
   t.style.height = Math.max(60, t.scrollHeight + 2) + 'px';
 }
+
+// Il riquadro dei valori nutrizionali resta aperto o chiuso come l'ha lasciato la persona.
+document.addEventListener('toggle', (e) => { if (e.target.classList && e.target.classList.contains('nutri')) ls.set('nutriOpen', e.target.open ? '1' : '0'); }, true);

@@ -1061,3 +1061,15 @@ button.link-card { width: 100%; border: 0; font: inherit; text-align: left; curs
 .al-grid { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 4px 0 12px; }
 .al-grid label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; }
 .al-grid input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+/* Valori del menu ("La faccio") */
+.menu-nutri { padding: 12px 14px; margin-top: 12px; }
+.mn-top { display: flex; align-items: baseline; gap: 10px; }
+.mn-k { font-size: 18px; }
+.mn-k b { font-size: 26px; }
+.mn-l { color: var(--muted); }
+.mn-l small { display: block; font-size: 12px; }
+.mn-macro { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 10px 0 4px; font-size: 12px; color: var(--muted); text-align: center; }
+.mn-macro b { display: block; color: var(--text); font-size: 15px; }
+.menu-nutri .al-h { margin-top: 10px; }
+.menu-nutri .hint { margin: 6px 0 0; }

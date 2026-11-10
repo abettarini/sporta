@@ -362,12 +362,13 @@
 
   // Caratteristiche suggerite da ingredienti e tempi (chi scrive le conferma).
   function suggestTraits(ingredients, minutes) {
-    const list = (ingredients || []).map((i) => i && i.name).filter((n) => foldText(n));
+    const items = (ingredients || []).filter((i) => i && foldText(i.name));
     const out = [];
-    if (list.length) {
+    if (items.length) {
       // Tipo di ogni ingrediente: dal database degli alimenti se lo conosce, altrimenti dalle parole chiave.
-      const kinds = list.map((name) => {
-        const k = api.foodIndex ? api.foodIndex.kindOf(name) : null;
+      const kinds = items.map((ing) => {
+        const name = ing.name;
+        const k = api.foodIndex ? api.foodIndex.kindOf(ing) : null;
         if (k !== null && k !== undefined) return k;
         const n = foldText(name);
         if (hasWord(n, MEAT)) return 'carne';
@@ -382,6 +383,14 @@
       if (!meat && !fish) {
         out.push('vegetariana');
         if (!kinds.some((k) => k === 'latte' || k === 'uova' || k === 'miele')) out.push('vegana');
+      }
+      // Senza glutine / senza lattosio: solo se il database riconosce tutti gli ingredienti.
+      if (api.foodIndex && api.foodIndex.allergens) {
+        const al = api.foodIndex.allergens(items);
+        if (!al.unknown.length) {
+          if (!al.list.some((a) => a.id === 'glutine')) out.push('senza-glutine');
+          if (!al.lactose) out.push('senza-lattosio');
+        }
       }
     }
     if (minutes > 0 && minutes <= 30) out.push('veloce');

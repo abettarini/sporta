@@ -53,6 +53,7 @@ function recipeBodyHtml(r, people, off) {
         <span class="txt"><span class="name">${h(i.name)}${q ? `<span class="qty">${h(q)}</span>` : ''}</span>
         ${i.brand ? `<span class="meta">${h(i.brand)}</span>` : ''}</span></button></li>`;
     }).join('')}</ul>` : '<div class="empty">Nessun ingrediente.</div>'}
+    ${allergensHtml(r)}
     ${nutritionHtml(r)}
     </div><div class="r-steps">
     ${steps.length ? `<div class="section-h">Procedimento</div><ol class="steps">${steps.map((s) => `<li>${h(s.text)}</li>`).join('')}</ol>` : ''}
@@ -61,6 +62,68 @@ function recipeBodyHtml(r, people, off) {
 
 // Valori nutrizionali per porzione, dal database centrale degli alimenti (indicativi).
 const SOURCE_LABEL = { ciqual: 'CIQUAL 2025 (ANSES)', usda: 'USDA FoodData Central' };
+// Allergeni (i 14 UE) dagli alimenti riconosciuti: indicativi, le etichette restano il riferimento.
+function allergensHtml(r) {
+  if (!S.foodIndex || !S.foodIndex.allergens || !(r.ingredients || []).length) return '';
+  nutriRecipe = r;
+  const a = S.foodIndex.allergens(r.ingredients);
+  // senza valori nutrizionali (nessuna quantità) l'elenco degli alimenti sta qui
+  const noNutri = !S.foodIndex.nutrition(r.ingredients, r.servings).counted;
+  const unk = a.unknown.length ? `<p class="hint">Non riconosciuti, da controllare: ${a.unknown.slice(0, 5).map(h).join(', ')}${a.unknown.length > 5 ? '…' : ''}.</p>` : '';
+  return `<div class="card allerg"><div class="al-h"><b>Allergeni</b>${a.list.length
+    ? `<span class="al-list">${a.list.map((x) => `<span class="al-chip" title="${h(x.from.join(', '))}">${h(x.label)}</span>`).join('')}</span>`
+    : `<span class="muted">${a.unknown.length ? 'nessuno tra gli ingredienti riconosciuti' : 'nessuno dei 14 principali'}</span>`}</div>
+    ${a.list.length ? `<p class="hint">${a.list.map((x) => `<b>${h(x.label)}</b>: ${x.from.map(h).join(', ')}`).join(' · ')}</p>` : ''}${unk}
+    <p class="hint">Indicativi, per le preparazioni tipiche: controlla sempre le etichette dei prodotti.</p>${noNutri ? ingFoodsHtml(r) : ''}</div>`;
+}
+
+// Come ogni ingrediente è stato riconosciuto; nelle ricette del gruppo si può scegliere l'alimento (per esempio la variante).
+function ingFoodsHtml(r) {
+  const own = st.recipes.get(r.id) === r;
+  const rows = r.ingredients.map((i, k) => {
+    const m = S.foodIndex.matchIng(i);
+    const what = i.food === Foods.NONE ? '<i>non contato</i>' : m ? `${h(m.food.n)}${m.food.v && m.food.v[0] != null ? ` <small>${Math.round(m.food.v[0])} kcal/100 g</small>` : ''}` : '<i>non riconosciuto</i>';
+    const fam = m && S.foodIndex.family(m.food).length > 1;
+    return `<li><span class="in">${h(i.name)}</span><span class="fd">${what}${i.food && i.food !== Foods.NONE ? ' <small class="chosen">scelto</small>' : ''}</span>
+      ${own ? `<button type="button" class="btn ghost small" data-food-pick="${k}">${fam && !i.food ? 'Variante…' : 'Cambia'}</button>` : ''}</li>`;
+  }).join('');
+  return `<details class="ing-foods"><summary>Come sono contati gli ingredienti</summary><ul>${rows}</ul>
+    ${own ? '<p class="hint">Scegli la variante giusta (per esempio latte scremato invece di intero) o correggi un ingrediente riconosciuto male: vale per valori e allergeni di questa ricetta.</p>' : ''}</details>`;
+}
+
+function ingFoodSheet(r, k) {
+  const ing = r.ingredients[k]; if (!ing) return;
+  const auto = S.foodIndex.match(ing.name);
+  const cur = S.foodIndex.matchIng(ing);
+  const fam = auto ? S.foodIndex.family(auto.food) : [];
+  const all = [...S.foodIndex.byId.values()];
+  const row = (f) => `<button type="button" class="mp-row ${cur && cur.food.id === f.id && ing.food !== Foods.NONE ? 'on' : ''}" data-id="${h(f.id)}"><span class="t"><b>${h(f.n)}</b>
+    <small>${[f.v && f.v[0] != null ? `${Math.round(f.v[0])} kcal/100 g` : '', (f.al || []).map((a) => Foods.ALLERGEN_LABEL[a]).join(', ')].filter(Boolean).map(h).join(' · ')}</small></span></button>`;
+  openSheet(`<h2>${h(ing.name)}</h2>
+    <p class="muted">${auto ? `Riconosciuto come <b>${h(auto.food.n)}</b>.` : 'Non riconosciuto dal database.'} Scegli l'alimento da usare per valori e allergeni.</p>
+    ${fam.length > 1 ? `<div class="section-h">Varianti</div><div class="menu-pick">${fam.map(row).join('')}</div>` : ''}
+    <div class="section-h">Altro alimento</div><input class="input search" id="if-q" type="search" placeholder="Cerca nel database…"><div class="menu-pick" id="if-l"></div>
+    <div class="actions">${ing.food ? '<button type="button" class="btn" data-set="">Automatico (dal nome)</button>' : ''}<button type="button" class="btn" data-set="${Foods.NONE}">Non contarlo</button></div>`, (sh) => {
+    const q = $('#if-q', sh);
+    q.oninput = () => {
+      const t = S.foldText(q.value);
+      $('#if-l', sh).innerHTML = t.length < 2 ? '' : all.filter((f) => S.foldText(f.n).includes(t)).sort((a, b) => a.n.length - b.n.length).slice(0, 20).map(row).join('') || '<div class="empty">Nessun alimento.</div>';
+    };
+    sh.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-id],[data-set]'); if (!b) return;
+      const food = b.dataset.id !== undefined ? b.dataset.id : b.dataset.set;
+      const ingredients = r.ingredients.map((x, j) => {
+        if (j !== k) return x;
+        const { food: _, ...rest } = x;
+        // l'alimento riconosciuto dal nome non va salvato: resta "automatico"
+        return food && !(auto && food === auto.food.id) ? { ...rest, food } : rest;
+      });
+      enqueue({ k: 'recipe.put', id: r.id, data: { ingredients } }, { silent: true });
+      closeSheet(); render();
+    });
+  });
+}
+
 let nutriRecipe = null;
 function nutritionHtml(r) {
   nutriRecipe = r;
@@ -82,6 +145,7 @@ function nutritionHtml(r) {
       <tr><td>Fibre</td><td>${fmt(p.fiber)} g</td></tr><tr><td>Sale</td><td>${fmt(p.salt, 2)} g</td></tr>
     </table>
     ${notes.map((t) => `<p class="hint">${t}</p>`).join('')}
+    ${ingFoodsHtml(r)}
     <p class="hint">Valori indicativi per una porzione (ricetta per ${r.servings}), calcolati sugli ingredienti crudi. Fonte: ${n.sources.map((s) => SOURCE_LABEL[s] || s).join(', ')}.</p>
     ${st.code ? '<button type="button" class="btn ghost small" data-food-report>Segnala un errore</button>' : ''}
   </details>`;
@@ -417,6 +481,7 @@ Views.recipeEdit = {
       const d = this.draft.find((x) => x._k === row.dataset.id); if (!d) return;
       const f = e.target.dataset.f;
       d[f] = f === 'qty' ? S.parseNum(e.target.value) : e.target.value;
+      if (f === 'name') delete d.food; // nome cambiato: l'alimento scelto prima non vale più
     });
     ingl.addEventListener('change', (e) => {
       const row = e.target.closest('.ing-edit'); if (!row) return;
@@ -513,7 +578,7 @@ Views.recipeEdit = {
       const el = f.elements;
       const name = el.rname.value.trim(); if (!name) return;
       const ingredients = this.draft.filter((d) => String(d.name || '').trim())
-        .map((d) => ({ name: d.name.trim(), qty: d.qty ?? null, unit: d.unit || '', brand: (d.brand || '').trim() }));
+        .map((d) => ({ name: d.name.trim(), qty: d.qty ?? null, unit: d.unit || '', brand: (d.brand || '').trim(), ...(d.food ? { food: d.food } : {}) }));
       const steps = this.steps.map((s) => ({ text: s.text.trim() })).filter((s) => s.text);
       const num = (v) => (v === '' ? null : Math.max(0, parseInt(v, 10) || 0));
       const data = {
@@ -612,5 +677,9 @@ function autoGrow(t) {
 }
 
 // Il riquadro dei valori nutrizionali resta aperto o chiuso come l'ha lasciato la persona.
-document.addEventListener('click', (e) => { if (e.target.closest('[data-food-report]') && nutriRecipe) foodReportSheet(nutriRecipe); });
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-food-report]') && nutriRecipe) foodReportSheet(nutriRecipe);
+  const p = e.target.closest('[data-food-pick]');
+  if (p && nutriRecipe) ingFoodSheet(nutriRecipe, Number(p.dataset.foodPick));
+});
 document.addEventListener('toggle', (e) => { if (e.target.classList && e.target.classList.contains('nutri')) ls.set('nutriOpen', e.target.open ? '1' : '0'); }, true);

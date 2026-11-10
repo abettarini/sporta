@@ -1041,3 +1041,23 @@ button.link-card { width: 100%; border: 0; font: inherit; text-align: left; curs
 @media (min-width: 560px) { .nut-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .miss-row .txt > span { display: block; }
 .foods-admin .seg-tabs a { white-space: nowrap; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+
+/* Allergeni e alimenti degli ingredienti */
+.card.allerg { padding: 12px 14px; margin-top: 12px; }
+.al-h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.al-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.al-chip { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); border-radius: 999px; padding: 2px 10px; font-size: 14px; font-weight: 600; }
+.card.allerg .hint { margin: 6px 0 0; }
+.ing-foods { margin-top: 10px; }
+.ing-foods summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 15px; }
+.ing-foods ul { list-style: none; margin: 8px 0 0; padding: 0; }
+.ing-foods li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.ing-foods li:last-child { border-bottom: 0; }
+.ing-foods .in { flex: 0 0 36%; min-width: 0; overflow-wrap: anywhere; }
+.ing-foods .fd { flex: 1; min-width: 0; color: var(--muted); text-align: left; }
+.ing-foods .fd small { display: block; }
+.ing-foods .chosen { display: inline; color: var(--accent); font-weight: 600; }
+.mp-row.on { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
+.al-grid { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 4px 0 12px; }
+.al-grid label { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; }
+.al-grid input { width: 18px; height: 18px; accent-color: var(--accent); }

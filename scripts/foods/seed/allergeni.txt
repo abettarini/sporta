@@ -1,0 +1,30 @@
+# Allergeni (i 14 del regolamento UE 1169/2011, allegato II) per alimento.
+# Formato: `allergene: id, id, …` (id come in public/foods.json).
+# Le varianti ereditano gli allergeni del generico, a meno che non compaiano qui o in `nessuno:`.
+# Gli alimenti di tipo latte (k=latte) e uova (k=uova) hanno già latte e uova: qui solo gli altri.
+# `senza-lattosio:` alimenti con latte ma senza lattosio (naturalmente o perché delattosati).
+# Sono indicazioni per le preparazioni tipiche: i prodotti confezionati vanno sempre controllati in etichetta.
+
+glutine: pasta, pasta-all-uovo, pasta-integrale, gnocchi-di-patate, tortellini, cous-cous, orzo, farro, bulgur, avena,
+  farina-00, semola, farina-di-farro, noodles, seitan, malto, birra, salsa-di-soia, salsa-worcestershire, lievito-madre,
+  besciamella, surimi, fette-biscottate, biscotti-secchi, savoiardi, pan-di-spagna, wafer,
+  pane, pangrattato, grissini, crackers, piadina, pasta-sfoglia, pasta-brisee, pasta-per-pizza, pasta-kataifi
+uova: pasta-all-uovo, tortellini, maionese, savoiardi, amaretti, pan-di-spagna, biscotti-secchi
+latte: besciamella, cioccolato-al-latte, cioccolato-bianco, nutella, wafer, biscotti-secchi, pasta-sfoglia, pasta-brisee,
+  tortellini, pesto, crema-pasticcera, gelato
+pesce: salsa-worcestershire, surimi
+crostacei: gamberi
+molluschi: calamari, seppie, polpo, cozze, vongole, capesante
+frutta-guscio: mandorle, nocciole, noci, pistacchi, anacardi, latte-di-mandorla, nutella, amaretti
+arachidi: arachidi, burro-di-arachidi, olio-di-arachidi
+soia: soia, latte-di-soia, yogurt-di-soia, tofu, tempeh, salsa-di-soia, edamame, panna-vegetale
+sedano: sedano, sedano-rapa, brodo-vegetale, dado
+senape: senape
+sesamo: semi-di-sesamo, olio-di-sesamo, tahina
+solfiti: vino-bianco, vino-rosso, marsala, vino-di-riso, liquore, aceto-di-vino, aceto-balsamico, uvetta, albicocche-secche,
+  pomodori-secchi, ciliegie-candite, cetriolini-sottaceto
+
+# Varianti senza gli allergeni del generico
+nessuno:
+
+senza-lattosio: latte-senza-lattosio, parmigiano, grana-padano

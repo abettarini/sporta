@@ -3,6 +3,13 @@
 // I dati stanno in /foods.json (generato da scripts/foods/, fonti CIQUAL 2025 e USDA).
 (function (root) {
   const NUT = ['kcal', 'prot', 'carb', 'sugar', 'fat', 'sat', 'fiber', 'salt'];
+  // I 14 allergeni del regolamento UE 1169/2011 (allegato II).
+  const ALLERGENS = [['glutine', 'Glutine'], ['crostacei', 'Crostacei'], ['uova', 'Uova'], ['pesce', 'Pesce'], ['arachidi', 'Arachidi'],
+    ['soia', 'Soia'], ['latte', 'Latte'], ['frutta-guscio', 'Frutta a guscio'], ['sedano', 'Sedano'], ['senape', 'Senape'],
+    ['sesamo', 'Sesamo'], ['solfiti', 'Solfiti'], ['lupini', 'Lupini'], ['molluschi', 'Molluschi']];
+  const ALLERGEN_LABEL = Object.fromEntries(ALLERGENS);
+  // Valore di `food` su un ingrediente quando chi scrive dice che non è nessun alimento del database.
+  const NONE = '-';
 
   // minuscole, niente accenti, apostrofi uniformi, punteggiatura e parentesi via
   function key(s) {
@@ -90,6 +97,17 @@
       return out;
     }
 
+    // Alimento di un ingrediente: quello scelto a mano (campo `food`, per esempio una variante) o
+    // quello riconosciuto dal nome. Ritorna { food, unit, chosen } o null.
+    function matchIng(i) {
+      if (!i || !i.name) return null;
+      if (i.food === NONE) return null;
+      const m = match(i.name);
+      const f = i.food && byId.get(i.food);
+      if (f) return { food: f, unit: m ? m.unit : '', chosen: true };
+      return m;
+    }
+
     // Grammi di un ingrediente; null se non si sa convertire (unità sconosciuta, quantità mancante).
     function grams(food, qty, unit, hint) {
       if (!food) return null;
@@ -111,8 +129,8 @@
       let counted = 0, total = 0, approx = false;
       const sources = new Set(), missing = [], noQty = [];
       for (const i of ingredients || []) {
-        if (!i || !i.name || i.unit === 'q.b.') continue;
-        const m = match(i.name);
+        if (!i || !i.name || i.unit === 'q.b.' || i.food === NONE) continue;
+        const m = matchIng(i);
         // acqua, sale "q.b." e simili: non contano nella copertura
         if (m && m.food.src === 'zero') continue;
         if (i.qty == null) { noQty.push(i.name); continue; } // senza quantità (sale, olio "q.b." scritti senza): non si contano
@@ -129,15 +147,40 @@
       return { per, counted, total, approx, sources: [...sources], missing, noQty };
     }
 
+    // Allergeni di una ricetta: [{ id, label, from: [nomi degli ingredienti] }] più gli ingredienti non
+    // riconosciuti (di cui non si sa niente). Contano anche gli ingredienti senza quantità.
+    function allergens(ingredients) {
+      const found = new Map(), unknown = [];
+      let lactose = false;
+      for (const i of ingredients || []) {
+        if (!i || !i.name) continue;
+        const m = matchIng(i);
+        if (!m) { if (i.food !== NONE) unknown.push(i.name); continue; }
+        for (const a of m.food.al || []) {
+          if (!found.has(a)) found.set(a, []);
+          found.get(a).push(i.name);
+        }
+        if ((m.food.al || []).includes('latte') && !m.food.nl) lactose = true;
+      }
+      const list = ALLERGENS.filter(([id]) => found.has(id)).map(([id, label]) => ({ id, label, from: found.get(id) }));
+      return { list, unknown, lactose };
+    }
+
     // Il nome canonico (o della variante) per suggerimenti e reparti.
     const deptOf = (name) => { const m = match(name); return m ? m.food.d : ''; };
     // Tipo per le caratteristiche: carne, pesce, latte, uova, miele o '' (vegetale).
-    const kindOf = (name) => { const m = match(name); if (!m) return null; let f = m.food; while (f && !f.k && f.p) f = byId.get(f.p); return (f && f.k) || ''; };
+    // Accetta un nome o un ingrediente ({ name, food }).
+    const kindOf = (x) => { const m = typeof x === 'string' ? match(x) : matchIng(x); if (!m) return null; let f = m.food; while (f && !f.k && f.p) f = byId.get(f.p); return (f && f.k) || ''; };
+    // Varianti di un alimento e del suo generico (per sceglierne una): il generico per primo.
+    const family = (food) => {
+      const top = food.p && byId.get(food.p) ? byId.get(food.p) : food;
+      return [top, ...[...byId.values()].filter((f) => f.p === top.id)];
+    };
     const names = () => [...byId.values()].map((f) => f.n);
-    return { match, grams, nutrition, deptOf, kindOf, names, byId, version: data.version, sources: data.sources || {} };
+    return { match, matchIng, grams, nutrition, allergens, deptOf, kindOf, family, names, byId, version: data.version, sources: data.sources || {} };
   }
 
-  const api = { key, createIndex, NUT };
+  const api = { key, createIndex, NUT, ALLERGENS, ALLERGEN_LABEL, NONE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Foods = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

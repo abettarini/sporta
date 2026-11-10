@@ -6,6 +6,7 @@
   `Nome | reparto | fonte | extra | nomi alternativi; separati; da punto e virgola`
   - **fonte**: codice CIQUAL (es. `22000`), `usda:<fdc_id>`, `q:<ricerca>` (prima voce CIQUAL che contiene tutte le parole; alternative con `//`) oppure `zero` (acqua, sale da cucina conta 0 kcal, aromi…).
   - **extra**: `pz=` peso medio di un pezzo in g, `d=` densità (g/ml), `u=unità:g,…` (es. `u=spicchi:5`), `k=` tipo (`carne`, `pesce`, `latte`, `uova`, `miele`; vuoto = vegetale), `p=` variante di (nome dell'alimento generico), `approx=1` valori presi da un alimento simile.
+- `seed/allergeni.txt` — i 14 allergeni UE per alimento (`allergene: id, id, …`); le varianti ereditano quelli del generico; `senza-lattosio:` per gli alimenti con latte ma senza lattosio.
 - `tools/` — script Python (solo libreria standard + openpyxl) e un controllo di copertura in Node.
 
 ## Rigenerare
@@ -21,6 +22,7 @@ python3 tools/build_index.py raw            # -> ciqual-index.json
 python3 tools/build_usda.py usda/FoodData_Central_sr_legacy_food_csv_2018-04   # -> usda-index.json
 python3 tools/resolve.py                    # abbina le fonti e stampa la revisione (-> foods-resolved.json)
 python3 tools/build_foods.py ../../public/foods.json
+python3 tools/allergens.py ../../public/foods.json   # allergeni da seed/allergeni.txt (e nuova versione)
 node tools/coverage.js /percorso/ricette.json   # copertura su un file di ricette (formato di "Importa ricette")
 ```
 

@@ -69,6 +69,7 @@ Views.foodsAdmin = {
       $('#fa-list').innerHTML = rows.length ? `<ul class="items card fa-rows">${rows.map((f) => `<li class="item"><button class="tap" type="button" data-id="${h(f.id)}"><span class="txt">
           <span class="name">${h(f.n)}${f.p && this.byId.get(f.p) ? ` <small class="muted">variante di ${h(this.byId.get(f.p).n)}</small>` : ''}</span>
           <span class="meta">${[S.deptOf(f.d).label, f.v && f.v[0] != null ? `${Math.round(f.v[0])} kcal` : 'senza valori', srcLabel(f.src)].filter(Boolean).map(h).join(' · ')}
+          ${(f.al || []).length ? ` · ${h(f.al.map((a) => Foods.ALLERGEN_LABEL[a]).join(', '))}` : ''}
           ${f.a ? '<i class="rtag t-senza-glutine">stimato</i>' : ''}${f.edited ? '<i class="rtag t-vegana">modificato</i>' : ''}</span></span></button></li>`).join('')}</ul>`
         : '<div class="empty">Nessun alimento trovato.</div>';
     };
@@ -163,6 +164,9 @@ function foodEditSheet(food, preset = {}) {
       <div class="section-h">Valori per 100 g ${f.src ? `<small class="muted">· ${h(srcLabel(f.src))}</small>` : ''}</div>
       <div class="nut-grid">${NUT_LABELS.map(([k, l], i) => `<label class="field"><span>${h(l)}</span><input class="input" name="v_${k}" inputmode="decimal" value="${h(num((f.v || [])[i]))}"></label>`).join('')}</div>
       <label class="switch"><input type="checkbox" name="a" ${f.a ? 'checked' : ''}><span>Valori stimati da un alimento simile</span></label>
+      <div class="section-h">Allergeni <small class="muted">· i 14 del regolamento UE</small></div>
+      <div class="al-grid">${Foods.ALLERGENS.map(([id, l]) => `<label><input type="checkbox" name="al" value="${id}" ${(f.al || []).includes(id) ? 'checked' : ''}>${h(l)}</label>`).join('')}</div>
+      <label class="switch"><input type="checkbox" name="nl" ${f.nl ? 'checked' : ''}><span>Senza lattosio (anche se contiene latte)</span></label>
       <div class="row">
         <label class="field"><span>Peso di un pezzo (g)</span><input class="input" name="pz" inputmode="decimal" value="${h(num(f.pz))}" placeholder="—"></label>
         <label class="field"><span>Densità (g/ml)</span><input class="input" name="den" inputmode="decimal" value="${h(num(f.den))}" placeholder="1"></label>
@@ -181,6 +185,7 @@ function foodEditSheet(food, preset = {}) {
       const u = {};
       for (const part of el.u.value.split(',')) { const [k, g] = part.split(':').map((s) => s && s.trim()); if (k && g) u[k] = g; }
       const body = {
+        al: [...form.querySelectorAll('[name=al]:checked')].map((x) => x.value), nl: el.nl.checked,
         n: el.n.value.trim(), d: el.d.value, k: el.k.value, p: el.p.value, a: el.a.checked, pz: el.pz.value, den: el.den.value, u,
         v: vals, src: changedValues ? 'manual' : f.src, aliases: el.aliases.value.split('\n').map((s) => s.trim()).filter(Boolean),
       };

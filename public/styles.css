@@ -1026,3 +1026,18 @@ button.link-card { width: 100%; border: 0; font: inherit; text-align: left; curs
 .nt td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .nt tr.sub td { color: var(--muted); font-size: 14px; padding-left: 12px; border-top: 0; padding-top: 0; }
 .nutri .hint { margin: 4px 0 10px; }
+
+/* Database degli alimenti (amministratori) */
+.btn.small { padding: 6px 10px; font-size: 14px; }
+.nutri [data-food-report] { margin-top: 4px; }
+.foods-admin .seg-tabs { max-width: 560px; }
+.foods-admin .seg-tabs small { color: var(--muted); font-weight: 500; }
+.foods-admin .seg-tabs .cnt { background: var(--accent); color: var(--accent-ink); border-radius: 999px; font-size: 12px; padding: 0 7px; }
+.miss-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
+.miss-row .txt { flex: 1; min-width: 0; }
+.miss-act { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.nut-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 10px; }
+.fe-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (min-width: 560px) { .nut-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.miss-row .txt > span { display: block; }
+.foods-admin .seg-tabs a { white-space: nowrap; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 5px; }

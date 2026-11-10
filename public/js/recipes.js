@@ -61,7 +61,9 @@ function recipeBodyHtml(r, people, off) {
 
 // Valori nutrizionali per porzione, dal database centrale degli alimenti (indicativi).
 const SOURCE_LABEL = { ciqual: 'CIQUAL 2025 (ANSES)', usda: 'USDA FoodData Central' };
+let nutriRecipe = null;
 function nutritionHtml(r) {
+  nutriRecipe = r;
   if (!S.foodIndex || !(r.ingredients || []).length) return '';
   const n = S.foodIndex.nutrition(r.ingredients, r.servings);
   if (!n.counted) return '';
@@ -81,6 +83,7 @@ function nutritionHtml(r) {
     </table>
     ${notes.map((t) => `<p class="hint">${t}</p>`).join('')}
     <p class="hint">Valori indicativi per una porzione (ricetta per ${r.servings}), calcolati sugli ingredienti crudi. Fonte: ${n.sources.map((s) => SOURCE_LABEL[s] || s).join(', ')}.</p>
+    ${st.code ? '<button type="button" class="btn ghost small" data-food-report>Segnala un errore</button>' : ''}
   </details>`;
 }
 
@@ -609,4 +612,5 @@ function autoGrow(t) {
 }
 
 // Il riquadro dei valori nutrizionali resta aperto o chiuso come l'ha lasciato la persona.
+document.addEventListener('click', (e) => { if (e.target.closest('[data-food-report]') && nutriRecipe) foodReportSheet(nutriRecipe); });
 document.addEventListener('toggle', (e) => { if (e.target.classList && e.target.classList.contains('nutri')) ls.set('nutriOpen', e.target.open ? '1' : '0'); }, true);

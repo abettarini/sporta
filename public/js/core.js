@@ -146,6 +146,7 @@ function setState(j) {
   st.me = j.me || null;
   st.platformAdmin = !!j.platform_admin;
   st.features = j.features || {};
+  refreshFoods(j.foods_version);
   st.members = new Map((j.members || []).map((x) => [x.id, x]));
   // Aggiorna i dati del gruppo salvati sul telefono.
   const g = groupOf(st.code);
@@ -269,9 +270,24 @@ function productOf(name) {
 }
 
 // Database centrale degli alimenti (/foods.json, in cache per l'uso offline): nomi, reparti, valori nutrizionali.
+// All'avvio: la copia salvata sul dispositivo (con le correzioni degli amministratori) o il file di base;
+// poi, quando lo stato del server indica una versione diversa, si scarica quella aggiornata.
+function useFoods(j) { S.foodIndex = Foods.createIndex(j); render(); }
 (function loadFoods() {
-  fetch('/foods.json').then((r) => (r.ok ? r.json() : Promise.reject())).then((j) => { S.foodIndex = Foods.createIndex(j); render(); }).catch(() => {});
+  const saved = ls.json('foods', null);
+  // la copia salvata si usa subito, prima del primo disegno (qui l'app non è ancora partita)
+  if (saved && saved.foods) { try { S.foodIndex = Foods.createIndex(saved); return; } catch { /* copia rovinata: si riscarica */ } }
+  fetch('/foods.json').then((r) => (r.ok ? r.json() : Promise.reject())).then(useFoods).catch(() => {});
 })();
+let foodsFetching = null;
+function refreshFoods(version) {
+  if (!version || (S.foodIndex && S.foodIndex.version === version) || foodsFetching === version) return;
+  foodsFetching = version;
+  fetch('/api/foods').then((r) => (r.ok ? r.json() : Promise.reject())).then((j) => {
+    try { ls.setJson('foods', j); } catch { /* spazio pieno: resta solo in memoria */ }
+    useFoods(j);
+  }).catch(() => { foodsFetching = null; });
+}
 
 // Aggiorna subito il catalogo locale (il server farà lo stesso e lo confermerà).
 function rememberProduct(d, { use = true } = {}) {
@@ -992,6 +1008,7 @@ function parseRoute() {
   if (p[0] === 'share') return { name: 'shareIn' };
   if (p[0] === 'cook') return { name: 'cook' };
   if (p[0] === 'admin' && p[1] === 'gruppi') return { name: 'systemGroups' };
+  if (p[0] === 'admin' && p[1] === 'alimenti') return { name: 'foodsAdmin' };
   if (p[0] === 'admin') return { name: 'reports' };
   return { name: 'home' };
 }

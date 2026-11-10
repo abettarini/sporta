@@ -80,6 +80,8 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - **Meno doppioni**: "uovo" e "uova" sono lo stesso articolo in lista (le quantità si sommano) e lo stesso prodotto nel catalogo; i suggerimenti mostrano anche i nomi del database ("zucch" → Zucchine); il reparto viene dal database.
 - **Valori per porzione** nella scheda della ricetta: kcal, proteine, carboidrati (zuccheri), grassi (saturi), fibre e sale, con la copertura ("calcolati su 9 ingredienti su 10"), gli ingredienti senza quantità esclusi, l'avviso quando un valore è stimato da un alimento simile e la citazione delle fonti. Sono indicativi e calcolati sugli ingredienti crudi.
 - Le caratteristiche suggerite (con carne, con pesce, vegetariana, vegana) usano il tipo degli alimenti del database.
+- **Segnala un errore** (nel riquadro dei valori): alimento sbagliato, valori sbagliati, alimento mancante; arriva agli amministratori senza dati del gruppo (massimo 20 al giorno per persona).
+- **Gestione per gli amministratori** (*Altro → Alimenti*, per chi è in `ADMIN_EMAILS`): modifica degli alimenti (nome, reparto, tipo, variante di, valori per 100 g, peso di un pezzo, densità, misure, nomi alternativi), nuovi alimenti ed eliminazione; coda **Da riconoscere** con i nomi di articoli e ingredienti non riconosciuti, mostrati quando compaiono in almeno 2 gruppi (solo conteggi: il gruppo è registrato come impronta, senza dire quale), da collegare a un alimento, trasformare in un alimento nuovo o ignorare; elenco delle **segnalazioni**. Le correzioni stanno nel database (tabelle `food_edits`, `food_alias_edits`) sopra `public/foods.json` e valgono subito per tutti: lo stato porta `foods_version` e le app riscaricano `/api/foods` solo quando cambia. "Scarica" salva il database completo, da riportare in `public/foods.json`.
 ### Ricette
 - Foto, descrizione, **difficoltà**, **tempi di preparazione e cottura**, ingredienti e **procedimento a passaggi** (riordinabili con drag & drop).
 - **Autocompletamento** degli ingredienti dal catalogo e dalle altre ricette; gli ingredienti nuovi entrano subito nei suggerimenti.
@@ -176,7 +178,7 @@ Ogni 4 minuti circa la funzione chiude la connessione per rispettare i limiti di
 | `CRON_SECRET` | segreto del cron dei promemoria: Vercel lo manda da solo a `/api/cron/reminders` (vedi `crons` in `vercel.json`, una volta al giorno) |
 | `BLOB_READ_WRITE_TOKEN` | facoltativa: con un **Vercel Blob** store collegato al progetto (Vercel la imposta da sola) le foto nuove vanno lì invece che nel database. Per spostare quelle già nel database: `npm run admin -- foto-su-blob --si`. Vedi [Foto](#foto). |
 | `PUBLIC_RECIPES` | facoltativa: `1` accende la parte pubblica delle ricette (Scopri, preferite, Ricettari, pagine web). Spenta se manca. |
-| `ADMIN_EMAILS` | facoltativa: email (separate da virgola) degli amministratori della piattaforma, che vedono *Altro → Segnalazioni* e possono nascondere o ripristinare le ricette pubbliche segnalate. |
+| `ADMIN_EMAILS` | facoltativa: email (separate da virgola) degli amministratori della piattaforma, che vedono *Altro → Segnalazioni* (ricette pubbliche segnalate) e *Altro → Alimenti* (database degli alimenti). |
 | `APP_TIMEZONE` | facoltativa, default `Europe/Rome`: fuso usato per "oggi" e "domani" nelle scadenze |
 
 Sul server locale le chiavi VAPID, se mancano, vengono create e salvate in `data/vapid.json`, e i promemoria partono ogni ora.
@@ -417,6 +419,7 @@ lib/members.js         membri: chiavi di gruppo, ruoli, richieste, inviti, prese
 lib/notify.js          avvisi, notifiche push (Web Push), promemoria delle scadenze
 lib/events.js          eventi, risposte con ospiti, liste collegate, promemoria del giorno prima
 lib/menu.js            menu "La faccio": ricette da preparare e scelte Ce l'ho / Da comprare
+lib/foods.js           database degli alimenti: correzioni degli amministratori, nomi non riconosciuti, segnalazioni
 lib/pubrecipes.js      ricette pubbliche: visibilità, firma, ricerca, preferite, segnalazioni
 lib/pages.js           pagine web delle ricette e dei ricettari, sitemap.xml, robots.txt
 lib/photos.js          foto delle ricette: nel database o su Vercel Blob
@@ -440,6 +443,7 @@ public/js/discover.js  Scopri, preferite, ricette pubbliche di altri, firma, seg
 public/js/import.js    importazione di ricette da file JSON
 public/foods-lib.js    database degli alimenti: riconoscimento dei nomi, grammi, valori per porzione (client e server)
 public/foods.json      il database degli alimenti (generato da scripts/foods/)
+public/js/foodsadmin.js  segnalazioni sugli alimenti e gestione per gli amministratori (Altro → Alimenti)
 public/js/trips.js     storico delle spese
 public/js/overview.js  panoramica di tutti i gruppi, avvisi, notifiche push
 public/js/events.js    eventi: elenco, calendario, risposte, liste dell'evento, .ics

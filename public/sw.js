@@ -12,7 +12,7 @@ const VERSION = self.SPORTA_VERSION || 'dev';
 const CACHE = 'sporta-' + VERSION;
 const PHOTOS = 'sporta-photos';
 const SHELL = ['/index.html', '/version.js', '/styles.css', '/shared.js', '/foods-lib.js', '/foods.json', '/js/icons.js', '/js/core.js', '/js/lists.js', '/js/listtypes.js', '/js/members.js', '/js/account.js', '/js/altcha-worker.js',
-  '/js/recipes.js', '/js/cook.js', '/js/discover.js', '/js/import.js', '/js/trips.js', '/js/events.js', '/js/invite.js', '/js/share.js', '/js/overview.js', '/js/webmcp.js', '/js/settings.js', '/manifest.webmanifest',
+  '/js/recipes.js', '/js/cook.js', '/js/discover.js', '/js/foodsadmin.js', '/js/import.js', '/js/trips.js', '/js/events.js', '/js/invite.js', '/js/share.js', '/js/overview.js', '/js/webmcp.js', '/js/settings.js', '/manifest.webmanifest',
   '/termini.html', '/privacy.html', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 // Cache delle prime versioni, che non sapevano mostrare l'avviso di aggiornamento.

@@ -30,6 +30,7 @@ Views.settings = {
       </div>` : ''}
       <button type="button" class="card link-card" id="imp-card">${iconTile('book')}<span class="t"><b>Importa ricette</b><span>Da un file JSON${isCookbook() ? ': diventano pubbliche nel ricettario' : ''}</span></span><span class="chev">›</span></button>
       ${st.platformAdmin ? `<a class="card link-card" href="#/admin/gruppi">${iconTile('home')}<span class="t"><b>Gruppi di sistema</b><span>Gruppi senza proprietario e token per gli script (solo amministratori)</span></span><span class="chev">›</span></a>` : ''}
+      ${st.platformAdmin ? `<a class="card link-card" href="#/admin/alimenti">${iconTile('note')}<span class="t"><b>Alimenti</b><span>Database di calorie e valori: correzioni, nomi da riconoscere, segnalazioni (solo amministratori)</span></span><span class="chev">›</span></a>` : ''}
       ${st.platformAdmin ? `<a class="card link-card" href="#/admin">${iconTile('note')}<span class="t"><b>Segnalazioni</b><span>Ricette pubbliche segnalate (solo amministratori)</span></span><span class="chev">›</span></a>` : ''}
       <div class="card" id="inv-card"><h3>Invita</h3>
         <p id="inv-p"></p>

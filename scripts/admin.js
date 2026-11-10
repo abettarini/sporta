@@ -10,6 +10,9 @@
                                                            preferite e voci del menu "La faccio")
    node scripts/admin.js rendi-private <gruppo|--tutti> [--si]
                                                            toglie la pubblicazione alle ricette
+   node scripts/admin.js foto                              quante foto e quanto spazio (database / Blob store)
+   node scripts/admin.js foto-su-blob [--si]               sposta sul Blob store di Vercel le foto ancora nel
+                                                           database (serve BLOB_READ_WRITE_TOKEN)
 
    <gruppo>: identificativo (anche solo le prime 8 cifre), codice d'invito o nome esatto.
    Senza --si i comandi che cambiano i dati mostrano solo cosa farebbero.
@@ -17,6 +20,7 @@
 
 // Il database prepara da solo schema e migrazioni alla prima query.
 const { createDb, createRealtime } = require('../lib/backends');
+const { createPhotos, blobOn, pathOf, putOptions } = require('../lib/photos');
 
 const args = process.argv.slice(2);
 const flags = new Set(args.filter((a) => a.startsWith('--')));
@@ -79,9 +83,10 @@ async function deleteRecipes(db, key, onlyPublic) {
   if (rows.length > 10) console.log(`  … e altre ${rows.length - 10}`);
   if (!yes) { console.log('\nNon ho cancellato nulla: aggiungi --si per procedere.'); return; }
   let n = 0;
+  const photos = createPhotos({ db });
   for (const r of rows) {
-    await db.run('DELETE FROM photos WHERE recipe_id = ?', [r.id]);
-    for (const p of parseJson(r.photos, [])) await db.run('DELETE FROM photos WHERE id = ?', [p]);
+    const ids = (await db.all('SELECT id FROM photos WHERE recipe_id = ?', [r.id])).map((x) => x.id);
+    await photos.remove([...ids, ...parseJson(r.photos, [])]); // anche i file sul Blob store
     await db.run('DELETE FROM recipe_bookmarks WHERE recipe_id = ?', [r.id]);
     await db.run('DELETE FROM menu_entries WHERE recipe_id = ?', [r.id]);
     await db.run('DELETE FROM recipes WHERE id = ?', [r.id]);
@@ -108,6 +113,43 @@ async function unpublish(db, key, all) {
   console.log(`Rese private ${n} ricette.`);
 }
 
+const mb = (n) => `${(Number(n || 0) / 1048576).toFixed(1)} MB`;
+async function photoStats(db) {
+  const tot = await db.get(`SELECT COUNT(*) AS n,
+      SUM(CASE WHEN url <> '' THEN 1 ELSE 0 END) AS blob,
+      SUM(CASE WHEN url = '' THEN COALESCE(size, length(data)) ELSE 0 END) AS db_bytes,
+      SUM(CASE WHEN url <> '' THEN COALESCE(size, 0) ELSE 0 END) AS blob_bytes FROM photos`, []);
+  console.log(`Foto: ${tot.n} · nel database ${Number(tot.n) - Number(tot.blob || 0)} (${mb(tot.db_bytes)}) · sul Blob store ${Number(tot.blob || 0)} (${mb(tot.blob_bytes)})`);
+  console.log(`Blob store: ${blobOn() ? 'configurato (BLOB_READ_WRITE_TOKEN)' : 'non configurato'}\n`);
+  const rows = await db.all(`SELECT h.name, h.id, COUNT(p.id) AS n, SUM(COALESCE(p.size, length(p.data))) AS bytes
+    FROM photos p JOIN households h ON h.id = p.household_id GROUP BY h.id, h.name ORDER BY bytes DESC LIMIT 20`, []);
+  for (const r of rows) console.log(`${pad(r.id.slice(0, 8), 10)}${pad(r.name, 32)}${pad(r.n + ' foto', 12)}${mb(r.bytes)}`);
+}
+
+async function photosToBlob(db) {
+  if (!blobOn()) throw new Error('Manca BLOB_READ_WRITE_TOKEN (lo trovi su Vercel → Storage → il Blob store → .env.local)');
+  const rows = await db.all(`SELECT id, household_id, mime, length(data) AS bytes FROM photos WHERE url = ''`, []);
+  const bytes = rows.reduce((s, r) => s + Number(r.bytes || 0), 0);
+  console.log(`${rows.length} foto nel database (${mb(bytes)}) da spostare sul Blob store.`);
+  if (!rows.length) return;
+  if (!yes) { console.log('\nNon ho spostato nulla: aggiungi --si per procedere.'); return; }
+  const { put } = require('@vercel/blob');
+  let n = 0, failed = 0;
+  for (const r of rows) {
+    try {
+      const p = await db.get('SELECT data FROM photos WHERE id = ?', [r.id]);
+      const data = Buffer.from(p.data);
+      const res = await put(pathOf(r.household_id, r.id, r.mime), data, putOptions(r.mime));
+      // Prima l'indirizzo, poi si libera lo spazio: se qualcosa si interrompe la foto resta leggibile.
+      await db.run('UPDATE photos SET url = ?, size = ? WHERE id = ?', [res.url, data.length, r.id]);
+      await db.run('UPDATE photos SET data = ? WHERE id = ?', [Buffer.alloc(0), r.id]);
+      if (++n % 25 === 0) console.log(`  ${n}/${rows.length}…`);
+    } catch (e) { failed++; console.log(`  foto ${r.id} non spostata: ${e.message}`); }
+  }
+  console.log(`Spostate ${n} foto${failed ? `, ${failed} non riuscite (rilancia il comando per riprovare)` : ''}.`);
+  if (db.kind === 'postgres') console.log('Su Postgres lo spazio liberato torna disponibile dopo il VACUUM automatico.');
+}
+
 async function main() {
   const db = createDb();
   try {
@@ -115,6 +157,8 @@ async function main() {
     else if (cmd === 'ricette') await recipes(db, rest[0]);
     else if (cmd === 'cancella-ricette') await deleteRecipes(db, rest[0], flags.has('--pubbliche'));
     else if (cmd === 'rendi-private') await unpublish(db, rest[0], flags.has('--tutti'));
+    else if (cmd === 'foto') await photoStats(db);
+    else if (cmd === 'foto-su-blob') await photosToBlob(db);
     else {
       console.log(require('fs').readFileSync(__filename, 'utf8').split('*/')[0].replace(/^[\s\S]*?\/\*/, '').replace(/^ {3}/gm, ''));
       process.exitCode = cmd ? 1 : 0;

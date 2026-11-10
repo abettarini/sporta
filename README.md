@@ -166,6 +166,7 @@ Ogni 4 minuti circa la funzione chiude la connessione per rispettare i limiti di
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | chiavi per le notifiche push: si generano una volta con `npm run vapid` (la privata è **riservata**). Senza, l'app funziona e non offre le notifiche. |
 | `VAPID_SUBJECT` | contatto per i servizi push, `mailto:…` o `https://…` (default: `APP_URL`) |
 | `CRON_SECRET` | segreto del cron dei promemoria: Vercel lo manda da solo a `/api/cron/reminders` (vedi `crons` in `vercel.json`, una volta al giorno) |
+| `BLOB_READ_WRITE_TOKEN` | facoltativa: con un **Vercel Blob** store collegato al progetto (Vercel la imposta da sola) le foto nuove vanno lì invece che nel database. Per spostare quelle già nel database: `npm run admin -- foto-su-blob --si`. Vedi [Foto](#foto). |
 | `PUBLIC_RECIPES` | facoltativa: `1` accende la parte pubblica delle ricette (Scopri, preferite, Ricettari, pagine web). Spenta se manca. |
 | `ADMIN_EMAILS` | facoltativa: email (separate da virgola) degli amministratori della piattaforma, che vedono *Altro → Segnalazioni* e possono nascondere o ripristinare le ricette pubbliche segnalate. |
 | `APP_TIMEZONE` | facoltativa, default `Europe/Rome`: fuso usato per "oggi" e "domani" nelle scadenze |
@@ -278,6 +279,15 @@ Sporta espone i suoi strumenti agli agenti AI del browser tramite [WebMCP](https
 
 Gli strumenti usano le stesse funzioni dell'interfaccia: le modifiche passano dalla coda offline e arrivano in tempo reale a tutto il gruppo.
 
+## Foto
+
+Le foto delle ricette vengono ridimensionate nel browser (lato lungo 1600 px, JPEG) e caricate dal server. Dove finiscono dipende da `BLOB_READ_WRITE_TOKEN`:
+
+- **senza**: nel database (tabella `photos`), come all'inizio;
+- **con un Vercel Blob store** (*Storage → Create → Blob* nel progetto su Vercel, accesso pubblico): il file va in `photos/<gruppo>/<id>.<ext>` sul Blob store e nel database resta solo una riga con l'indirizzo.
+
+L'app usa sempre `/api/photos/<id>`: per le foto sul Blob store il server risponde con un reindirizzamento, quindi link e pagine già esistenti continuano a funzionare e le due modalità convivono. Il service worker le tiene in cache per l'uso offline. Togliere una foto da una ricetta, eliminare la ricetta o il gruppo, eliminare l'account o usare `cancella-ricette` cancella anche il file sul Blob store; le ricette copiate in un altro gruppo hanno una copia propria del file. Per provare in locale con lo stesso store basta mettere il token nell'ambiente (`vercel env pull` o copiandolo dal pannello).
+
 ## Amministrazione da riga di comando
 
 `scripts/admin.js` lavora direttamente sul database configurato (`DATABASE_URL`/`POSTGRES_URL`, altrimenti SQLite in `DATA_DIR`). Per il database su Neon basta lanciarlo con la stessa `DATABASE_URL` di Vercel.
@@ -304,6 +314,8 @@ npm run admin -- rendi-private --tutti --si
 | `ricette <gruppo>` | le ricette di un gruppo |
 | `cancella-ricette <gruppo> [--pubbliche]` | cancella le ricette del gruppo (o solo le pubbliche), con foto, preferite e voci del menu "La faccio" |
 | `rendi-private <gruppo> \| --tutti` | toglie la pubblicazione |
+| `foto` | quante foto ci sono e quanto spazio occupano, nel database e sul Blob store, con i gruppi che ne hanno di più |
+| `foto-su-blob` | sposta sul Blob store le foto ancora nel database (serve `BLOB_READ_WRITE_TOKEN`); si può rilanciare se si interrompe |
 
 `<gruppo>` è l'identificativo (bastano le prime 8 cifre), il codice d'invito o il nome esatto; se il nome corrisponde a più gruppi lo script li elenca e si ferma. Senza `--si` i comandi che cambiano i dati mostrano solo cosa farebbero. Su Postgres le app aperte ricaricano i dati da sole.
 

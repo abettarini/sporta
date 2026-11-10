@@ -88,7 +88,10 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(caches.open(PHOTOS).then(async (cache) => {
       const hit = await cache.match(e.request);
       if (hit) return hit;
-      const res = await fetch(e.request);
+      // Le foto sul Blob store arrivano con un reindirizzamento a un altro dominio: in modalità CORS la
+      // risposta è leggibile e si può tenere per l'uso offline; se il CORS non va, si mostra senza cache.
+      let res = await fetch(e.request.url, { mode: 'cors', credentials: 'omit' }).catch(() => null);
+      if (!res || !res.ok) res = await fetch(e.request);
       if (res.ok) cache.put(e.request, res.clone());
       return res;
     }).catch(offline));

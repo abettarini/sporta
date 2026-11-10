@@ -1,6 +1,6 @@
 {
   "name": "sporta",
-  "version": "3.19.0",
+  "version": "3.20.0",
   "description": "Sporta: PWA lista della spesa condivisa in tempo reale, con ricette",
   "main": "server.js",
   "private": true,
@@ -21,6 +21,7 @@
     "admin": "node --no-warnings scripts/admin.js"
   },
   "dependencies": {
+    "@vercel/blob": "2.8.2",
     "altcha-lib": "2.8.0",
     "postgres": "3.4.5",
     "web-push": "3.6.7"

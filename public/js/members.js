@@ -77,9 +77,10 @@ async function createGroup(name, alias, acceptTerms, extra = {}) {
 
 // --------------------------------------------------------------- campi per presentarsi
 // Nome (con controllo che sia libero), relazione e, se serve l'approvazione, email e messaggio.
-function presentFieldsHtml({ approval, relation, fixedRelation }) {
+// alias: nome proposto (per esempio quello scritto da chi ha fatto l'invito); si può cambiare.
+function presentFieldsHtml({ approval, relation, fixedRelation, alias }) {
   return `<label class="field"><span>Come ti chiami?</span>
-      <input class="input" name="alias" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h(st.member || ls.get('member') || '')}">
+      <input class="input" name="alias" required maxlength="40" autocomplete="given-name" placeholder="es. Marco" value="${h(alias || st.member || ls.get('member') || '')}">
       <span class="hint alias-hint"></span></label>
     ${fixedRelation ? '' : `<div class="field"><span>Chi sei per il gruppo?</span>${relationPicker('relation', relation || '')}</div>`}
     ${approval ? `<label class="field"><span>Messaggio per gli amministratori (facoltativo)</span><textarea class="input" name="message" rows="2" maxlength="300" placeholder="es. Ciao, sono Luca, il cugino di Giulia"></textarea></label>` : ''}`;
@@ -253,7 +254,7 @@ Views.welcome = {
       const label = needCode ? 'Invia il codice' : !inv && this.approval ? 'Invia richiesta' : 'Entra nel gruppo';
       body = `${this.fromLink || inv ? '' : back('code')}${this.fromLink || inv ? '' : dots(2)}
         <div class="invite-card">${groupAvatar(this.group)}${sub}<b>${h(this.group)}</b>${extra}</div>
-        <form id="w-alias-f">${presentFieldsHtml({ approval: !inv && this.approval, fixedRelation: !!inv })}${mail}
+        <form id="w-alias-f">${presentFieldsHtml({ approval: !inv && this.approval, fixedRelation: !!inv, alias: inv && inv.name })}${mail}
           ${needTerms() ? termsCheckHtml() : ''}
           ${err}<button class="btn primary block lg">${label}</button></form>
         ${this.fromLink || inv ? `<button class="btn ghost block" data-to="code" style="margin-top:8px">Non è il tuo invito? Inserisci un codice</button>` : ''}`;
@@ -436,7 +437,7 @@ function joinGroupSheet(prefill) {
       const askMore = !invite && approval;
       body.innerHTML = `<div class="invite-head">${groupAvatar(name)}<div><small>${invite ? h((info.invited_by || 'Qualcuno') + ' ti invita nel gruppo') : 'Entra nel gruppo'}</small><b>${h(name)}</b>
           ${askMore ? '<small>Un amministratore dovrà accettarti</small>' : ''}</div></div>
-        <form id="jg2">${presentFieldsHtml({ approval: askMore, fixedRelation: !!invite })}
+        <form id="jg2">${presentFieldsHtml({ approval: askMore, fixedRelation: !!invite, alias: invite && info && info.name })}
         <p class="err" id="jg-err"></p>
         <div class="actions"><button type="button" class="btn" id="jg-back">Altro codice</button><button class="btn primary">${askMore ? 'Invia richiesta' : 'Entra nel gruppo'}</button></div></form>`;
       const f = $('#jg2', sh);
@@ -608,7 +609,7 @@ Views.members = {
 };
 
 function inviteRow(i) {
-  const who = i.email || 'Link condiviso';
+  const who = [i.name, i.email].filter(Boolean).join(' · ') || 'Link condiviso';
   const days = Math.max(0, Math.ceil((i.expires_at - Date.now()) / 864e5));
   const sub = [relLabel(i.relation), i.role === 'admin' ? 'amministratore' : '', i.created_by ? 'da ' + i.created_by : '', fmtAgo(i.created_at),
     days <= 1 ? 'scade oggi' : `scade tra ${days} giorni`].filter(Boolean).join(' · ');
@@ -741,7 +742,9 @@ function inviteSheet() {
   };
   openSheet(`<h2>Invita in ${h(groupName())}</h2>
     ${isAdmin() && tokenFor(st.code) ? `<div class="opt on"><b>Link personale</b><small>Entra subito, senza approvazione. Vale per una persona e scade tra 7 giorni.</small>
-      <form id="iv"><div class="field" style="margin-bottom:8px">${relationPicker('relation', 'amico')}</div>
+      <form id="iv"><label class="field" style="margin-bottom:8px"><span>Nome (facoltativo)</span><input class="input" name="name" maxlength="40" autocomplete="off" placeholder="es. Marco">
+        <span class="hint">Chi apre l’invito lo trova già scritto e può cambiarlo.</span></label>
+      <div class="field" style="margin-bottom:8px">${relationPicker('relation', 'amico')}</div>
       <div class="field" style="margin-bottom:10px">${roleSeg('role', 'member')}</div>
       <div id="iv-out"></div><button class="btn primary block" id="iv-make">Crea link personale</button>
       ${serverConfig.email ? `<div class="or">oppure invialo per email</div>
@@ -760,20 +763,21 @@ function inviteSheet() {
       const email = $('#iv-email', sh).value.trim();
       if (!email) return $('#iv-email', sh).focus();
       send.disabled = true;
-      try { await api('POST', '/api/invites', { email, relation: f.elements.relation.value, role: f.elements.role.value }); toast(`Invito inviato a ${email}`); $('#iv-email', sh).value = ''; }
+      try { await api('POST', '/api/invites', { email, name: f.elements.name.value.trim(), relation: f.elements.relation.value, role: f.elements.role.value }); toast(`Invito inviato a ${email}`); $('#iv-email', sh).value = ''; f.elements.name.value = ''; }
       catch (x) { toast(x.message); }
       send.disabled = false;
     };
     f.onsubmit = async (e) => {
       e.preventDefault();
       try {
-        const j = await api('POST', '/api/invites', { relation: f.elements.relation.value, role: f.elements.role.value });
+        const j = await api('POST', '/api/invites', { name: f.elements.name.value.trim(), relation: f.elements.relation.value, role: f.elements.role.value });
         const url = `${location.origin}/?invite=${encodeURIComponent(j.token)}`;
         $('#iv-out', sh).innerHTML = `<div class="code small-code">${h(url)}</div>
           <div class="actions" style="margin-bottom:8px"><button type="button" class="btn" id="iv-c2">Copia</button><button type="button" class="btn primary" id="iv-s2">Condividi</button></div>`;
         $('#iv-make', sh).hidden = true;
         $('#iv-c2', sh).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('Link copiato'); } catch { prompt('Copia il link:', url); } };
-        $('#iv-s2', sh).onclick = () => share(url, `Ti invito nel gruppo "${groupName()}" su Sporta: apri il link e scrivi il tuo nome.`);
+        const who = f.elements.name.value.trim();
+        $('#iv-s2', sh).onclick = () => share(url, `${who ? `Ciao ${who}, t` : 'T'}i invito nel gruppo "${groupName()}" su Sporta: apri il link per entrare.`);
       } catch (x) { toast(x.message); }
     };
   });

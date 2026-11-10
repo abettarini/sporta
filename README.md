@@ -72,6 +72,14 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - **Concludi spesa** salva gli articoli presi nello storico, con data, chi l'ha fatta, negozio e totale (facoltativi), e li toglie dalla lista.
 - Nella scheda **Spese** lo storico è diviso per mese, con il totale mensile; da una spesa passata si possono **rimettere in lista** gli articoli scelti.
 
+
+### Alimenti e valori nutrizionali
+
+- **Database centrale degli alimenti** (`public/foods.json`, generato da `scripts/foods/`): circa 400 alimenti generici in italiano con varianti (latte → intero, scremato, senza lattosio…), circa 1.500 nomi alternativi (plurali, sinonimi, scritture diverse), reparto, peso medio di un pezzo, densità e valori per 100 g da **CIQUAL 2025 (ANSES)** e **USDA FoodData Central**. È unico per tutti i gruppi e funziona anche offline.
+- **Riconoscimento dei nomi**: "2 spicchi d'aglio", "parmigiano reggiano dop da grattugiare", "latte intero a temperatura ambiente", "uova medie" vengono ricondotti all'alimento giusto (aggiunte, misure, plurali). Sulle ricette reali riconosce circa il 98% degli ingredienti.
+- **Meno doppioni**: "uovo" e "uova" sono lo stesso articolo in lista (le quantità si sommano) e lo stesso prodotto nel catalogo; i suggerimenti mostrano anche i nomi del database ("zucch" → Zucchine); il reparto viene dal database.
+- **Valori per porzione** nella scheda della ricetta: kcal, proteine, carboidrati (zuccheri), grassi (saturi), fibre e sale, con la copertura ("calcolati su 9 ingredienti su 10"), gli ingredienti senza quantità esclusi, l'avviso quando un valore è stimato da un alimento simile e la citazione delle fonti. Sono indicativi e calcolati sugli ingredienti crudi.
+- Le caratteristiche suggerite (con carne, con pesce, vegetariana, vegana) usano il tipo degli alimenti del database.
 ### Ricette
 - Foto, descrizione, **difficoltà**, **tempi di preparazione e cottura**, ingredienti e **procedimento a passaggi** (riordinabili con drag & drop).
 - **Autocompletamento** degli ingredienti dal catalogo e dalle altre ricette; gli ingredienti nuovi entrano subito nei suggerimenti.
@@ -411,6 +419,7 @@ lib/events.js          eventi, risposte con ospiti, liste collegate, promemoria 
 lib/menu.js            menu "La faccio": ricette da preparare e scelte Ce l'ho / Da comprare
 lib/pubrecipes.js      ricette pubbliche: visibilità, firma, ricerca, preferite, segnalazioni
 lib/pages.js           pagine web delle ricette e dei ricettari, sitemap.xml, robots.txt
+lib/photos.js          foto delle ricette: nel database o su Vercel Blob
 lib/util.js            funzioni di supporto del server
 lib/backends.js        adattatori: SQLite o Postgres, tempo reale in memoria o LISTEN/NOTIFY
 lib/http.js            adattamento richiesta/risposta HTTP
@@ -429,6 +438,8 @@ public/js/recipes.js   ricette, foto, condivisione
 public/js/cook.js      "La faccio": menu condiviso e ingredienti da comprare
 public/js/discover.js  Scopri, preferite, ricette pubbliche di altri, firma, segnalazioni
 public/js/import.js    importazione di ricette da file JSON
+public/foods-lib.js    database degli alimenti: riconoscimento dei nomi, grammi, valori per porzione (client e server)
+public/foods.json      il database degli alimenti (generato da scripts/foods/)
 public/js/trips.js     storico delle spese
 public/js/overview.js  panoramica di tutti i gruppi, avvisi, notifiche push
 public/js/events.js    eventi: elenco, calendario, risposte, liste dell'evento, .ics

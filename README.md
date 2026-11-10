@@ -66,7 +66,7 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - **Nel carrello**: gli articoli spuntati scendono in fondo e mostrano chi li ha presi.
 
 ### Prodotti
-- Il **catalogo** si riempie da solo con quello che si aggiunge alle liste e alle ricette. Da *Altro → Prodotti* si impostano reparto, tag, quantità e marca abituali e la ★.
+- Il **catalogo** si riempie da solo con quello che si aggiunge alle liste e alle ricette. Da *Altro → Prodotti* si impostano reparto, tag, quantità e marca abituali e la ★. Il **nome** di un prodotto si può correggere (per esempio "Hamburge" → "Hamburger"): l'app propone di correggerlo anche negli articoli delle liste e negli ingredienti delle ricette del gruppo, e se il nome giusto è già nel catalogo i due prodotti si uniscono.
 
 ### Spese
 - **Concludi spesa** salva gli articoli presi nello storico, con data, chi l'ha fatta, negozio e totale (facoltativi), e li toglie dalla lista.

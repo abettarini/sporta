@@ -595,12 +595,20 @@ Views.products = {
   },
 };
 
+// Quante volte un prodotto compare negli articoli delle liste e negli ingredienti delle ricette del gruppo.
+function productUses(key) {
+  const items = [...st.items.values()].filter((i) => S.normName(i.name) === key).length;
+  const recipes = [...st.recipes.values()].filter((r) => (r.ingredients || []).some((i) => S.normName(i.name) === key)).length;
+  return { items, recipes };
+}
+
 function productSheet(p) {
   const isNew = !p;
   p = p || { key: '', name: '', unit: '', brand: '', department: '', tags: [], favorite: false, qty: null };
   openSheet(`<h2>${isNew ? 'Nuovo prodotto' : h(p.name)}</h2>
     <form id="pf">
-      ${isNew ? `<label class="field"><span>Nome</span><input class="input" name="pname" required maxlength="120"></label>` : ''}
+      <label class="field"><span>Nome</span><input class="input" name="pname" required maxlength="120" value="${h(p.name)}" autocomplete="off"></label>
+      ${isNew ? '' : `<label class="switch" id="pren" hidden><input type="checkbox" name="everywhere" checked><span id="pren-t"></span></label>`}
       <div class="row">
         <label class="field"><span>Quantità abituale</span><input class="input" name="qty" inputmode="decimal" placeholder="—" value="${h(S.fmtNum(p.qty))}"></label>
         <label class="field narrow"><span>Unità</span><select class="input" name="unit">${unitOptions(p.unit)}</select></label>
@@ -620,15 +628,37 @@ function productSheet(p) {
       const n = f.elements.pname;
       setTimeout(() => n.focus(), 50);
       n.addEventListener('change', () => { if (!f.elements.department.value) setDept(S.guessDepartment(n.value)); });
+    } else {
+      // Nome cambiato (es. un errore di battitura): si propone di correggerlo anche in liste e ricette.
+      const uses = productUses(p.key);
+      f.elements.pname.addEventListener('input', () => {
+        const v = f.elements.pname.value.trim();
+        const changed = v && v !== p.name;
+        $('#pren', sh).hidden = !changed || !(uses.items + uses.recipes);
+        const where = [uses.items && `${uses.items} ${uses.items === 1 ? 'articolo' : 'articoli'}`, uses.recipes && `${uses.recipes} ${uses.recipes === 1 ? 'ricetta' : 'ricette'}`].filter(Boolean).join(' e ');
+        const other = st.products.get(S.normName(v));
+        const merge = other && other.key !== p.key ? `si unisce a “${other.name}”, già nel catalogo` : '';
+        $('#pren-t', sh).textContent = [where && `Correggi anche in ${where}`, merge && (where ? merge : merge.charAt(0).toUpperCase() + merge.slice(1))].filter(Boolean).join(' · ');
+        const box = f.elements.everywhere;
+        box.hidden = !where; // senza articoli o ricette da correggere resta solo l'avviso dell'unione
+        $('#pren', sh).hidden = !changed || !(where || merge);
+      });
     }
     const values = () => {
       const el = f.elements;
       return { qty: S.parseNum(el.qty.value), unit: el.unit.value, brand: el.brand.value.trim(), department: el.department.value, tags: parseTags(el.tags.value), favorite: el.favorite.checked, pantry: el.pantry.checked };
     };
-    f.onsubmit = (e) => {
+    f.onsubmit = async (e) => {
       e.preventDefault();
-      const name = isNew ? f.elements.pname.value.trim() : p.name;
+      const name = f.elements.pname.value.trim();
       if (!name) return;
+      if (!isNew && name !== p.name) {
+        // Rinomina sul server (serve la rete): catalogo, e se richiesto articoli e ricette.
+        const everywhere = !!(f.elements.everywhere && f.elements.everywhere.checked);
+        try { await api('POST', '/api/products/rename', { from: p.key, to: name, everywhere }); }
+        catch (err) { return toast(err.message); }
+        toast(`“${p.name}” ora è “${name}”`);
+      }
       enqueue({ k: 'product.put', id: S.normName(name), data: { name, ...values() } }, { silent: true });
       closeSheet();
     };

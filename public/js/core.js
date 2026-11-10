@@ -115,6 +115,8 @@ const groupOf = (code) => st.groups.find((g) => g.code === code);
 // Gruppo personale: solo tuo, niente membri, inviti, presenza o assegnazioni.
 // Una ricetta usabile da questo gruppo: sua, pubblica nel menu, tra le preferite o già aperta.
 const recipeById = (id) => st.recipes.get(id) || st.menuRecipes.get(id) || ((st.bookmarks.get(id) || {}).recipe) || (typeof pubCache !== 'undefined' && pubCache.get(id)) || null;
+// Parte pubblica delle ricette (Scopri, preferite, Ricettari, pagine web): decisa dal server (PUBLIC_RECIPES).
+const publicOn = () => !!(st.features && st.features.public_recipes);
 // Ricettario: un gruppo di sole ricette, tutte pubbliche e firmate con il suo nome.
 const isCookbook = (code = st.code) => ((groupOf(code) || {}).kind || (code === st.code && st.household && st.household.kind)) === 'cookbook';
 const isPersonal = (code = st.code) => !!((groupOf(code) || {}).personal || (code === st.code && st.household && st.household.personal));
@@ -143,6 +145,7 @@ function setState(j) {
   st.bookmarks = new Map((j.bookmarks || []).map((x) => [x.recipe_id, x]));
   st.me = j.me || null;
   st.platformAdmin = !!j.platform_admin;
+  st.features = j.features || {};
   st.members = new Map((j.members || []).map((x) => [x.id, x]));
   // Aggiorna i dati del gruppo salvati sul telefono.
   const g = groupOf(st.code);
@@ -169,7 +172,7 @@ function writeCache() {
     household: st.household, lists: [...st.lists.values()], items: [...st.items.values()],
     recipes: [...st.recipes.values()], products: [...st.products.values()], trips: [...st.trips.values()],
     events: [...st.events.values()], menu: { entries: [...st.menuEntries.values()], marks: [...st.menuMarks.values()], recipes: [...st.menuRecipes.values()] },
-    bookmarks: [...st.bookmarks.values()], platform_admin: st.platformAdmin, me: st.me, members: [...st.members.values()],
+    bookmarks: [...st.bookmarks.values()], platform_admin: st.platformAdmin, features: st.features, me: st.me, members: [...st.members.values()],
   });
 }
 function saveCache() {
@@ -999,6 +1002,8 @@ function mount() {
     view = Views.shareIn; r.name = 'shareIn';
   }
   if (view === Views.members && isPersonal()) { history.replaceState(null, '', '#/s'); view = Views.settings; }
+  // Parte pubblica spenta: Scopri, preferite e ricette di altri gruppi portano alle ricette del gruppo.
+  if (!publicOn() && [Views.discover, Views.favorites, Views.pubRecipe].includes(view)) { history.replaceState(null, '', '#/r'); view = Views.recipes; }
   // Un ricettario ha solo ricette: liste, eventi e spese portano alle ricette.
   if (isCookbook() && [Views.lists, Views.list, Views.events, Views.event, Views.trips, Views.trip, Views.cook].includes(view)) { history.replaceState(null, '', '#/r'); view = Views.recipes; }
   // Con la colonna laterale l'elenco delle liste coincide con l'ultima lista aperta.

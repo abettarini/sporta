@@ -378,9 +378,9 @@ function newGroupSheet() {
   if (!acct) { toast('Prima conferma la tua email'); return confirmEmailSheet(); }
   openSheet(`<h2>Nuovo gruppo</h2>
     <p class="muted">Una famiglia, la squadra di calcetto, una festa… Ne sarai l'amministratore.</p>
-    <form id="ng"><div class="kind-pick">
+    <form id="ng"><div class="kind-pick" ${publicOn() ? '' : 'hidden'}>
       <label class="radio-row"><input type="radio" name="kind" value="group" checked><span><b>Gruppo</b><small>Liste, eventi e ricette con le persone che inviti.</small></span></label>
-      <label class="radio-row"><input type="radio" name="kind" value="cookbook"><span><b>${icon('book')} Ricettario</b><small>Solo ricette, tutte pubbliche, firmate con il nome del ricettario e con una pagina web.</small></span></label></div>
+      <label class="radio-row" ${publicOn() ? '' : 'hidden'}><input type="radio" name="kind" value="cookbook"><span><b>${icon('book')} Ricettario</b><small>Solo ricette, tutte pubbliche, firmate con il nome del ricettario e con una pagina web.</small></span></label></div>
     <label class="field"><span id="ng-l">Nome del gruppo</span><input class="input" name="gname" required maxlength="80" placeholder="es. Calcetto del giovedì"></label>
     <label class="field" id="ng-desc" hidden><span>Descrizione (facoltativa)</span><textarea class="input" name="description" rows="2" maxlength="500" placeholder="es. Le ricette di base, provate in cucina"></textarea></label>
     <label class="field"><span>Il tuo nome in questo gruppo</span><input class="input" name="alias" required maxlength="40" value="${h(st.member || ls.get('member') || '')}"></label>

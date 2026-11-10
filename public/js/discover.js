@@ -5,10 +5,10 @@
 
 const REPORT_REASONS = [['spam', 'Pubblicità o spam'], ['offensiva', 'Contenuto offensivo'], ['copiata', 'Copiata senza permesso'], ['persone', 'Foto di persone'], ['altro', 'Altro']];
 
-const recipeTabs = (on) => `<div class="seg-tabs" role="tablist">
+const recipeTabs = (on) => (!publicOn() ? '' : `<div class="seg-tabs" role="tablist">
   <a href="#/r" class="${on === 'mine' ? 'on' : ''}" role="tab">Mie</a>
   <a href="#/r/preferite" class="${on === 'favorites' ? 'on' : ''}" role="tab">Preferite</a>
-  <a href="#/r/scopri" class="${on === 'discover' ? 'on' : ''}" role="tab">Scopri</a></div>`;
+  <a href="#/r/scopri" class="${on === 'discover' ? 'on' : ''}" role="tab">Scopri</a></div>`);
 
 // --------------------------------------------------------------- preferite
 const isFav = (id) => st.bookmarks.has(id);
@@ -435,7 +435,7 @@ Views.systemGroups = {
         <form id="sgf">
           <label class="field"><span>Nome</span><input class="input" name="name" maxlength="80" value="Ricette di Sporta" required></label>
           <label class="radio-row"><input type="radio" name="kind" value="group" checked><span><b>Gruppo privato per le prove</b><small>Le ricette restano private: le vedono solo i membri. È dove vanno le ricette scaricate da altri siti.</small></span></label>
-          <label class="radio-row"><input type="radio" name="kind" value="cookbook"><span><b>${icon('book')} Ricettario pubblico</b><small>Ricette pubbliche e sul web, firmate con il nome del gruppo. Solo per ricette vostre: lo script di scaricamento non ci scrive.</small></span></label>
+          <label class="radio-row" ${publicOn() ? '' : 'hidden'}><input type="radio" name="kind" value="cookbook"><span><b>${icon('book')} Ricettario pubblico</b><small>Ricette pubbliche e sul web, firmate con il nome del gruppo. Solo per ricette vostre: lo script di scaricamento non ci scrive.</small></span></label>
           <div class="actions"><button class="btn primary">Crea</button></div>
         </form></div></main>` + tabBar('settings');
     $('#sgf').onsubmit = async (e) => {

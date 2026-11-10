@@ -106,7 +106,7 @@ function recipesIn(j) {
 function parseImport(text) {
   let j;
   try { j = JSON.parse(text); } catch { throw new Error('Il file non è un JSON valido'); }
-  const cook = isCookbook();
+  const cook = isCookbook() && publicOn();
   const existing = new Set([...st.recipes.values()].map((r) => fold(r.name)));
   const items = recipesIn(j);
   if (!items.length) throw new Error('Nel file non ho trovato ricette');
@@ -122,7 +122,7 @@ function parseImport(text) {
     const steps = stepsOfImport(x.steps || x.recipeInstructions);
     const diff = { facile: 'facile', easy: 'facile', media: 'media', medium: 'media', difficile: 'difficile', hard: 'difficile' }[fold(x.difficulty)] || '';
     const description = String(x.description || '').trim().slice(0, 2000);
-    let visibility = cook ? 'public' : (x.visibility === 'public' || x.public === true ? 'public' : 'private');
+    let visibility = !publicOn() ? 'private' : cook ? 'public' : (x.visibility === 'public' || x.public === true ? 'public' : 'private');
     if (!ingredients.length) warn.push('nessun ingrediente');
     if (existing.has(fold(name))) warn.push('c’è già una ricetta con questo nome');
     // Foto dentro il file: "photos_data" (o "image") come data URL base64; gli indirizzi web non si scaricano.
@@ -154,13 +154,13 @@ function downloadExample() {
 }
 
 function importRecipesSheet() {
-  const cook = isCookbook();
+  const cook = isCookbook() && publicOn();
   openSheet(`<h2>Importa ricette</h2><div id="imp-body"></div>`, (sh) => {
     const body = $('#imp-body', sh);
     let items = [];
     const pick = () => {
       body.innerHTML = `<p class="muted">Scegli un file <b>.json</b> con una o più ricette (al massimo ${IMPORT_MAX}). Va bene il formato di Sporta (scarica l’esempio) e anche quello <i>schema.org/Recipe</i> usato da molti siti e programmi di ricette.</p>
-        <p class="muted">${cook ? `Nel ricettario le ricette diventano subito <b>pubbliche</b>, firmate “${h(groupName())}”.` : 'Le ricette importate restano <b>private</b>, salvo quelle con <code>"visibility": "public"</code> nel file.'} Le foto si importano solo se sono dentro il file (<code>photos_data</code>).</p>
+        <p class="muted">${cook ? `Nel ricettario le ricette diventano subito <b>pubbliche</b>, firmate “${h(groupName())}”.` : (publicOn() ? 'Le ricette importate restano <b>private</b>, salvo quelle con <code>"visibility": "public"</code> nel file.' : 'Le ricette importate sono visibili solo a questo gruppo.')} Le foto si importano solo se sono dentro il file (<code>photos_data</code>).</p>
         <input type="file" id="imp-file" accept=".json,application/json" hidden>
         <div class="actions"><button type="button" class="btn" id="imp-ex">Scarica un esempio</button><button type="button" class="btn primary" id="imp-pick">Scegli il file</button></div>
         <p class="err" id="imp-err"></p>`;
@@ -178,7 +178,7 @@ function importRecipesSheet() {
       body.innerHTML = `<p class="muted">${h(fname)}: ${items.length} ${items.length === 1 ? 'ricetta' : 'ricette'}${items.some((x) => !x.ok) ? `, ${items.filter((x) => !x.ok).length} da correggere` : ''}. Togli la spunta a quelle che non vuoi importare.</p>
         <ul class="items card imp-list">${items.map((x) => `<li class="item ${x.ok && x.on !== false ? 'done' : ''} ${x.ok ? '' : 'bad'}" data-k="${x.k}"><button class="tap" type="button" ${x.ok ? '' : 'disabled'}><span class="check">${I.check}</span>
           <span class="txt"><span class="name">${h(x.data.name || 'Senza nome')}</span>
-          <span class="meta">${[S.courseLabel(x.data.course), `${x.data.ingredients.length} ingredienti`, `${x.data.steps.length} passaggi`, x.photosData.length ? `${x.photosData.length} ${x.photosData.length === 1 ? 'foto' : 'foto'}` : '', x.data.visibility === 'public' ? 'pubblica' : 'privata'].filter(Boolean).join(' · ')}</span>
+          <span class="meta">${[S.courseLabel(x.data.course), `${x.data.ingredients.length} ingredienti`, `${x.data.steps.length} passaggi`, x.photosData.length ? `${x.photosData.length} ${x.photosData.length === 1 ? 'foto' : 'foto'}` : '', publicOn() ? (x.data.visibility === 'public' ? 'pubblica' : 'privata') : ''].filter(Boolean).join(' · ')}</span>
           ${[...x.err.map((e) => `<span class="imp-msg err">${h(e)}</span>`), ...x.warn.map((w) => `<span class="imp-msg">${h(w)}</span>`)].join('')}</span></button></li>`).join('')}</ul>
         <div class="actions"><button type="button" class="btn" id="imp-back">Altro file</button><button type="button" class="btn primary" id="imp-go" ${sel.length ? '' : 'disabled'}>Importa ${sel.length} ${sel.length === 1 ? 'ricetta' : 'ricette'}</button></div>`;
       $('.imp-list', sh).onclick = (e) => {

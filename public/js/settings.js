@@ -58,6 +58,7 @@ Views.settings = {
     if (cbSave) cbSave.onclick = async () => {
       try { await api('PATCH', '/api/household', { description: $('#cb-desc').value.trim() }); st.household.description = $('#cb-desc').value.trim(); toast('Descrizione salvata'); } catch (e) { toast(e.message); }
     };
+    if (!publicOn()) { const sr = document.querySelector('.sig-row'); if (sr) sr.hidden = true; const cb = $('#cb-card'); if (cb) cb.hidden = true; }
     if (isCookbook()) { const sr = document.querySelector('.sig-row'); if (sr) sr.hidden = true; document.querySelectorAll('a[href="#/p"], a[href="#/t"]').forEach((a) => { a.hidden = true; }); }
     // --- firma delle ricette pubbliche (per questo gruppo)
     const sigShow = () => { $('#sig-v').textContent = `“${authorLabel(myAuthor())}”${st.me && st.me.author_name != null ? '' : ' (proposta)'} · vale per le prossime pubblicazioni`; };

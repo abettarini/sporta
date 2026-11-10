@@ -76,6 +76,7 @@ Lista della spesa condivisa, installabile sul telefono come app (PWA) e aggiorna
 - Foto, descrizione, **difficoltà**, **tempi di preparazione e cottura**, ingredienti e **procedimento a passaggi** (riordinabili con drag & drop).
 - **Autocompletamento** degli ingredienti dal catalogo e dalle altre ricette; gli ingredienti nuovi entrano subito nei suggerimenti.
 - Si sceglie per quante persone cucinare: le quantità vengono ricalcolate e arrotondate in modo sensato (uova e pezzi interi, grammi a 5/10). Si deselezionano gli ingredienti già in casa e il resto va nella lista.
+- **Parte pubblica delle ricette (spenta per ora)**: tutto ciò che segue — ricette pubbliche, Scopri, preferite, Ricettari, pagine web — funziona solo con `PUBLIC_RECIPES=1`. Spenta (il default), le nuove ricette sono private, le schede Mie/Preferite/Scopri, la firma e il tipo Ricettario spariscono, ricerca, stelle e ricette di altri gruppi sono rifiutate anche dal server, le pagine `/ricetta/…` rispondono 404, la sitemap è vuota e `robots.txt` esclude tutto. Le ricette già pubbliche e le preferite restano nel database: riaccendendo la variabile torna tutto com'era (per toglierle davvero: `npm run admin -- rendi-private --tutti --si`).
 - **Ricette pubbliche e Scopri**: ogni ricetta è *privata* (solo il gruppo) o *pubblica* (la trovano tutti). Le ricette che esistevano prima restano private; per quelle nuove l'interruttore **Pubblica** parte attivo. Alla prima pubblicazione si sceglie la **firma** (proposta: "<nome> da <gruppo>", nel gruppo Personale solo il nome; oppure un altro nome o Anonimo), che si cambia da *Altro* e vale per le pubblicazioni successive. Ogni ricetta ha una **portata** e delle **caratteristiche** (vegetariana, vegana, con carne, con pesce, senza glutine, senza lattosio, veloce, per bambini, economica, light, da preparare prima, al forno): quelle calcolabili vengono suggerite dagli ingredienti e dai tempi e si confermano con un tocco.
 - In **Ricette → Scopri** si cerca tra le ricette pubbliche di tutti per nome o ingrediente, con filtri per portata, caratteristiche, ingredienti *con* (tutti) e *senza*, tempo massimo e ordine. Una ricetta di un altro gruppo si apre in sola lettura: si scelgono le persone, si mettono gli ingredienti in lista (nota "per <ricetta>"), si **salva una copia** (privata, con "Da una ricetta di …") o si **segnala**. Nei testi pubblici non sono ammessi link; al massimo 20 pubblicazioni al giorno per gruppo.
 - **Preferite**: la ★ su una ricetta pubblica (in Scopri o nella ricetta) la mette in *Ricette → Preferite*. Le preferite sono della persona, non del gruppo: si ritrovano in tutti i propri gruppi, si aprono anche senza rete e si usano in **La faccio** come le ricette proprie (il menu del gruppo porta con sé i dati della ricetta, così la vedono tutti i membri). Sono un riferimento all'originale: se l'autore la corregge si vede la versione nuova; se la rende privata o la elimina resta in fondo, grigia, con "non più disponibile" finché non la si toglie, ed esce dai menu degli altri gruppi. Le ricette pubbliche mostrano quante persone le hanno tra le preferite.
@@ -165,6 +166,7 @@ Ogni 4 minuti circa la funzione chiude la connessione per rispettare i limiti di
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | chiavi per le notifiche push: si generano una volta con `npm run vapid` (la privata è **riservata**). Senza, l'app funziona e non offre le notifiche. |
 | `VAPID_SUBJECT` | contatto per i servizi push, `mailto:…` o `https://…` (default: `APP_URL`) |
 | `CRON_SECRET` | segreto del cron dei promemoria: Vercel lo manda da solo a `/api/cron/reminders` (vedi `crons` in `vercel.json`, una volta al giorno) |
+| `PUBLIC_RECIPES` | facoltativa: `1` accende la parte pubblica delle ricette (Scopri, preferite, Ricettari, pagine web). Spenta se manca. |
 | `ADMIN_EMAILS` | facoltativa: email (separate da virgola) degli amministratori della piattaforma, che vedono *Altro → Segnalazioni* e possono nascondere o ripristinare le ricette pubbliche segnalate. |
 | `APP_TIMEZONE` | facoltativa, default `Europe/Rome`: fuso usato per "oggi" e "domani" nelle scadenze |
 
@@ -275,6 +277,35 @@ Sporta espone i suoi strumenti agli agenti AI del browser tramite [WebMCP](https
 | `sporta_create_list` | crea una lista |
 
 Gli strumenti usano le stesse funzioni dell'interfaccia: le modifiche passano dalla coda offline e arrivano in tempo reale a tutto il gruppo.
+
+## Amministrazione da riga di comando
+
+`scripts/admin.js` lavora direttamente sul database configurato (`DATABASE_URL`/`POSTGRES_URL`, altrimenti SQLite in `DATA_DIR`). Per il database su Neon basta lanciarlo con la stessa `DATABASE_URL` di Vercel.
+
+```bash
+npm run admin -- gruppi
+```
+
+```bash
+npm run admin -- ricette "Ricette di Sporta"
+```
+
+```bash
+npm run admin -- cancella-ricette "Ricette di Sporta" --si
+```
+
+```bash
+npm run admin -- rendi-private --tutti --si
+```
+
+| Comando | Cosa fa |
+|---|---|
+| `gruppi [testo]` | elenco dei gruppi (identificativo, codice, nome, tipo, membri, ricette, pubbliche), filtrabile per nome |
+| `ricette <gruppo>` | le ricette di un gruppo |
+| `cancella-ricette <gruppo> [--pubbliche]` | cancella le ricette del gruppo (o solo le pubbliche), con foto, preferite e voci del menu "La faccio" |
+| `rendi-private <gruppo> \| --tutti` | toglie la pubblicazione |
+
+`<gruppo>` è l'identificativo (bastano le prime 8 cifre), il codice d'invito o il nome esatto; se il nome corrisponde a più gruppi lo script li elenca e si ferma. Senza `--si` i comandi che cambiano i dati mostrano solo cosa farebbero. Su Postgres le app aperte ricaricano i dati da sole.
 
 ## Importazione di ricette
 

@@ -268,15 +268,10 @@ Views.home = {
     const evs = groups.flatMap((grp) => upcomingEvents(grp.events || []).filter((e) => e.date <= limit).map((e) => ({ grp, e })))
       .sort((a, b) => a.e.date.localeCompare(b.e.date) || (a.e.time || '99').localeCompare(b.e.time || '99'));
 
-    // I quattro pulsanti.
-    const lateMine = mine.filter(({ i }) => S.fmtDue(i.due_date).state === 'late').length;
-    const nCards = st.cards ? st.cards.size : 0, nRecipes = st.recipes ? st.recipes.size : 0;
-    const tile = (href, ico, label, sub, cls = '') => `<a class="home-btn ${cls}" href="${href}">${iconTile(ico, 'lg')}<span class="t"><b>${label}</b><small>${sub}</small></span></a>`;
+    // I quattro pulsanti: solo dove portano.
+    const tile = (href, ico, label, color) => `<a class="home-btn" href="${href}" style="--hb:${color}">${icon(ico, 'hb-ico')}<b>${label}</b></a>`;
     const btns = `<nav class="home-btns" aria-label="Sezioni">
-      ${tile('#/l', 'cart', 'Liste', toBuy ? `${toBuy} da comprare` : mine.length ? `${mine.length} da fare` : 'Tutto a posto', toBuy || mine.length ? 'hot' : '')}
-      ${tile('#/e', 'party', 'Eventi', evs.length ? `${evs.length} in arrivo` : 'Nessuno in vista', evs.length ? 'hot' : '')}
-      ${tile('#/carte', 'card', 'Carte', nCards ? `${nCards} ${nCards === 1 ? 'carta' : 'carte'}` : 'Aggiungi la prima')}
-      ${tile('#/r', 'book', 'Ricette', nRecipes ? `${nRecipes} ${nRecipes === 1 ? 'ricetta' : 'ricette'}` : 'Aggiungi la prima')}
+      ${tile('#/l', 'cart', 'Liste', '#12a150')}${tile('#/e', 'party', 'Eventi', '#e0367f')}${tile('#/carte', 'card', 'Carte', '#1f6fe0')}${tile('#/r', 'book', 'Ricette', '#f07a12')}
     </nav>`;
 
     // Da comprare: solo le liste, con quante cose.
@@ -286,6 +281,7 @@ Views.home = {
 
     // Da fare per me (con la spunta), le prime 5.
     const key = 'todo';
+    const lateMine = mine.filter(({ i }) => S.fmtDue(i.due_date).state === 'late').length;
     const showMine = this.open.has(key) ? mine : mine.slice(0, 5);
     const todoHtml = mine.length ? `<section class="ov-sec"><div class="section-h"><span>Da fare per me</span><span>${mine.length}${lateMine ? ` · <b class="late">${lateMine} ${lateMine === 1 ? 'scaduta' : 'scadute'}</b>` : ''}</span></div>
       <ul class="ov-items card">${showMine.map(({ grp, l, i }) => ovItemRow(grp, l, i, { many, who: i.assigned_by && i.assigned_by !== grp.me ? 'da ' + memberName(grp, i.assigned_by) : '' })).join('')}</ul>

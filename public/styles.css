@@ -686,14 +686,16 @@ small.as { display: block; color: var(--muted); font-size: 13px; }
   .ov-cols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0 22px; align-items: start; }
 }
 /* Home: quattro pulsanti grandi, poi solo quello che c'è da fare (v3.28) */
-.home-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 4px 0 18px; }
-.home-btn { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 14px; min-height: 128px; padding: 16px;
-  background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); text-decoration: none; color: inherit; transition: transform .12s; }
-.home-btn:active { transform: scale(.97); }
-.home-btn .t b { display: block; font-size: 20px; letter-spacing: -.01em; }
-.home-btn .t small { color: var(--muted); font-size: 14px; }
-.home-btn.hot .t small { color: var(--accent); font-weight: 600; }
-@media (min-width: 760px) { .home-btns { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.home-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 4px 0 20px; }
+.home-btn { --hb: #12a150; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; aspect-ratio: 1 / .86;
+  border-radius: 26px; text-decoration: none; color: #fff; background: linear-gradient(150deg, color-mix(in srgb, var(--hb) 82%, #fff), var(--hb) 55%, color-mix(in srgb, var(--hb) 82%, #000));
+  box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--hb) 70%, transparent), inset 0 1px 0 rgba(255, 255, 255, .25); transition: transform .12s, box-shadow .12s; }
+.home-btn:active { transform: scale(.96); }
+.home-btn:hover { box-shadow: 0 14px 30px -10px color-mix(in srgb, var(--hb) 80%, transparent), inset 0 1px 0 rgba(255, 255, 255, .25); }
+.home-btn:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
+.home-btn .hb-ico { width: 46%; height: auto; max-width: 92px; stroke-width: 1.7; }
+.home-btn b { font-size: 21px; letter-spacing: -.01em; }
+@media (min-width: 760px) { .home-btns { grid-template-columns: repeat(4, minmax(0, 1fr)); } .home-btn { aspect-ratio: 1 / .8; } .home-btn .hb-ico { width: 40%; } }
 .ov-rows { padding: 4px 0; }
 .ov-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; text-decoration: none; color: inherit; }
 .ov-row + .ov-row { border-top: 1px solid var(--line); }

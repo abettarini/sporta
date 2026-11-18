@@ -761,11 +761,13 @@ function topBar(title, { back, right = '' } = {}) {
 // Barra di navigazione: in basso sul telefono, laterale su tablet e desktop (vedi CSS).
 function tabBar(active) {
   // data-badge: numero di richieste di accesso in attesa (solo per gli amministratori).
-  const t = (id, href, icon, label, cls = '', badge = false) => `<a href="${href}" class="${active === id ? 'on' : ''} ${cls}" title="${label}">${icon}<span>${label}</span>${badge === 'n' ? '<i class="tab-badge" data-nbadge hidden></i>' : badge ? '<i class="tab-badge" data-badge hidden></i>' : ''}</a>`;
+  // Le carte stanno in "Altro" sul telefono e hanno una voce propria nella barra laterale.
+  const on = (id, cls) => active === id || (active === 'cards' && id === 'settings' && cls === 'narrow-only');
+  const t = (id, href, icon, label, cls = '', badge = false) => `<a href="${href}" class="${on(id, cls) ? 'on' : ''} ${cls}" title="${label}">${icon}<span>${label}</span>${badge === 'n' ? '<i class="tab-badge" data-nbadge hidden></i>' : badge ? '<i class="tab-badge" data-badge hidden></i>' : ''}</a>`;
   const g = groupName();
   return `<nav class="tabs">
     <button type="button" class="nav-group wide-only" id="nav-grp" title="Cambia gruppo">${groupBadge(groupOf(st.code) || { name: g })}<span class="g-name">${h(g)}</span>${I.down}</button>
-    ${t('home', '#/', I.home, 'Panoramica', '', 'n')}${isCookbook() ? '' : t('lists', '#/l', I.cart, 'Liste') + t('events', '#/e', I.cal, 'Eventi')}${t('recipes', '#/r', I.book, 'Ricette')}${isCookbook() ? '' : t('trips', '#/t', I.receipt, 'Spese', 'wide-only')}
+    ${t('home', '#/', I.home, 'Panoramica', '', 'n')}${isCookbook() ? '' : t('lists', '#/l', I.cart, 'Liste') + t('events', '#/e', I.cal, 'Eventi')}${t('recipes', '#/r', I.book, 'Ricette')}${isCookbook() ? '' : t('cards', '#/carte', icon('card'), 'Carte', 'wide-only')}${isCookbook() ? '' : t('trips', '#/t', I.receipt, 'Spese', 'wide-only')}
     ${isCookbook() ? '' : t('products', '#/p', icon('tag'), 'Prodotti', 'wide-only')}${isPersonal() ? '' : t('members', '#/m', I.users, 'Membri', 'wide-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'narrow-only', true)}${t('settings', '#/s', I.gear, 'Altro', 'wide-only')}</nav>`;
 }
 

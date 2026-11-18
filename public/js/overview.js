@@ -179,7 +179,6 @@ async function markRead(code, ids) {
 }
 
 // --------------------------------------------------------------- panoramica
-const SHOP_PREVIEW = 6;
 
 function ovDueRank(i) {
   const d = S.fmtDue(i.due_date);
@@ -193,19 +192,6 @@ function ovItemRow(grp, list, i, { many, who }) {
     <button class="check-btn" data-act="check" aria-label="Fatto"><span class="check">${I.check}</span></button>
     <a class="txt" href="${goHref(grp, list && list.id, i.id)}"><span class="name">${h(i.name)}${q ? `<span class="qty">${h(q)}</span>` : ''}</span>${meta ? `<span class="meta">${meta}</span>` : ''}</a>
     ${dueChip(i.due_date)}</li>`;
-}
-
-function ovListSub(grp, l) {
-  if (grp.current) return listSummary(l);
-  const c = l.counts || { todo: 0, done: 0 };
-  const type = typeOf(l);
-  if (type === 'spesa') return { sub: c.todo ? `${c.todo} da prendere` : 'Tutto preso', badge: c.todo };
-  if (type === 'todo') {
-    const late = grp.items.filter((i) => i.list_id === l.id && S.fmtDue(i.due_date).state === 'late').length;
-    return { sub: (c.todo ? `${c.todo} da fare` : 'Tutto fatto') + (late ? ` · ${late} ${late === 1 ? 'scaduta' : 'scadute'}` : ''), badge: c.todo, late: !!late };
-  }
-  const n = c.todo + c.done;
-  return { sub: n ? `${n} ${n === 1 ? 'elemento' : 'elementi'}` : 'Vuota', badge: 0 };
 }
 
 Views.home = {

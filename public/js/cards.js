@@ -37,7 +37,7 @@ Views.cards = {
   mount() {
     loadChains();
     app.innerHTML = topBar('Carte', { back: '#/s', right: `<a class="icon-btn" href="#/carte/nuova" aria-label="Aggiungi una carta">${I.plus}</a>` })
-      + '<main class="wide cards-page"><div id="cards-body"></div></main>' + tabBar('settings');
+      + '<main class="wide cards-page"><div id="cards-body"></div></main>' + tabBar('cards');
     $('#cards-body').addEventListener('click', (e) => { const a = e.target.closest('[data-f]'); if (a) { e.preventDefault(); this.filter = a.dataset.f; this.update(); } });
     this.update();
   },
@@ -195,7 +195,7 @@ Views.cardEdit = {
     this.d = c ? { ...c } : { name: '', chain: '', color: '', format: '', code: '', holder: '', note: '', mine: false };
     this.step = c ? 'form' : 'scan';
     app.innerHTML = topBar(c ? 'Modifica carta' : 'Nuova carta', { back: c ? `#/carte/${c.id}` : '#/carte' })
-      + '<main class="wide card-edit"><div id="ce-body"></div></main>' + tabBar('settings');
+      + '<main class="wide card-edit"><div id="ce-body"></div></main>' + tabBar('cards');
     this.draw();
   },
   leave() { if (this.scanner) this.scanner.stop(); this.scanner = null; },

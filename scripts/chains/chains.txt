@@ -1,0 +1,61 @@
+# Catene per le carte fedeltà: id | nome | tipo | sito | ricerca su Wikimedia Commons (facoltativa)
+# tipo: spesa, casa, elettronica, persona, altro
+esselunga | Esselunga | spesa | esselunga.it |
+coop | Coop | spesa | e-coop.it | Coop Italia logo
+conad | Conad | spesa | conad.it |
+carrefour | Carrefour | spesa | carrefour.it | Carrefour logo
+lidl | Lidl | spesa | lidl.it | Lidl logo
+eurospin | Eurospin | spesa | eurospin.it |
+pam | Pam Panorama | spesa | pampanorama.it | Pam Panorama logo
+despar | Despar · Eurospar · Interspar | spesa | despar.it | Despar logo
+crai | Crai | spesa | crai-supermercati.it | Crai logo
+sigma | Sigma | spesa | supersigma.com | Sigma supermercati logo
+iper | Iper La grande i | spesa | iper.it | Iper la grande i logo
+bennet | Bennet | spesa | bennet.com | Bennet logo
+famila | Famila | spesa | famila.it | Famila logo
+penny | Penny | spesa | penny.it | Penny Market logo
+aldi | Aldi | spesa | aldi.it | Aldi Süd logo
+md | MD | spesa | mdspa.it | MD discount logo
+ins | In's Mercato | spesa | insmercato.it | In's Mercato logo
+todis | Todis | spesa | todis.it | Todis logo
+tigros | Tigros | spesa | tigros.it | Tigros logo
+basko | Basko | spesa | basko.it | Basko logo
+unes | Unes | spesa | unes.it | Unes logo
+gigante | Il Gigante | spesa | ilgigante.net | Il Gigante supermercati logo
+deco | Decò | spesa | supermercatideco.it | Decò supermercati logo
+sisa | Sisa | spesa | sisa.it | Sisa supermercati logo
+prix | Prix | spesa | prixquality.com | Prix Quality logo
+tuodi | Tuodì | spesa | tuodi.it | Tuodì logo
+naturasi | NaturaSì | spesa | naturasi.it | NaturaSì logo
+iperal | Iperal | spesa | iperal.it | Iperal logo
+gros | Gros | spesa | grosonline.it | Gros logo
+ikea | IKEA | casa | ikea.com | Ikea logo
+leroymerlin | Leroy Merlin | casa | leroymerlin.it | Leroy Merlin logo
+bricocenter | Brico Center | casa | bricocenter.it | Bricocenter logo
+obi | OBI | casa | obi-italia.it | OBI logo
+bricoman | Bricoman | casa | bricoman.it | Bricoman logo
+bricofer | Bricofer | casa | bricofer.it | Bricofer logo
+maisonsdumonde | Maisons du Monde | casa | maisonsdumonde.com | Maisons du Monde logo
+kasanova | Kasanova | casa | kasanova.com | Kasanova logo
+mediaworld | MediaWorld | elettronica | mediaworld.it | MediaWorld logo
+unieuro | Unieuro | elettronica | unieuro.it | Unieuro logo
+euronics | Euronics | elettronica | euronics.it | Euronics logo
+expert | Expert | elettronica | expert.it | Expert logo electronics
+trony | Trony | elettronica | trony.it | Trony logo
+acquaesapone | Acqua & Sapone | persona | acquaesapone.it | Acqua e Sapone logo
+tigota | Tigotà | persona | tigota.it | Tigotà logo
+douglas | Douglas | persona | douglas.it | Douglas Holding logo
+sephora | Sephora | persona | sephora.it | Sephora logo
+kiko | Kiko | persona | kikocosmetics.com | Kiko Milano logo
+caddys | Caddy's | persona | caddys.it | Caddy's logo
+pinalli | Pinalli | persona | pinalli.it | Pinalli logo
+decathlon | Decathlon | altro | decathlon.it | Decathlon logo
+ovs | OVS | altro | ovs.it | OVS logo
+coin | Coin | altro | coin.it | Coin grandi magazzini logo
+rinascente | Rinascente | altro | rinascente.it | Rinascente logo
+feltrinelli | Feltrinelli | altro | lafeltrinelli.it | La Feltrinelli logo
+mondadori | Mondadori | altro | mondadoristore.it | Mondadori Store logo
+giunti | Giunti al Punto | altro | giuntialpunto.it | Giunti al Punto logo
+arcaplanet | Arcaplanet | altro | arcaplanet.it | Arcaplanet logo
+isoladeitesori | Isola dei Tesori | altro | isoladeitesori.it | Isola dei Tesori logo
+benu | Benu Farmacia | altro | benufarmacia.it | Benu farmacia logo

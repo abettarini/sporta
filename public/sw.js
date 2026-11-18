@@ -12,7 +12,7 @@ const VERSION = self.SPORTA_VERSION || 'dev';
 const CACHE = 'sporta-' + VERSION;
 const PHOTOS = 'sporta-photos';
 const SHELL = ['/index.html', '/version.js', '/styles.css', '/shared.js', '/foods-lib.js', '/foods.json', '/js/icons.js', '/js/core.js', '/js/lists.js', '/js/listtypes.js', '/js/members.js', '/js/account.js', '/js/altcha-worker.js',
-  '/js/recipes.js', '/js/cook.js', '/js/discover.js', '/js/foodsadmin.js', '/js/import.js', '/js/trips.js', '/js/events.js', '/js/invite.js', '/js/share.js', '/js/overview.js', '/js/webmcp.js', '/js/settings.js', '/manifest.webmanifest',
+  '/js/recipes.js', '/js/cook.js', '/js/discover.js', '/js/foodsadmin.js', '/js/cards.js', '/barcode.js', '/vendor/qrcode-generator-2.0.4.js', '/chains/chains.json', '/js/import.js', '/js/trips.js', '/js/events.js', '/js/invite.js', '/js/share.js', '/js/overview.js', '/js/webmcp.js', '/js/settings.js', '/manifest.webmanifest',
   '/termini.html', '/privacy.html', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
 
 // Cache delle prime versioni, che non sapevano mostrare l'avviso di aggiornamento.
@@ -105,7 +105,12 @@ self.addEventListener('fetch', (e) => {
     const cache = await caches.open(CACHE);
     const hit = await cache.match(key);
     if (hit) return hit;
-    try { return await fetch(e.request); } catch {
+    try {
+      const res = await fetch(e.request);
+      // loghi delle catene e librerie: si tengono per l'uso offline (in cassa senza rete)
+      if (res.ok && /^\/(chains|vendor)\//.test(url.pathname)) cache.put(key, res.clone());
+      return res;
+    } catch {
       const any = key === '/index.html' ? await caches.match('/index.html') : await caches.match(key);
       return any || offline();
     }

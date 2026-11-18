@@ -47,6 +47,8 @@ const ICONS = {
   tag: '<path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.5 1.5 0 0 1 0 2.1l-6.1 6.1a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8" cy="8" r="1.4"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   dish: '<path d="M4 17a8 8 0 0 1 16 0"/><path d="M2.5 17h19"/><path d="M12 9V7.3M10.3 7.3h3.4"/><path d="M8 13.2c.7-1 1.6-1.6 2.6-1.9"/>',
+  card: '<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M6.5 9v6M9 9v6M11 9v6M14 9v6M17.5 9v6"/>',
+  scan: '<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M3 12h18"/>',
   star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
   starFill: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" fill="currentColor"/>',
 };
@@ -58,7 +60,7 @@ const ICON_COLORS = {
   persona: '#c45fa0', casa: '#2a9d8f', animali: '#a0703c', bimbi: '#e07a86', altro: '#7b8794',
   cart: '#1f8a5b', basket: '#1f8a5b', pharmacy: '#d0463f', home: '#4f86d6', ball: '#3d7a3f', party: '#d0569b',
   gift: '#c8504a', tree: '#2f8a4a', wine: '#8e3b5a', beer: '#cf9a12', cake: '#d0569b', tent: '#3d7a3f', leaf: '#3f9a4a',
-  todo: '#b7791f', book: '#2f6fb8', film: '#7a5fc4', note: '#66736c', star: '#cf9a12',
+  todo: '#b7791f', card: '#2f6fb8', book: '#2f6fb8', film: '#7a5fc4', note: '#66736c', star: '#cf9a12',
 };
 
 // Icone tra cui scegliere per una lista.

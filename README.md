@@ -293,6 +293,16 @@ Sporta espone i suoi strumenti agli agenti AI del browser tramite [WebMCP](https
 
 Gli strumenti usano le stesse funzioni dell'interfaccia: le modifiche passano dalla coda offline e arrivano in tempo reale a tutto il gruppo.
 
+## Carte fedeltà
+
+*Altro → Carte* (e la scorciatoia "Carte" sull'icona dell'app installata): le carte dei negozi da mostrare in cassa.
+
+- **Aggiunta** inquadrando il codice a barre: si usa il lettore del browser (`BarcodeDetector`, Chrome su Android) e, dove manca (iPhone, computer), ZXing (`public/vendor/zxing-0.23.0.min.js`, Apache-2.0), caricato solo quando si apre la fotocamera. L'immagine resta sul dispositivo. In alternativa si scrive il numero e si sceglie il formato (o "Automatico": EAN-13/EAN-8/UPC-A se la cifra di controllo torna, altrimenti Code 128).
+- **In cassa** il codice viene ridisegnato dall'app (`public/barcode.js`: EAN-13, EAN-8, UPC-A, Code 128, Code 39, ITF, Codabar; QR con `public/vendor/qrcode-generator-2.0.4.js`, MIT), grande, su fondo bianco anche col tema scuro, con lo schermo sempre acceso (Wake Lock) e il pulsante *Ruota*. Funziona senza rete: le carte sono nello stato salvato sul dispositivo e librerie e loghi restano nella cache del service worker. I formati che non si sanno ridisegnare si mostrano come Code 128 più il numero, da far digitare.
+- **Del gruppo o solo mie**: di default una carta è del gruppo (la vedono e la usano tutti i membri, con "usata ieri da Luca"); *Solo per me* la lega all'account, compare in tutti i propri gruppi solo a chi l'ha aggiunta e non passa dal canale in tempo reale del gruppo. Niente foto.
+- **Catene**: `public/chains/chains.json` con circa 60 catene italiane (spesa, casa, elettronica, cura della persona, altro) e i loghi in `public/chains/`. Si rigenerano con `NODE_USE_ENV_PROXY=1 node scripts/chains/fetch-logos.js [id…]` da `scripts/chains/chains.txt` (Wikimedia Commons in SVG, altrimenti l'icona del sito; quinta colonna `File:…` per scegliere un file, `-` per non avere il logo). **I loghi sono marchi dei rispettivi titolari**: si usano solo per riconoscere la carta; prima di pubblicare valuta il permesso delle catene.
+- API: `PUT/DELETE /api/cards/:id` (`name`, `chain`, `color`, `format`, `code`, `holder`, `note`, `mine`), `POST /api/cards/:id/used`; le carte arrivano in `cards` dello stato.
+
 ## Foto
 
 Le foto delle ricette vengono ridimensionate nel browser (lato lungo 1600 px, JPEG) e caricate dal server. Dove finiscono dipende da `BLOB_READ_WRITE_TOKEN`:
@@ -423,6 +433,7 @@ lib/members.js         membri: chiavi di gruppo, ruoli, richieste, inviti, prese
 lib/notify.js          avvisi, notifiche push (Web Push), promemoria delle scadenze
 lib/events.js          eventi, risposte con ospiti, liste collegate, promemoria del giorno prima
 lib/menu.js            menu "La faccio": ricette da preparare e scelte Ce l'ho / Da comprare
+lib/cards.js           carte fedeltà: del gruppo o personali (legate all'account)
 lib/foods.js           database degli alimenti: correzioni degli amministratori, nomi non riconosciuti, segnalazioni
 lib/pubrecipes.js      ricette pubbliche: visibilità, firma, ricerca, preferite, segnalazioni
 lib/pages.js           pagine web delle ricette e dei ricettari, sitemap.xml, robots.txt
@@ -447,6 +458,8 @@ public/js/discover.js  Scopri, preferite, ricette pubbliche di altri, firma, seg
 public/js/import.js    importazione di ricette da file JSON
 public/foods-lib.js    database degli alimenti: riconoscimento dei nomi, grammi, valori per porzione (client e server)
 public/foods.json      il database degli alimenti (generato da scripts/foods/)
+public/js/cards.js     carte fedeltà: elenco, fotocamera, in cassa
+public/barcode.js      disegno dei codici a barre (client e test)
 public/js/foodsadmin.js  segnalazioni sugli alimenti e gestione per gli amministratori (Altro → Alimenti)
 public/js/trips.js     storico delle spese
 public/js/overview.js  panoramica di tutti i gruppi, avvisi, notifiche push

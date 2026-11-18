@@ -74,6 +74,19 @@
       ]
     },
     {
+      "name": "Carte fedeltà",
+      "short_name": "Carte",
+      "description": "Le carte dei negozi da mostrare in cassa",
+      "url": "/#/carte",
+      "icons": [
+        {
+          "src": "/icons/shortcut-cards.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Eventi",
       "short_name": "Eventi",
       "description": "Eventi in programma",

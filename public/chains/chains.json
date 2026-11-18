@@ -1,0 +1,455 @@
+[
+ {
+  "id": "esselunga",
+  "name": "Esselunga",
+  "kind": "spesa",
+  "site": "esselunga.it"
+ },
+ {
+  "id": "coop",
+  "name": "Coop",
+  "kind": "spesa",
+  "site": "e-coop.it",
+  "logo": "coop.png",
+  "source": "https://www.e-coop.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "conad",
+  "name": "Conad",
+  "kind": "spesa",
+  "site": "conad.it",
+  "logo": "conad.png",
+  "source": "https://www.conad.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "carrefour",
+  "name": "Carrefour",
+  "kind": "spesa",
+  "site": "carrefour.it",
+  "logo": "carrefour.png",
+  "source": "https://www.carrefour.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "lidl",
+  "name": "Lidl",
+  "kind": "spesa",
+  "site": "lidl.it",
+  "logo": "lidl.svg",
+  "source": "https://commons.wikimedia.org/wiki/File:Lidl-Logo.svg",
+  "license": "Wikimedia Commons"
+ },
+ {
+  "id": "eurospin",
+  "name": "Eurospin",
+  "kind": "spesa",
+  "site": "eurospin.it",
+  "logo": "eurospin.png",
+  "source": "https://www.eurospin.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "pam",
+  "name": "Pam Panorama",
+  "kind": "spesa",
+  "site": "pampanorama.it"
+ },
+ {
+  "id": "despar",
+  "name": "Despar · Eurospar · Interspar",
+  "kind": "spesa",
+  "site": "despar.it"
+ },
+ {
+  "id": "crai",
+  "name": "Crai",
+  "kind": "spesa",
+  "site": "crai-supermercati.it"
+ },
+ {
+  "id": "sigma",
+  "name": "Sigma",
+  "kind": "spesa",
+  "site": "supersigma.com",
+  "logo": "sigma.png",
+  "source": "https://www.supersigma.com",
+  "license": "icona del sito"
+ },
+ {
+  "id": "iper",
+  "name": "Iper La grande i",
+  "kind": "spesa",
+  "site": "iper.it"
+ },
+ {
+  "id": "bennet",
+  "name": "Bennet",
+  "kind": "spesa",
+  "site": "bennet.com",
+  "logo": "bennet.png",
+  "source": "https://www.bennet.com",
+  "license": "icona del sito"
+ },
+ {
+  "id": "famila",
+  "name": "Famila",
+  "kind": "spesa",
+  "site": "famila.it",
+  "logo": "famila.png",
+  "source": "https://www.famila.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "penny",
+  "name": "Penny",
+  "kind": "spesa",
+  "site": "penny.it"
+ },
+ {
+  "id": "aldi",
+  "name": "Aldi",
+  "kind": "spesa",
+  "site": "aldi.it",
+  "logo": "aldi.png",
+  "source": "https://www.aldi.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "md",
+  "name": "MD",
+  "kind": "spesa",
+  "site": "mdspa.it",
+  "logo": "md.png",
+  "source": "https://www.mdspa.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "ins",
+  "name": "In's Mercato",
+  "kind": "spesa",
+  "site": "insmercato.it",
+  "logo": "ins.png",
+  "source": "https://www.insmercato.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "todis",
+  "name": "Todis",
+  "kind": "spesa",
+  "site": "todis.it",
+  "logo": "todis.png",
+  "source": "https://www.todis.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "tigros",
+  "name": "Tigros",
+  "kind": "spesa",
+  "site": "tigros.it"
+ },
+ {
+  "id": "basko",
+  "name": "Basko",
+  "kind": "spesa",
+  "site": "basko.it"
+ },
+ {
+  "id": "unes",
+  "name": "Unes",
+  "kind": "spesa",
+  "site": "unes.it"
+ },
+ {
+  "id": "gigante",
+  "name": "Il Gigante",
+  "kind": "spesa",
+  "site": "ilgigante.net",
+  "logo": "gigante.png",
+  "source": "https://www.ilgigante.net",
+  "license": "icona del sito"
+ },
+ {
+  "id": "deco",
+  "name": "Decò",
+  "kind": "spesa",
+  "site": "supermercatideco.it"
+ },
+ {
+  "id": "sisa",
+  "name": "Sisa",
+  "kind": "spesa",
+  "site": "sisa.it"
+ },
+ {
+  "id": "prix",
+  "name": "Prix",
+  "kind": "spesa",
+  "site": "prixquality.com",
+  "logo": "prix.png",
+  "source": "https://www.prixquality.com",
+  "license": "icona del sito"
+ },
+ {
+  "id": "tuodi",
+  "name": "Tuodì",
+  "kind": "spesa",
+  "site": "tuodi.it"
+ },
+ {
+  "id": "naturasi",
+  "name": "NaturaSì",
+  "kind": "spesa",
+  "site": "naturasi.it",
+  "logo": "naturasi.png",
+  "source": "https://www.naturasi.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "iperal",
+  "name": "Iperal",
+  "kind": "spesa",
+  "site": "iperal.it",
+  "logo": "iperal.png",
+  "source": "https://www.iperal.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "gros",
+  "name": "Gros",
+  "kind": "spesa",
+  "site": "grosonline.it"
+ },
+ {
+  "id": "ikea",
+  "name": "IKEA",
+  "kind": "casa",
+  "site": "ikea.com"
+ },
+ {
+  "id": "leroymerlin",
+  "name": "Leroy Merlin",
+  "kind": "casa",
+  "site": "leroymerlin.it"
+ },
+ {
+  "id": "bricocenter",
+  "name": "Brico Center",
+  "kind": "casa",
+  "site": "bricocenter.it",
+  "logo": "bricocenter.png",
+  "source": "https://www.bricocenter.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "obi",
+  "name": "OBI",
+  "kind": "casa",
+  "site": "obi-italia.it",
+  "logo": "obi.png",
+  "source": "https://www.obi-italia.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "bricoman",
+  "name": "Bricoman",
+  "kind": "casa",
+  "site": "bricoman.it",
+  "logo": "bricoman.png",
+  "source": "https://www.bricoman.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "bricofer",
+  "name": "Bricofer",
+  "kind": "casa",
+  "site": "bricofer.it"
+ },
+ {
+  "id": "maisonsdumonde",
+  "name": "Maisons du Monde",
+  "kind": "casa",
+  "site": "maisonsdumonde.com"
+ },
+ {
+  "id": "kasanova",
+  "name": "Kasanova",
+  "kind": "casa",
+  "site": "kasanova.com"
+ },
+ {
+  "id": "mediaworld",
+  "name": "MediaWorld",
+  "kind": "elettronica",
+  "site": "mediaworld.it"
+ },
+ {
+  "id": "unieuro",
+  "name": "Unieuro",
+  "kind": "elettronica",
+  "site": "unieuro.it",
+  "logo": "unieuro.png",
+  "source": "https://www.unieuro.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "euronics",
+  "name": "Euronics",
+  "kind": "elettronica",
+  "site": "euronics.it",
+  "logo": "euronics.png",
+  "source": "https://www.euronics.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "expert",
+  "name": "Expert",
+  "kind": "elettronica",
+  "site": "expert.it",
+  "logo": "expert.png",
+  "source": "https://www.expert.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "trony",
+  "name": "Trony",
+  "kind": "elettronica",
+  "site": "trony.it"
+ },
+ {
+  "id": "acquaesapone",
+  "name": "Acqua & Sapone",
+  "kind": "persona",
+  "site": "acquaesapone.it"
+ },
+ {
+  "id": "tigota",
+  "name": "Tigotà",
+  "kind": "persona",
+  "site": "tigota.it",
+  "logo": "tigota.png",
+  "source": "https://www.tigota.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "douglas",
+  "name": "Douglas",
+  "kind": "persona",
+  "site": "douglas.it",
+  "logo": "douglas.png",
+  "source": "https://www.douglas.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "sephora",
+  "name": "Sephora",
+  "kind": "persona",
+  "site": "sephora.it",
+  "logo": "sephora.svg",
+  "source": "https://commons.wikimedia.org/wiki/File:Sephora_logo.svg",
+  "license": "Public domain"
+ },
+ {
+  "id": "kiko",
+  "name": "Kiko",
+  "kind": "persona",
+  "site": "kikocosmetics.com",
+  "logo": "kiko.png",
+  "source": "https://www.kikocosmetics.com",
+  "license": "icona del sito"
+ },
+ {
+  "id": "caddys",
+  "name": "Caddy's",
+  "kind": "persona",
+  "site": "caddys.it",
+  "logo": "caddys.png",
+  "source": "https://www.caddys.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "pinalli",
+  "name": "Pinalli",
+  "kind": "persona",
+  "site": "pinalli.it",
+  "logo": "pinalli.png",
+  "source": "https://www.pinalli.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "decathlon",
+  "name": "Decathlon",
+  "kind": "altro",
+  "site": "decathlon.it",
+  "logo": "decathlon.png",
+  "source": "https://www.decathlon.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "ovs",
+  "name": "OVS",
+  "kind": "altro",
+  "site": "ovs.it",
+  "logo": "ovs.png",
+  "source": "https://www.ovs.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "coin",
+  "name": "Coin",
+  "kind": "altro",
+  "site": "coin.it",
+  "logo": "coin.png",
+  "source": "https://www.coin.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "rinascente",
+  "name": "Rinascente",
+  "kind": "altro",
+  "site": "rinascente.it"
+ },
+ {
+  "id": "feltrinelli",
+  "name": "Feltrinelli",
+  "kind": "altro",
+  "site": "lafeltrinelli.it"
+ },
+ {
+  "id": "mondadori",
+  "name": "Mondadori",
+  "kind": "altro",
+  "site": "mondadoristore.it"
+ },
+ {
+  "id": "giunti",
+  "name": "Giunti al Punto",
+  "kind": "altro",
+  "site": "giuntialpunto.it"
+ },
+ {
+  "id": "arcaplanet",
+  "name": "Arcaplanet",
+  "kind": "altro",
+  "site": "arcaplanet.it",
+  "logo": "arcaplanet.png",
+  "source": "https://www.arcaplanet.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "isoladeitesori",
+  "name": "Isola dei Tesori",
+  "kind": "altro",
+  "site": "isoladeitesori.it",
+  "logo": "isoladeitesori.png",
+  "source": "https://www.isoladeitesori.it",
+  "license": "icona del sito"
+ },
+ {
+  "id": "benu",
+  "name": "Benu Farmacia",
+  "kind": "altro",
+  "site": "benufarmacia.it"
+ }
+]

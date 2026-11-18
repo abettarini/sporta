@@ -22,6 +22,7 @@ Views.settings = {
       <div class="card" id="ntf"></div>
       <a class="card link-card" href="#/m" id="mb-card">${iconTile('home')}<span class="t"><b>Membri <i class="tab-badge inline" data-badge hidden></i></b><span id="mb-sub">Chi c'è nel gruppo, inviti e richieste</span></span><span class="chev">›</span></a>
       <a class="card link-card narrow-only" href="#/t">${iconTile('receipt')}<span class="t"><b>Spese</b><span>Storico delle spese concluse</span></span><span class="chev">›</span></a>
+      <a class="card link-card" href="#/carte">${iconTile('card')}<span class="t"><b>Carte fedeltà</b><span>Tutte le carte dei negozi, da mostrare in cassa anche senza rete</span></span><span class="chev">›</span></a>
       <a class="card link-card" href="#/p">${iconTile('tag')}<span class="t"><b>Prodotti</b><span>Catalogo, reparti, tag e prodotti abituali</span></span><span class="chev">›</span></a>
       ${isCookbook() ? `<div class="card" id="cb-card"><h3>${icon('book')} Ricettario</h3>
         <p>Ogni ricetta è pubblica e firmata “${h(groupName())}”. La pagina web raccoglie tutte le ricette.</p>
@@ -60,7 +61,7 @@ Views.settings = {
       try { await api('PATCH', '/api/household', { description: $('#cb-desc').value.trim() }); st.household.description = $('#cb-desc').value.trim(); toast('Descrizione salvata'); } catch (e) { toast(e.message); }
     };
     if (!publicOn()) { const sr = document.querySelector('.sig-row'); if (sr) sr.hidden = true; const cb = $('#cb-card'); if (cb) cb.hidden = true; }
-    if (isCookbook()) { const sr = document.querySelector('.sig-row'); if (sr) sr.hidden = true; document.querySelectorAll('a[href="#/p"], a[href="#/t"]').forEach((a) => { a.hidden = true; }); }
+    if (isCookbook()) { const sr = document.querySelector('.sig-row'); if (sr) sr.hidden = true; document.querySelectorAll('a[href="#/p"], a[href="#/t"], a[href="#/carte"]').forEach((a) => { a.hidden = true; }); }
     // --- firma delle ricette pubbliche (per questo gruppo)
     const sigShow = () => { $('#sig-v').textContent = `“${authorLabel(myAuthor())}”${st.me && st.me.author_name != null ? '' : ' (proposta)'} · vale per le prossime pubblicazioni`; };
     sigShow();

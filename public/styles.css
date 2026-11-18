@@ -667,7 +667,7 @@ small.as { display: block; color: var(--muted); font-size: 13px; }
 .ov-group .list-card { gap: 12px; padding: 10px 12px; text-decoration: none; color: inherit; }
 .ov-group .list-card .t b { font-size: 16px; }
 .ov-group .list-card .t span.late { color: var(--danger); }
-.overview > #ov > .ov-col:last-child .btn.block { margin-top: 12px; }
+.overview .ov-col .btn.block { margin-top: 10px; }
 .icon-btn.bell { position: relative; }
 .icon-btn.bell .tab-badge { top: -2px; left: auto; right: -4px; }
 .notifs { list-style: none; margin: 8px 0 0; padding: 4px 0; }
@@ -683,8 +683,26 @@ small.as { display: block; color: var(--muted); font-size: 13px; }
 #ntf .btn.sm { margin-top: 6px; }
 @media (min-width: 1000px) {
   main.overview { max-width: 1120px; }
-  .overview #ov { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 0 22px; align-items: start; }
+  .ov-cols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0 22px; align-items: start; }
 }
+/* Home: quattro pulsanti grandi, poi solo quello che c'è da fare (v3.28) */
+.home-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 4px 0 18px; }
+.home-btn { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 14px; min-height: 128px; padding: 16px;
+  background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); text-decoration: none; color: inherit; transition: transform .12s; }
+.home-btn:active { transform: scale(.97); }
+.home-btn .t b { display: block; font-size: 20px; letter-spacing: -.01em; }
+.home-btn .t small { color: var(--muted); font-size: 14px; }
+.home-btn.hot .t small { color: var(--accent); font-weight: 600; }
+@media (min-width: 760px) { .home-btns { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.ov-rows { padding: 4px 0; }
+.ov-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; text-decoration: none; color: inherit; }
+.ov-row + .ov-row { border-top: 1px solid var(--line); }
+.ov-row .t { flex: 1; min-width: 0; }
+.ov-row .t b { display: block; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-row .t small { color: var(--muted); font-size: 13px; }
+.section-h b.late { color: var(--danger); }
+.ov-calm { margin-bottom: 12px; }
+.ov-calm b { color: var(--text); }
 
 /* --- eventi (v3.5) --- */
 .event-card { display: flex; align-items: center; gap: 12px; padding: 10px 12px; text-decoration: none; color: inherit; }

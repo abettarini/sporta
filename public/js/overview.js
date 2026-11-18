@@ -224,10 +224,6 @@ Views.home = {
       }
       const more = e.target.closest('[data-more]');
       if (more) { this.open.add(more.dataset.more); this.update(); return; }
-      const gs = e.target.closest('[data-gswitch]');
-      if (gs) switchGroup(gs.dataset.gswitch, '#/l');
-      const nl = e.target.closest('[data-newlist]');
-      if (nl) listSheet();
     });
     this.open = this.open || new Set();
     refreshOverview();
@@ -240,64 +236,72 @@ Views.home = {
     const memberName = (grp, id) => { const m = grp.members.find((x) => x.id === id); return m ? m.alias : ''; };
     const listOf = (grp, id) => grp.lists.find((l) => l.id === id);
 
-    // Da fare per me (in tutti i gruppi) + in scadenza senza nessuno.
-    const mine = [], free = [];
-    const soon = S.ymd(S.addDays(new Date(), 2));
+    // Da fare per me (in tutti i gruppi).
+    const mine = [], due = [];
+    const week = S.ymd(S.addDays(new Date(), 7));
     for (const grp of groups) {
       for (const i of grp.items) {
         const l = listOf(grp, i.list_id);
         if (!l || typeOf(l) !== 'todo') continue;
         // Nel gruppo personale tutto ciò che c'è da fare è tuo.
         if (grp.me && (i.assigned_to === grp.me || (grp.personal && !i.assigned_to))) mine.push({ grp, l, i });
-        else if (!i.assigned_to && i.due_date && i.due_date <= soon) free.push({ grp, l, i });
+        // Scadenze dei prossimi 7 giorni (o già passate) delle cose degli altri o di nessuno.
+        else if (i.due_date && i.due_date <= week) due.push({ grp, l, i });
       }
     }
     const byDue = (a, b) => ovDueRank(a.i) - ovDueRank(b.i) || String(a.i.due_date).localeCompare(String(b.i.due_date)) || b.i.priority - a.i.priority || a.i.created_at - b.i.created_at;
-    mine.sort(byDue); free.sort(byDue);
-    const todoHtml = `<section class="ov-sec"><div class="section-h"><span>Da fare per me</span>${mine.length ? `<span>${mine.length}</span>` : ''}</div>
-      ${mine.length ? `<ul class="ov-items card">${mine.map(({ grp, l, i }) => ovItemRow(grp, l, i, { many, who: i.assigned_by && i.assigned_by !== grp.me ? 'da ' + memberName(grp, i.assigned_by) : '' })).join('')}</ul>`
-        : `<div class="card pad ov-empty">${icon('todo')}<span>Niente da fare per te. Nelle liste <b>Da fare</b> scrivi <b>@nome</b> per assegnare qualcosa.</span></div>`}
-      ${free.length ? `<div class="section-h sub"><span>In scadenza, senza nessuno</span></div>
-        <ul class="ov-items card">${free.map(({ grp, l, i }) => ovItemRow(grp, l, i, { many })).join('')}</ul>` : ''}</section>`;
+    mine.sort(byDue); due.sort(byDue);
 
     // Da comprare: liste della spesa con qualcosa da prendere.
     const shops = [];
     for (const grp of groups) {
       for (const l of grp.lists) {
         if (typeOf(l) !== 'spesa') continue;
-        const its = grp.items.filter((i) => i.list_id === l.id).sort((a, b) => a.position - b.position || b.created_at - a.created_at);
-        if (its.length) shops.push({ grp, l, its });
+        const n = grp.items.filter((i) => i.list_id === l.id).length;
+        if (n) shops.push({ grp, l, n });
       }
     }
-    const shopHtml = `<section class="ov-sec"><div class="section-h"><span>Da comprare</span></div>
-      ${shops.length ? shops.map(({ grp, l, its }) => {
-        const key = grp.code + ':' + l.id;
-        const show = this.open.has(key) ? its : its.slice(0, SHOP_PREVIEW);
-        return `<div class="card ov-shop">
-          <a class="ov-shop-h" href="${goHref(grp, l.id)}">${listTile(l, 'sm')}<span class="t"><b>${h(l.name)}</b>${many ? `<small>${h(grp.name)}</small>` : ''}</span><span class="badge">${its.length}</span><span class="chev">›</span></a>
-          <ul class="ov-items">${show.map((i) => ovItemRow(grp, null, i, { many: false })).join('')}</ul>
-          ${its.length > show.length ? `<button class="btn ghost block sm" data-more="${h(key)}">Mostra altri ${its.length - show.length}</button>` : ''}
-        </div>`;
-      }).join('') : `<div class="card pad ov-empty">${icon('cart')}<span>Non c'è niente da comprare.</span></div>`}</section>`;
+    const toBuy = shops.reduce((t, x) => t + x.n, 0);
 
-    // Tutte le liste, gruppo per gruppo.
-    const listsHtml = `<section class="ov-sec"><div class="section-h"><span>${many ? 'Le liste dei tuoi gruppi' : 'Le tue liste'}</span></div>
-      ${groups.map((grp) => `<div class="ov-group">
-        ${many ? `<button class="ov-group-h" data-gswitch="${h(grp.code)}">${groupBadge(grp)}<b>${h(grp.name)}</b>${grp.current ? '<small>attuale</small>' : ''}<span class="chev">›</span></button>` : ''}
-        <div class="list-cards compact">${grp.lists.length ? grp.lists.map((l) => {
-          const sm = ovListSub(grp, l);
-          return `<a class="card list-card lc" href="${goHref(grp, l.id)}">${listTile(l, 'sm')}<span class="t"><b>${h(l.name)}</b><span class="${sm.late ? 'late' : ''}">${h(sm.sub)}</span></span>${sm.badge ? `<span class="badge">${sm.badge}</span>` : ''}</a>`;
-        }).join('') : `<p class="muted small">${grp.stale ? 'Caricamento…' : 'Nessuna lista'}</p>`}</div>
-      </div>`).join('')}
-      <button class="btn ghost block" data-newlist>${I.plus} Nuova lista${many ? ' in ' + h(groupName()) : ''}</button></section>`;
-
-    // Prossimi eventi di tutti i gruppi (le prossime 5 settimane, al massimo 6).
+    // Prossimi eventi di tutti i gruppi (le prossime 5 settimane).
     const limit = S.ymd(S.addDays(new Date(), 35));
     const evs = groups.flatMap((grp) => upcomingEvents(grp.events || []).filter((e) => e.date <= limit).map((e) => ({ grp, e })))
-      .sort((a, b) => a.e.date.localeCompare(b.e.date) || (a.e.time || '99').localeCompare(b.e.time || '99')).slice(0, 6);
-    const evHtml = evs.length ? `<section class="ov-sec"><div class="section-h"><span>Prossimi eventi</span></div>
-      <div class="list-cards">${evs.map(({ grp, e }) => eventCard(e, { href: goEvent(grp, e.id), meId: grp.me, members: grp.members, group: many ? grp.name : '' })).join('')}</div></section>` : '';
-    $('#ov').innerHTML = `<div class="ov-col">${todoHtml}${shopHtml}</div><div class="ov-col">${evHtml}${listsHtml}</div>`;
+      .sort((a, b) => a.e.date.localeCompare(b.e.date) || (a.e.time || '99').localeCompare(b.e.time || '99'));
+
+    // I quattro pulsanti.
+    const lateMine = mine.filter(({ i }) => S.fmtDue(i.due_date).state === 'late').length;
+    const nCards = st.cards ? st.cards.size : 0, nRecipes = st.recipes ? st.recipes.size : 0;
+    const tile = (href, ico, label, sub, cls = '') => `<a class="home-btn ${cls}" href="${href}">${iconTile(ico, 'lg')}<span class="t"><b>${label}</b><small>${sub}</small></span></a>`;
+    const btns = `<nav class="home-btns" aria-label="Sezioni">
+      ${tile('#/l', 'cart', 'Liste', toBuy ? `${toBuy} da comprare` : mine.length ? `${mine.length} da fare` : 'Tutto a posto', toBuy || mine.length ? 'hot' : '')}
+      ${tile('#/e', 'party', 'Eventi', evs.length ? `${evs.length} in arrivo` : 'Nessuno in vista', evs.length ? 'hot' : '')}
+      ${tile('#/carte', 'card', 'Carte', nCards ? `${nCards} ${nCards === 1 ? 'carta' : 'carte'}` : 'Aggiungi la prima')}
+      ${tile('#/r', 'book', 'Ricette', nRecipes ? `${nRecipes} ${nRecipes === 1 ? 'ricetta' : 'ricette'}` : 'Aggiungi la prima')}
+    </nav>`;
+
+    // Da comprare: solo le liste, con quante cose.
+    const shopHtml = shops.length ? `<section class="ov-sec"><div class="section-h"><span>Da comprare</span><span>${toBuy}</span></div>
+      <div class="card ov-rows">${shops.map(({ grp, l, n }) => `<a class="ov-row" href="${goHref(grp, l.id)}">${listTile(l, 'sm')}
+        <span class="t"><b>${h(l.name)}</b>${many ? `<small>${h(grp.name)}</small>` : ''}</span><span class="badge">${n}</span><span class="chev">›</span></a>`).join('')}</div></section>` : '';
+
+    // Da fare per me (con la spunta), le prime 5.
+    const key = 'todo';
+    const showMine = this.open.has(key) ? mine : mine.slice(0, 5);
+    const todoHtml = mine.length ? `<section class="ov-sec"><div class="section-h"><span>Da fare per me</span><span>${mine.length}${lateMine ? ` · <b class="late">${lateMine} ${lateMine === 1 ? 'scaduta' : 'scadute'}</b>` : ''}</span></div>
+      <ul class="ov-items card">${showMine.map(({ grp, l, i }) => ovItemRow(grp, l, i, { many, who: i.assigned_by && i.assigned_by !== grp.me ? 'da ' + memberName(grp, i.assigned_by) : '' })).join('')}</ul>
+      ${mine.length > showMine.length ? `<button class="btn ghost block sm" data-more="${key}">Mostra altre ${mine.length - showMine.length}</button>` : ''}</section>` : '';
+
+    // Eventi e scadenze.
+    const showEv = evs.slice(0, 4);
+    const evHtml = showEv.length || due.length ? `<section class="ov-sec"><div class="section-h"><span>Eventi e scadenze</span></div>
+      ${showEv.length ? `<div class="list-cards">${showEv.map(({ grp, e }) => eventCard(e, { href: goEvent(grp, e.id), meId: grp.me, members: grp.members, group: many ? grp.name : '' })).join('')}</div>
+        ${evs.length > showEv.length ? `<a class="btn ghost block sm" href="#/e">Tutti gli eventi (${evs.length})</a>` : ''}` : ''}
+      ${due.length ? `<div class="section-h sub"><span>Scadenze dei prossimi 7 giorni</span></div>
+        <ul class="ov-items card">${due.slice(0, 8).map(({ grp, l, i }) => ovItemRow(grp, l, i, { many, who: i.assigned_to ? memberName(grp, i.assigned_to) : 'nessuno' })).join('')}</ul>` : ''}</section>` : '';
+
+    const calm = !shopHtml && !todoHtml && !evHtml
+      ? `<div class="card pad ov-empty ov-calm">${icon('done')}<span><b>Tutto a posto.</b> Niente da comprare, niente da fare, nessun evento in vista.</span></div>` : '';
+    $('#ov').innerHTML = `${btns}${calm}<div class="ov-cols"><div class="ov-col">${shopHtml}${todoHtml}</div><div class="ov-col">${evHtml}</div></div>`;
   },
 };
 

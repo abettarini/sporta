@@ -70,12 +70,6 @@ async function keepAwake(on) {
 }
 document.addEventListener('visibilitychange', () => { if (view === Views.card && document.visibilityState === 'visible') keepAwake(true); });
 
-let qrLoading = null;
-function loadQr() {
-  if (typeof qrcode === 'function') return Promise.resolve();
-  if (!qrLoading) qrLoading = loadScript('/vendor/qrcode-generator-2.0.4.js');
-  return qrLoading;
-}
 function loadScript(src) {
   return new Promise((ok, ko) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ko(new Error('Serve la connessione per caricare ' + src)); document.head.appendChild(s); });
 }
@@ -85,7 +79,7 @@ Views.card = {
     const c = st.cards.get(this.route.id);
     if (!c) { history.replaceState(null, '', '#/carte'); return mount(); }
     loadChains();
-    if (c.format === 'qr') loadQr().then(() => this.update()).catch(() => {});
+    Barcode.load(c.format).then(() => this.update()).catch(() => {});
     this.rot = false;
     app.innerHTML = `<div class="till">${topBar(`<span id="ct"></span>`, { back: '#/carte', right: `<a class="icon-btn" href="#/carte/${h(c.id)}/modifica" aria-label="Modifica">${I.edit}</a>` })}<main id="till-body"></main></div>`;
     $('#till-body').addEventListener('click', (e) => {
@@ -102,14 +96,17 @@ Views.card = {
     const body = $('#till-body'); if (!c || !body) return;
     $('#ct').textContent = c.name;
     const ch = chainOf(c);
-    const code = Barcode.svg(c.format, c.code);
-    const e = c.format === 'qr' ? null : Barcode.encode(c.format, c.code);
-    const fallback = c.format !== 'qr' && e && e.format !== c.format;
+    const ready = Barcode.ready(c.format);
+    const code = ready ? Barcode.svg(c.format, c.code) : '';
+    const used = ready ? Barcode.usable(c.format, c.code) : null;
+    const fallback = c.format !== 'qr' && used && used !== c.format;
+    // EAN e UPC hanno già il numero dentro il codice
+    const num = !code || Barcode.needsNumber(c.format, c.code);
     body.innerHTML = `<div class="till-hero" style="--cc:${cardColor(c)}">
         ${ch && ch.logo ? `<span class="th-logo"><img src="/chains/${h(ch.logo)}" alt=""></span>` : `<span class="th-ini">${h(c.name.charAt(0).toUpperCase())}</span>`}
         <span><b>${h(c.name)}</b><small>${h(c.holder || (c.mine ? 'Carta personale' : 'Carta del gruppo'))}</small></span></div>
-      <div class="till-code ${this.rot ? 'rot' : ''} ${c.format === 'qr' ? 'is-qr' : ''}">${code || (c.format === 'qr' ? '<div class="empty muted">Caricamento del QR…</div>' : '')}
-        <div class="till-num">${h(e ? e.text : c.code)}</div></div>
+      <div class="till-code ${this.rot ? 'rot' : ''} ${c.format === 'qr' ? 'is-qr' : ''}"><div class="till-face">${code || (ready ? '' : '<div class="empty muted">Caricamento del codice…</div>')}
+        ${num ? `<div class="till-num">${h(c.code)}</div>` : ''}</div></div>
       ${fallback ? '<p class="hint center">Questo formato non si può ridisegnare: se il lettore non legge, il cassiere può digitare il numero.</p>' : ''}
       <p class="hint center">☀ Se il lettore non legge, alza la luminosità dello schermo.</p>
       <div class="till-acts"><button type="button" class="btn" id="rot">↻ ${this.rot ? 'Normale' : 'Ruota'}</button></div>
@@ -250,8 +247,11 @@ Views.cardEdit = {
     const preview = () => {
       const code = f.elements.code.value.trim();
       const fmt = f.elements.format.value || Barcode.guessFormat(code);
-      if (fmt === 'qr') { loadQr().then(() => { $('#ce-preview').innerHTML = code ? Barcode.svg('qr', code) : ''; }).catch(() => {}); return; }
-      $('#ce-preview').innerHTML = code ? Barcode.svg(fmt, code) : '';
+      if (!code) { $('#ce-preview').innerHTML = ''; return; }
+      Barcode.load(fmt).then(() => {
+        const box = $('#ce-preview');
+        if (box && f.elements.code.value.trim() === code) box.innerHTML = Barcode.svg(fmt, code);
+      }).catch(() => {});
     };
     f.addEventListener('input', (e) => {
       if (e.target.name === 'code' || e.target.name === 'format') preview();
@@ -305,8 +305,13 @@ Views.cardEdit = {
     const d = this.d;
     if (!d.name || !d.code) { $('#ce-err').textContent = 'Servono il negozio e il numero della carta.'; return; }
     const format = d.format || Barcode.guessFormat(d.code);
-    if (format !== 'qr' && !Barcode.encode(format, d.code)) { $('#ce-err').textContent = `Il numero non va bene per il formato ${Barcode.LABELS[format]}.`; return; }
-    if (format !== 'qr' && Barcode.encode(format, d.code).format !== format) { $('#ce-err').textContent = `Il numero non va bene per il formato ${Barcode.LABELS[format]}.`; return; }
+    Barcode.load(format).then(() => {
+      if (Barcode.usable(format, d.code) !== format) { $('#ce-err').textContent = `Il numero non va bene per il formato ${Barcode.LABELS[format]}.`; return; }
+      this.store(format);
+    }).catch((e) => { $('#ce-err').textContent = e.message; });
+  },
+  store(format) {
+    const d = this.d;
     const id = this.card ? this.card.id : uid();
     const data = { name: d.name, chain: d.chain || '', color: d.color || '', format, code: d.code, holder: d.holder, note: d.note, mine: d.mine };
     enqueue({ k: 'card.put', id, data }, { silent: true });

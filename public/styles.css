@@ -1119,12 +1119,14 @@ button.link-card { width: 100%; border: 0; font: inherit; text-align: left; curs
 .th-ini { width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 255, 255, .25); display: grid; place-items: center; font-weight: 800; font-size: 20px; flex: none; }
 .till-code { margin: 18px 0 0; padding: 18px 10px 12px; border: 1px solid #e3e3e3; border-radius: 16px; text-align: center; background: #fff; }
 .till-code .bars { width: 100%; height: 130px; display: block; }
+.till-code .bars.labelled { height: auto; max-height: 40vh; }
 .till-code .qr { width: min(72vw, 300px); height: auto; display: block; margin: 0 auto; }
 .till-num { font: 600 21px/1.25 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .1em; margin-top: 8px; overflow-wrap: anywhere; color: #111; }
 .till-code.rot:not(.is-qr) { border: 0; padding: 0; height: 70vh; display: flex; align-items: center; justify-content: center; }
-.till-code.rot:not(.is-qr) > * { transform: rotate(90deg); flex: none; }
-.till-code.rot:not(.is-qr) .bars { width: 66vh; height: 34vw; }
-.till-code.rot:not(.is-qr) .till-num { position: absolute; }
+/* ruotato: barre e numero girano insieme (.till-face), il numero resta sotto le barre */
+.till-code.rot:not(.is-qr) .till-face { transform: rotate(90deg); flex: none; width: 66vh; }
+.till-code.rot:not(.is-qr) .bars { height: 50vw; }
+.till-code.rot:not(.is-qr) .bars.labelled { height: auto; max-height: 86vw; }
 .till .hint { color: #666; }
 .hint.center { text-align: center; }
 .till-acts { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
@@ -1161,6 +1163,7 @@ button.link-card { width: 100%; border: 0; font: inherit; text-align: left; curs
 .ce-preview { background: #fff; border-radius: 12px; padding: 8px; margin: 0 0 12px; }
 .ce-preview:empty { display: none; }
 .ce-preview .bars { width: 100%; height: 70px; display: block; }
+.ce-preview .bars.labelled { height: 110px; }
 .ce-preview .qr { width: 140px; display: block; margin: 0 auto; }
 #ce-rescan { margin-bottom: 12px; }
 a.btn { text-decoration: none; }
